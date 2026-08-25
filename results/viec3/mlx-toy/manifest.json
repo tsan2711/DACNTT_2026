@@ -1,0 +1,31 @@
+{
+  "date": "2026-08-16",
+  "utc": "2026-08-16T12:23:12Z",
+  "viec": 3,
+  "mode": "mlx",
+  "note": "mode=mlx: mlx-community/Qwen2.5-0.5B-Instruct-4bit LoRA SFT (not GRPO). Mac toy — do not treat pass@* as paper numbers.",
+  "paper_quality": false,
+  "n": 8,
+  "rounds": 2,
+  "k": 4,
+  "max_tokens": 48,
+  "datasets": [
+    "gsm8k"
+  ],
+  "select_preset": "reward",
+  "exam_presets": [
+    "reward",
+    "default"
+  ],
+  "locked_exam": "reward",
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "train": "mlx-lora-sft",
+  "lora_iters": 8,
+  "math_verify_version": "0.9.0",
+  "antlr4_version": "4.13.2",
+  "mlx_lm_version": "0.31.3",
+  "n_records": 2,
+  "gold_urls": {
+    "gsm8k": "https://raw.githubusercontent.com/openai/grade-school-math/master/grade_school_math/data/test.jsonl"
+  }
+}

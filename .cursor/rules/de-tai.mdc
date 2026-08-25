@@ -1,0 +1,18 @@
+---
+description: Khung đề tài DACNTT — GVT loop, không nhầm TinyV
+alwaysApply: true
+---
+
+# Đề tài (luôn nhớ)
+
+**Title:** Self-improving small reasoning models through generate-verify-train iterations.
+
+**Claim:** SLM tự cải thiện reasoning qua vòng **generate → verify → select → train**, không cần thêm human annotation.
+
+Hai máy: **generate** = SLM viết bài; **verify** = `math-verify` so đáp án với sách (không phải LLM chat). "Self" = không người gán nhãn bài mới; không phải một máy tự làm tự chấm.
+
+`BAI-GIANG.md` không phải đề khác. Đó là **câu hỏi trên claim**: vòng GVT có đang cải thiện reasoning, hay chỉ dạy viết kiểu máy chấm ưa?
+
+Không đổi đề thành: sửa máy chấm (TinyV), tối ưu cách chấm, làm model SOTA, viết app.
+
+Khi giảng / lập luận: mở bằng vòng GVT và claim self-improve, rồi mới tới cách đo (pass@1, pass@k, chữ, A/B/C). Chi tiết đề: `TOI-HIEU.md`. File nào làm gì: `HUONG-DAN.md` (phải cập nhật mỗi lần đổi code).

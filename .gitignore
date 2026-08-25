@@ -1,0 +1,24 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.DS_Store
+
+# Gold cache and run outputs (regenerate via CLI)
+data/gold/*
+!data/gold/.gitkeep
+data/traces/*
+!data/traces/.gitkeep
+results/viec1/*
+!results/viec1/.gitkeep
+results/viec2/*
+!results/viec2/.gitkeep
+results/viec3/mlx-toy/adapters/
+results/viec3/**/sft_data/
+*.safetensors

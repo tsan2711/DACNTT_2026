@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dacntt"
+version = "0.1.0"
+description = "Generate-verify-select-train loop for small reasoning models."
+requires-python = ">=3.10"
+dependencies = [
+    "math-verify[antlr4_13_2]==0.9.0",
+    "pytest>=8.0",
+]
+
+[project.optional-dependencies]
+mac = ["mlx-lm"]
+kaggle = ["torch", "transformers", "accelerate", "peft", "trl", "datasets"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

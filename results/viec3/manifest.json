@@ -1,0 +1,31 @@
+{
+  "date": "2026-08-16",
+  "utc": "2026-08-16T09:38:41Z",
+  "viec": 3,
+  "mode": "dry",
+  "note": "mode=dry: scripted generate from gold writing-styles; real math-verify select+metrics; train is no-op. Not a model run.",
+  "paper_quality": false,
+  "n": 100,
+  "rounds": 2,
+  "k": 4,
+  "max_tokens": 96,
+  "datasets": [
+    "gsm8k"
+  ],
+  "select_preset": "reward",
+  "exam_presets": [
+    "reward",
+    "default"
+  ],
+  "locked_exam": "reward",
+  "model": "scripted-from-gold",
+  "train": "noop",
+  "lora_iters": 0,
+  "math_verify_version": "0.9.0",
+  "antlr4_version": "4.13.2",
+  "mlx_lm_version": "0.31.3",
+  "n_records": 2,
+  "gold_urls": {
+    "gsm8k": "https://raw.githubusercontent.com/openai/grade-school-math/master/grade_school_math/data/test.jsonl"
+  }
+}

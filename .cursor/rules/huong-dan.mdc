@@ -1,0 +1,24 @@
+---
+description: Mỗi lần đổi code hoặc thí nghiệm phải cập nhật HUONG-DAN.md
+alwaysApply: true
+---
+
+# Cập nhật HUONG-DAN.md
+
+`HUONG-DAN.md` là file giảng cho người không đọc code. Không để nó cũ.
+
+Sau khi làm xong bất kỳ việc nào dưới đây, **sửa `HUONG-DAN.md` trong cùng lượt**:
+
+- Thêm / đổi / xóa file trong `src/`, `experiments/`, `tests/`
+- Chạy thí nghiệm ra số mới (`results/`)
+- Đổi lệnh chạy, đổi nghĩa một bước
+
+Sửa gì:
+
+1. Mục **Đã làm / chưa làm** cho khớp hiện tại.
+2. Nếu có file mới: thêm một hàng vào bảng đúng khúc (A/B/C/D hoặc mục 4–6).
+3. **Nhật ký:** thêm mục ngày hôm nay lên trên (đã làm gì, vì sao, lệnh nếu có). Không xóa mục cũ.
+
+Cách viết: lời thường, chuyện cô/học sinh. Không dán cả hàm. Không giả sử người đọc hiểu Python.
+
+Giảng đề thì `TOI-HIEU.md`. Giảng “file nào làm gì” thì `HUONG-DAN.md`.
