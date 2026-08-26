@@ -174,7 +174,7 @@ class HfLoraSftTrain:
             per_device_train_batch_size=self.batch_size,
             num_train_epochs=self.epochs,
             learning_rate=self.learning_rate,
-            max_seq_length=self.max_seq_length,
+            max_length=self.max_seq_length,
             bf16=True,
             report_to=[],
             save_strategy="no",
