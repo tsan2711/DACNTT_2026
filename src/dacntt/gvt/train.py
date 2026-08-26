@@ -158,10 +158,12 @@ class HfLoraSftTrain:
         from transformers import AutoModelForCausalLM, AutoTokenizer
         from trl import SFTConfig, SFTTrainer
 
+        import torch
+
         tokenizer = AutoTokenizer.from_pretrained(self.model_id)
-        model = AutoModelForCausalLM.from_pretrained(
-            self.model_id, torch_dtype="auto", device_map="auto"
-        )
+        model = AutoModelForCausalLM.from_pretrained(self.model_id, torch_dtype="auto")
+        if torch.cuda.is_available():
+            model = model.to("cuda")
         peft_config = LoraConfig(
             r=self.lora_r,
             lora_alpha=self.lora_alpha,
