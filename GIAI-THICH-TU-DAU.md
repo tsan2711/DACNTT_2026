@@ -1,11 +1,11 @@
-# Đề tài của Bi là gì — giải thích từ số 0, cho dân kỹ thuật phần mềm
+# Đề tài của bạn là gì — giải thích từ số 0, cho dân kỹ thuật phần mềm
 
 File này viết cho người **biết code nhưng chưa từng làm ML/AI**. Mọi khái niệm
-sẽ ví với thứ Bi đã quen (hàm, test, CI/CD, patch/diff) trước khi dùng từ
+sẽ ví với thứ bạn đã quen (hàm, test, CI/CD, patch/diff) trước khi dùng từ
 chuyên ngành. Lần này viết **kỹ hơn phần nền** — không chỉ ví von mà giải
 thích cơ chế thật bên trong (weights là gì, train làm gì thật sự, generate
 sinh chữ kiểu gì, verifier chấm ra sao), kèm **ví dụ chạy tay có số thật**,
-và **câu hỏi tự kiểm tra** ở cuối để Bi tự chắc là đã hiểu đúng, không còn lủng.
+và **câu hỏi tự kiểm tra** ở cuối để bạn tự chắc là đã hiểu đúng, không còn lủng.
 
 Đọc theo thứ tự từ đầu, đừng nhảy cóc — phần 2 dựa vào phần 1, phần 3 dựa
 vào phần 2.
@@ -35,7 +35,7 @@ sau — giống một pipeline hàm lồng nhau `f = f_n(...f_2(f_1(x)))`, mỗi
 lập trình tay**. Chúng do một quá trình gọi là *train* tự động dò ra. Việc
 của model không phải "hiểu nghĩa" theo cách người hiểu — nó là một hàm số
 được luyện để với input dạng này, ra output dạng kia, dựa trên hàng tỷ ví dụ
-đã thấy lúc train (bởi người khác, gọi là *base model*, Bi không tự train
+đã thấy lúc train (bởi người khác, gọi là *base model*, bạn không tự train
 từ đầu — xem mục 1.4).
 
 ### 1.2 Input/output không phải là chữ trực tiếp — mà là *token*
@@ -85,9 +85,9 @@ Trước hết, phân biệt 2 việc khác nhau hay bị lẫn:
 
 - **Pretrain** (train từ đầu): tốn hàng triệu đô, cần hàng nghìn GPU, dùng
   hàng nghìn tỷ token văn bản. Đây là việc các công ty lớn (Alibaba/Qwen team,
-  OpenAI, Google...) đã làm sẵn. **Bi không làm bước này.**
+  OpenAI, Google...) đã làm sẵn. **bạn không làm bước này.**
 - **Fine-tuning** (huấn luyện thêm): lấy model đã pretrain sẵn (gọi là *base
-  model*), rồi chỉnh thêm một ít trên dữ liệu riêng. Đây là việc Bi làm (mục
+  model*), rồi chỉnh thêm một ít trên dữ liệu riêng. Đây là việc bạn làm (mục
   1.5, LoRA).
 
 Cơ chế train, dù pretrain hay fine-tune, đều dựa trên vòng lặp sau — đây là
@@ -100,7 +100,7 @@ phần hay bị hiểu mơ hồ nhất, nên viết kỹ:
    (loss càng lớn = model dự đoán càng lệch xa câu trả lời đúng)
 4. Tính xem MỖI con số trong 500 triệu weight cần tăng hay giảm bao nhiêu
    để loss ở bước 3 giảm xuống — phép tính này gọi là GRADIENT
-   (đạo hàm riêng của loss theo từng weight — không cần Bi tự tính tay,
+   (đạo hàm riêng của loss theo từng weight — không cần bạn tự tính tay,
    thư viện làm tự động, gọi là backpropagation)
 5. Chỉnh từng weight một chút theo hướng gradient chỉ (gọi là 1 "bước" train)
 6. Lặp lại với ví dụ tiếp theo, hàng nghìn/triệu lần
@@ -215,7 +215,7 @@ Vòng N+1: model bây giờ dùng adapter mới train ở vòng N, lặp lại (
 giải nó vừa được chấm đúng. Ý tưởng nghe hợp lý: mỗi vòng chỉ học từ bài
 "đúng", nên càng lặp càng giỏi.
 
-**Đề tài của Bi:** *"tin verifier chấm tự động 100% chính xác đó có thật sự
+**Đề tài của bạn:** *"tin verifier chấm tự động 100% chính xác đó có thật sự
 đúng không — và nếu không, hậu quả tích luỹ qua nhiều vòng là gì?"*
 
 ### Ví dụ chạy tay — 1 vòng, có số/chữ thật (đơn giản hoá để dễ theo dõi)
@@ -253,7 +253,7 @@ theo những kiểu bị loại — đây là mầm mống của câu hỏi nghi
 
 ---
 
-## 3. Vấn đề Bi nghi ngờ — và vì sao nó giống một bug quen thuộc
+## 3. Vấn đề bạn nghi ngờ — và vì sao nó giống một bug quen thuộc
 
 Từ ví dụ trên: `math-verify` **không đọc cách làm bài**, chỉ lôi đáp án cuối
 rồi so — giống một bài test chỉ `assertEqual` giá trị cuối, không kiểm logic
@@ -305,12 +305,12 @@ D. Xây công cụ đo NỀN TẢNG trước khi chạy vòng lặp thật:
 E. Xây code cho vòng lặp thật (generate→verify→select→train),
    2 nhánh: Mac (thử nhỏ, không phải số thật) + Kaggle (GPU, số thật)  ✅ Code xong
         ↓
+F. Chạy thử trên Kaggle ở quy mô NHỎ (vài chục bài, 1-2 vòng)          ✅ Xong (2026-08-26 — 20 bài
+   để bắt lỗi kỹ thuật (thư viện đổi version, code chưa test thật)         GSM8K, 2 vòng, chạy sạch)
+        ↓
    ────────────────  ĐANG ĐỨNG Ở ĐÂY  ────────────────
         ↓
-F. Chạy thử trên Kaggle ở quy mô NHỎ (vài chục bài, 1-2 vòng)          ⬜ Chưa làm — BƯỚC KẾ TIẾP
-   để bắt lỗi kỹ thuật (thư viện đổi version, code chưa test thật)
-        ↓
-G. Chạy đủ quy mô thật (500 bài, 5 vòng, 2 cỡ model 0.5B/1.5B)         ⬜ Chưa làm
+G. Chạy đủ quy mô thật (500 bài, 5 vòng, 2 cỡ model 0.5B/1.5B)         ⬜ Chưa làm — BƯỚC KẾ TIẾP
    → đây là bước duy nhất tạo ra SỐ LIỆU THẬT cho bài báo
         ↓
 H. Đọc bảng số (pass@1, pass@k, văn phong) — xác nhận hay bác bỏ       ⬜ Chưa làm
@@ -323,7 +323,7 @@ J. Nộp — cần biết yêu cầu thầy trước (deadline, định dạng) 
 ```
 
 **Lưu ý quan trọng về chữ "Xong" ở A–E:** "Xong" ở đây nghĩa là **đã chạy
-xong và có số/code**, KHÔNG có nghĩa là "Bi đã thuộc lòng, giải thích vo
+xong và có số/code**, KHÔNG có nghĩa là "bạn đã thuộc lòng, giải thích vo
 được". Nếu đọc xong mục 1–3 vẫn còn chỗ mơ hồ, đó là bình thường — dùng
 mục 12 (tự kiểm tra) để lộ ra đúng chỗ còn hổng, rồi quay lại đọc kỹ đoạn
 tương ứng, đừng chỉ tin vào chữ "✅ Xong" trong bảng.
@@ -341,7 +341,7 @@ Nếu **không** đo tách riêng pass@1 / pass@k / văn phong (tức là chỉ 
 đa số bài GVT/self-training vẫn làm — chỉ nhìn pass@1 tăng là kết luận "model
 giỏi hơn"):
 
-| Không có phát hiện này | Có phát hiện này (phần Bi thêm vào) |
+| Không có phát hiện này | Có phát hiện này (phần bạn thêm vào) |
 |---|---|
 | Chỉ nhìn pass@1 tăng qua các vòng → kết luận "model tự cải thiện thành công" | Nhìn thêm pass@k + văn phong → phân biệt được "giỏi thật" (pass@k cũng tăng, văn phong đa dạng) với "học viết đúng kiểu verifier thích" (pass@1 tăng nhưng pass@k đứng, văn phong tụ về 1 kiểu) |
 | Sai lệch của verifier âm thầm tích lũy qua nhiều vòng, không ai phát hiện vì không ai đo lại bằng gold data mỗi vòng | Phát hiện được **ngay trong vòng lặp**, không cần thêm nhãn người mỗi vòng (chỉ cần đo pass@k + văn phong, hai thứ tự sinh ra từ chính quá trình generate) |
@@ -351,7 +351,7 @@ giỏi hơn"):
 Nói ngắn: nếu không làm phần này, một pipeline GVT có thể "báo cáo thành
 công" (số pass@1 đẹp) trong khi thực chất không cải thiện khả năng giải toán
 — và không ai biết, vì không ai đo pass@k + văn phong song song. Phần đóng
-góp của Bi là **cách phát hiện sớm** hiện tượng đó, dùng được ngay trong lúc
+góp của bạn là **cách phát hiện sớm** hiện tượng đó, dùng được ngay trong lúc
 train, không cần chờ đánh giá cuối cùng bằng tập test riêng.
 
 ---
@@ -368,7 +368,7 @@ lần 2 qua Semantic Scholar ngày 2026-08-24, khớp 100%). Kết luận:
 
 **Chưa ai ghép đủ 3 mảnh:** (verifier có bug chấm-sai-vì-văn-phong) + (lặp
 nhiều vòng, không phải 1 lần) + (đo xem văn phong đầu ra có hội tụ theo thời
-gian không). Đó là phần Bi làm.
+gian không). Đó là phần bạn làm.
 
 Hai bài trên (ReST-EM, Teacher-Free Self-Training) là **hai bài gần nhất**,
 đọc kỹ hai bài này trước khi viết bài báo để biết chính xác cần nói khác họ
@@ -422,15 +422,16 @@ cách làm cũ**, không mở rộng khả năng.
 
 ---
 
-## 8. Trạng thái hiện tại trong repo (tính tới 2026-08-25)
+## 8. Trạng thái hiện tại trong repo (tính tới 2026-08-26)
 
 | Việc | Trạng thái |
 |---|---|
 | Việc 1 — đo verifier chấm sai kiểu viết nào (200 GSM8K + 200 MATH) | **Xong**, có bảng số |
-| Việc 2 — đo trên bài model thật đã viết sẵn (không phải Bi tự đặt) | **Xong** — GSM8K gần như không sai, MATH sai oan ~7.8% |
-| Việc 3 — code cho vòng lặp thật (generate→verify→select→train) | Code đã viết xong (cả nhánh Mac thử nghiệm và nhánh Kaggle chạy thật), nhưng **chưa chạy lần nào để lấy số** vì cần GPU (Kaggle), máy Bi không có |
+| Việc 2 — đo trên bài model thật đã viết sẵn (không phải bạn tự đặt) | **Xong** — GSM8K gần như không sai, MATH sai oan ~7.8% |
+| Việc 3 — code cho vòng lặp thật (generate→verify→select→train) | Code xong, **đã xác nhận chạy sạch thật trên Kaggle** (2026-08-26, 20 bài GSM8K, 2 vòng — xem `experiments/viec3/KAGGLE.md`), gặp 3 lỗi lệch version thư viện và đã sửa cả 3 |
 | Khảo sát bài báo (29 bài, xác nhận "chưa ai làm") | **Xong**, xác nhận lại 2 lần (WebSearch/WebFetch + Semantic Scholar), xem `papers/KHAO-SAT.md` |
-| Chạy Kaggle lấy số thật | **Chưa làm — bước kế tiếp** |
+| Chạy Kaggle quy mô nhỏ (bắt lỗi) | **Xong** (2026-08-26) |
+| Chạy Kaggle full lấy số paper (500 bài, 5 vòng, 2 cỡ model) | **Chưa làm — bước kế tiếp** |
 | Viết bài báo | **Chưa bắt đầu** |
 | Hỏi thầy về hạn nộp / yêu cầu | **Chưa điền** — xem `CAU-HOI-THAY.md` |
 
@@ -444,10 +445,9 @@ cách làm cũ**, không mở rộng khả năng.
 2. **Đọc kỹ 2 bài đụng gần nhất**: ReST-EM (2312.06585) và Teacher-Free Self-Training Amplifies but Does Not Compound (2606.07856).
    *Tại sao:* lần trước thầy nói hướng trình bày "chưa đúng" — rủi ro lớn nhất là không phân biệt rõ được với 2 bài này khi bị hỏi trực tiếp "khác gì bài X". Đọc kỹ để trả lời chính xác, không chung chung.
 
-3. **Chạy thử trên Kaggle ở quy mô nhỏ trước** (vài chục bài, 1-2 vòng) — xem `experiments/viec3/KAGGLE.md`.
-   *Tại sao:* code nhánh Kaggle (`transformers`+`peft`+`trl`) chưa từng chạy thật lần nào (máy Bi không có GPU để test). Các thư viện này hay đổi tham số giữa các bản — gần như chắc chắn sẽ lỗi lần đầu. Chạy nhỏ để bắt lỗi rẻ, tránh phí giờ GPU (30h/tuần có hạn) vào một lần chạy lớn rồi mới phát hiện lỗi.
+3. ~~Chạy thử trên Kaggle ở quy mô nhỏ trước~~ — **Xong (2026-08-26)**: 20 bài GSM8K, 2 vòng, chạy sạch sau khi sửa 3 lỗi lệch phiên bản thư viện (chi tiết `experiments/viec3/KAGGLE.md`).
 
-4. **Chạy đủ quy mô thật** (500 bài, 5 vòng, 2 cỡ model 0.5B và 1.5B, GSM8K+MATH).
+4. **Chạy đủ quy mô thật** (500 bài, 5 vòng, 2 cỡ model 0.5B và 1.5B, GSM8K+MATH) — dùng đúng lệnh Ô 3 trong `experiments/viec3/KAGGLE.md`.
    *Tại sao:* đây là bước DUY NHẤT tạo ra số liệu thật. Không có bước này, mọi phần khác (bảng mục 7, kết luận mục 5) chỉ là giả thuyết, chưa kiểm chứng được.
 
 5. **Viết bài báo** dựa trên số đo được, đối chiếu rõ với ReST-EM và Teacher-Free Self-Training.
@@ -474,7 +474,7 @@ sau khi có số thật từ bước 4, lúc đó sẽ rõ hướng nào đáng 
 | FP (false positive) | Verifier khen nhầm — bài sai mà bảo đúng | `math-verify` gần như không mắc lỗi này, chỉ mắc FN |
 | GRPO | Một thuật toán RL để train model theo reward — đề này **không dùng** GRPO (xem quyết định trong `HUONG-DAN.md`), dùng SFT (học đơn giản hơn) | — |
 | SFT | Supervised Fine-Tuning — cách train đơn giản nhất: đưa đúng (đề, lời giải đúng) rồi dạy model lặp lại kiểu đó | Không phải RL — không cần công thức reward phức tạp |
-| RLVR | Reinforcement Learning with Verifiable Rewards — nhóm kỹ thuật dùng verifier tự động làm reward để train bằng RL | Đề Bi liên quan tới nhóm này nhưng dùng SFT, không phải RL thuần |
+| RLVR | Reinforcement Learning with Verifiable Rewards — nhóm kỹ thuật dùng verifier tự động làm reward để train bằng RL | Đề bạn liên quan tới nhóm này nhưng dùng SFT, không phải RL thuần |
 | k | Số lần cho model làm lại cùng 1 đề (không phải số dạng đề khác nhau) | — |
 | Temperature | Con số điều khiển model chọn token ngẫu nhiên hay luôn chọn xác suất cao nhất (mục 1.3) | Không liên quan tới nhiệt độ phần cứng |
 
@@ -484,7 +484,7 @@ sau khi có số thật từ bước 4, lúc đó sẽ rõ hướng nào đáng 
 
 1. Có máy giải toán (model) và máy chấm tự động (verifier) — máy chấm có bug: hay chấm sai bài đúng vì viết khác kiểu sách.
 2. Người ta lặp vòng: máy giải → máy chấm giữ bài đúng → dạy lại máy giải bằng đúng bài đó → lặp — tưởng máy ngày càng giỏi toán.
-3. Bi đo: cái bug chấm sai đó lặp nhiều vòng có làm máy giải chỉ giỏi "viết đúng kiểu máy chấm thích" thay vì giỏi toán thật không — và đây là góc **chưa ai đo** (đã tra 29 bài để chắc). Hạ tầng đo xong hết rồi, **chỉ còn thiếu bước bấm nút chạy trên Kaggle để lấy số thật**.
+3. Bạn đo: cái bug chấm sai đó lặp nhiều vòng có làm máy giải chỉ giỏi "viết đúng kiểu máy chấm thích" thay vì giỏi toán thật không — và đây là góc **chưa ai đo** (đã tra 29 bài để chắc). Hạ tầng đo xong hết rồi, **chỉ còn thiếu bước bấm nút chạy trên Kaggle để lấy số thật**.
 
 ---
 
@@ -520,7 +520,7 @@ Trả lời (nói to hoặc viết ra) trước khi xem đáp án bên dưới m
 > *Đáp:* Để mỗi vòng là một fine-tune độc lập, chỉ chịu ảnh hưởng của đúng dữ liệu được chọn ở vòng đó — giữ đúng thiết kế thí nghiệm, tránh hiệu ứng cộng dồn không kiểm soát được giữa các vòng làm khó tách bạch nguyên nhân (mục 1.5).
 
 **Câu 10.** Đề tài này khác câu hỏi rộng "SLM có tự cải thiện qua GVT được không" ở chỗ nào?
-> *Đáp:* Câu rộng đã được nhiều bài trả lời "có" rồi (STaR, ReST-EM...). Đề tài của Bi hẹp hơn: giả sử GVT chạy được, thì việc verifier lệch-vì-chữ có làm cho sự "cải thiện" đó là ảo (chỉ học văn phong) hay không — và đo bằng cách nào để phát hiện ngay trong vòng lặp, không cần nhãn người thêm (mục 3, 5).
+> *Đáp:* Câu rộng đã được nhiều bài trả lời "có" rồi (STaR, ReST-EM...). Đề tài của bạn hẹp hơn: giả sử GVT chạy được, thì việc verifier lệch-vì-chữ có làm cho sự "cải thiện" đó là ảo (chỉ học văn phong) hay không — và đo bằng cách nào để phát hiện ngay trong vòng lặp, không cần nhãn người thêm (mục 3, 5).
 
 Nếu có câu nào trả lời còn ấp úng — quay lại đọc đúng mục được trích trong
 đáp án, đừng đọc lại từ đầu cả file.

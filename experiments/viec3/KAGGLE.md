@@ -17,10 +17,20 @@ Cùng thiết kế với Mac: mỗi vòng generate k lần/đề → máy chấm
 ## Ô 1 — cài
 
 ```python
-%pip install -q "math-verify[antlr4_13_2]==0.9.0" torch transformers accelerate peft trl datasets
+%pip install -q "math-verify[antlr4_13_2]==0.9.0" torch transformers accelerate peft trl datasets "torchao>=0.16.0"
 ```
 
-Clone repo (hoặc Upload) rồi:
+`torchao>=0.16.0` bắt buộc — Kaggle cài sẵn bản cũ hơn (0.10.0), không tương
+thích với `peft`. Sau lệnh này **restart session** rồi chạy lại ô cài (bản
+`torchao` mới chỉ áp dụng sau restart — xác nhận thật trên Kaggle 2026-08-26).
+
+Clone repo (khuyên dùng, dễ cập nhật fix hơn upload zip — cần repo public
+hoặc dùng token):
+
+```python
+!git clone https://github.com/<tài-khoản>/DACNTT_2026.git /kaggle/working/DACNTT_2026
+%cd /kaggle/working/DACNTT_2026
+```
 
 ```python
 import sys
@@ -30,7 +40,35 @@ sys.path.insert(0, str(root / "src"))
 sys.path.insert(0, str(root))
 ```
 
-## Ô 2 — chạy cả vòng (một lệnh, giống hệt lệnh Mac)
+Nếu notebook tạo với **"GPU T4 x2"** (2 GPU) thay vì 1 GPU: không cần đổi gì
+thêm — `run.py` đã tự ép `CUDA_VISIBLE_DEVICES=0` (chỉ dùng 1 GPU, đúng
+thiết kế single-GPU của nhánh `hf`; để lộ cả 2 GPU sẽ làm `transformers.Trainer`
+tự bọc `nn.DataParallel` và crash vì input/model lệch device — đã gặp và sửa
+thật, xem lịch sử commit `run.py`).
+
+## Ô 2 — chạy thử NHỎ trước (bắt lỗi rẻ, đừng chạy full ngay lần đầu)
+
+```bash
+PYTHONPATH=src:. python -m experiments.viec3.run \
+  --mode hf --model Qwen/Qwen2.5-0.5B-Instruct --dataset gsm8k \
+  --n 20 --rounds 2 --k 4 --max-tokens 256 \
+  --select-preset reward --exam-presets reward,default \
+  --out /kaggle/working/results/viec3/smoke
+```
+
+**Xác nhận đã chạy được (2026-08-26, notebook Kaggle thật, `transformers==5.0.0`,
+`trl==1.10.0`, `peft==0.19.1`)** — 3 lỗi gặp phải và đã sửa trong code (không
+phải vá tay trong notebook):
+1. `SFTConfig.__init__() got an unexpected keyword argument 'max_seq_length'` — TRL 1.10.0 đổi tên thành `max_length`.
+2. `ImportError: Found an incompatible version of torchao` — cần nâng `torchao` lên `>=0.16.0` (xem Ô 1).
+3. `AttributeError: 'functools.partial' object has no attribute '__func__'` — do tự load model với `device_map="auto"`, khiến `accelerate` bọc `forward` thành `functools.partial`, TRL không đọc được signature. Đã bỏ `device_map="auto"`, dùng `.to("cuda")` trực tiếp (T4 chỉ 1 GPU, không cần `device_map="auto"` vốn dành cho multi-GPU/nhiều máy). Xác nhận qua issue đã đóng `huggingface/trl#6483`.
+
+Nếu bản `transformers`/`trl`/`peft` trên Kaggle đổi tiếp (rất có thể, đây đều
+là thư viện cập nhật nhanh), khả năng cao sẽ vướng lỗi mới khác — sửa trực
+tiếp trong `src/dacntt/gvt/train.py` / `generate.py`, đừng vá riêng trong
+notebook.
+
+## Ô 3 — chạy full lấy số paper (chỉ sau khi Ô 2 chạy sạch)
 
 ```bash
 python -m experiments.viec3.run \
@@ -52,7 +90,7 @@ python -m experiments.viec3.run \
 
 `train.py:HfLoraSftTrain` và `generate.py:HfGenerate` là code thật (không phải notebook cell dán tay) — nếu lỗi (version TRL/transformers lệch), sửa trực tiếp trong `src/dacntt/gvt/train.py` / `generate.py`, không vá riêng trong notebook.
 
-## Ô 3 — đọc số
+## Ô 4 — đọc số
 
 Mở `table.md` trong `--out`. Câu đề:
 

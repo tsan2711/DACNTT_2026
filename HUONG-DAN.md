@@ -533,12 +533,23 @@ Chỗ hổng list chữ: [`VIEC-SAU.md`](VIEC-SAU.md) — việc 2 đã thấy f
 - Paper: `experiments/viec3/KAGGLE.md` (T4, 0.5B rồi 1.5B, k=8, GRPO).
 - Lệnh dry: `.venv/bin/python -m experiments.viec3.run --mode dry --n 100 --rounds 2 --k 4`.
 
+### 2026-08-26 — Kaggle smoke test đầu tiên chạy được thật
+
+- Repo đổi `private` → `public` trên GitHub (`tsan2711/DACNTT_2026`) để `git clone` thẳng trong notebook Kaggle, không phải upload zip mỗi lần sửa code. Đã quét không có secret/API key trước khi đổi.
+- Notebook Kaggle thật (`transformers==5.0.0`, `trl==1.10.0`, `peft==0.19.1`) chạy `--mode hf --dataset gsm8k --n 20 --rounds 2 --k 4` — gặp 3 lỗi, sửa cả 3 trong code (không vá tay notebook), chi tiết đầy đủ ở `experiments/viec3/KAGGLE.md`:
+  1. `SFTConfig` đổi tên `max_seq_length` → `max_length` (TRL 1.10.0).
+  2. `torchao` cài sẵn trên Kaggle (0.10.0) không tương thích `peft` — cần `torchao>=0.16.0`.
+  3. `device_map="auto"` khi tự load model làm `accelerate` bọc `forward` thành `functools.partial`, TRL crash khi đọc signature — bỏ `device_map="auto"`, dùng `.to("cuda")` (xác nhận qua issue đã đóng `huggingface/trl#6483`).
+  4. (Phát sinh thêm, không phải lỗi thư viện) notebook Kaggle mặc định "GPU T4 x2" (2 GPU) làm `Trainer` tự bọc `nn.DataParallel`, lệch device — ép `CUDA_VISIBLE_DEVICES=0` đầu `run.py`.
+- Sau 4 fix trên: chạy sạch hết 2 vòng, ra `table.md`/`manifest.json` đúng cấu trúc. **Chưa phải số paper** (mới 20 bài GSM8K, chưa MATH, chưa 1.5B) — nhưng pipeline Kaggle giờ đã xác nhận chạy được thật, không còn "chỉ có code chưa test".
+- Bước tiếp: chạy full đúng lệnh trong `KAGGLE.md` Ô 3 (500 bài, 5 vòng, k=8, cả GSM8K+MATH, 0.5B rồi 1.5B).
+
 ### 2026-08-23 — Kaggle: đổi GRPO → SFT, code thật thay pseudocode
 
 - Quyết định lại: nhánh Kaggle dùng **SFT** (khớp thiết kế select→train sẵn có), không dùng GRPO. GRPO tự sinh rollout + `reward_fn` trong lúc train, không khớp bước `select_batch` tách rời đã có trong `loop.py`.
 - Thêm `HfLoraSftTrain` (`gvt/train.py`) và `HfGenerate` (`gvt/generate.py`): transformers + peft + TRL `SFTTrainer`, cùng ngữ nghĩa với `MlxLoraTrain`/`MlxGenerate` (mỗi vòng LoRA mới từ base, chỉ train trên bài vòng đó được giữ).
 - `experiments/viec3/run.py` có `--mode hf`: một lệnh CLI y hệt đường Mac, không còn phải chép tay pseudocode notebook trong `KAGGLE.md`.
-- Chưa chạy được trên máy này (không có torch/CUDA) — chưa test thật. Sẽ lộ lỗi version TRL/transformers lần đầu chạy trên Kaggle; sửa thẳng trong `train.py`/`generate.py`, không vá trong notebook.
+- Chưa chạy được trên máy này (không có torch/CUDA) — chưa test thật lúc viết entry này. Đã chạy thật trên Kaggle ngày 2026-08-26, xem entry phía trên.
 
 ### 2026-08-16 — Việc 2: bài model thật, FN MATH 7.8%
 
