@@ -73,6 +73,21 @@ def main(argv: list[str] | None = None) -> int:
     generator, trainer, note = _backend(mode, args, out_dir, items)
     print(note, file=sys.stderr)
 
+    def _save_partial(records_so_far: list[RoundRecord]) -> None:
+        # Written after every round, not just at the end, so a run killed
+        # partway (e.g. Kaggle's session time limit) still leaves usable
+        # results on disk instead of nothing.
+        write_reports(records_so_far, items, out_dir, args.k, args.select_preset)
+        write_manifest(
+            out_dir / "manifest.json",
+            _manifest(args, mode, note, records_so_far, items),
+        )
+        print(
+            f"  ...round {records_so_far[-1].round} done, "
+            f"wrote {out_dir / 'table.md'} ({len(records_so_far)}/{args.rounds} rounds)",
+            file=sys.stderr,
+        )
+
     records = run_rounds(
         items,
         generator=generator,
@@ -84,6 +99,7 @@ def main(argv: list[str] | None = None) -> int:
         train=not args.no_train,
         extra_exam=args.extra_exam,
         locked_exam=args.select_preset,
+        on_round=_save_partial,
     )
     write_reports(records, items, out_dir, args.k, args.select_preset)
     write_manifest(out_dir / "manifest.json", _manifest(args, mode, note, records, items))
@@ -101,7 +117,12 @@ def _backend(mode: str, args: argparse.Namespace, out_dir: Path, items: list):
         )
         return generator, trainer, note
     if mode == "hf":
-        generator = HfGenerate(args.model, max_tokens=args.max_tokens, temp=args.temp)
+        generator = HfGenerate(
+            args.model,
+            max_tokens=args.max_tokens,
+            temp=args.temp,
+            gen_batch_size=args.gen_batch_size,
+        )
         trainer = HfLoraSftTrain(
             args.model,
             out_dir / "adapters",
@@ -316,6 +337,12 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--lora-alpha", type=int, default=32, help="hf mode only")
     parser.add_argument("--hf-epochs", type=float, default=1.0, help="hf mode only")
     parser.add_argument("--hf-batch-size", type=int, default=2, help="hf mode only")
+    parser.add_argument(
+        "--gen-batch-size",
+        type=int,
+        default=8,
+        help="hf mode only; problems batched per model.generate() call",
+    )
     parser.add_argument("--max-seq-length", type=int, default=512)
     parser.add_argument("--no-train", action="store_true")
     parser.add_argument(
