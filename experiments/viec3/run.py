@@ -13,6 +13,15 @@ See experiments/viec3/KAGGLE.md for setup.
 
 from __future__ import annotations
 
+import os
+
+# hf mode is single-GPU by design (see KAGGLE.md); on a multi-GPU notebook
+# (e.g. Kaggle's "GPU T4 x2"), leaving both GPUs visible makes HF Trainer
+# wrap the model in nn.DataParallel, which crashes when inputs/model aren't
+# explicitly placed across both devices. Must be set before torch is
+# imported anywhere in this process.
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", "0")
+
 import argparse
 import csv
 import json
