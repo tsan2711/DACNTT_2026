@@ -161,7 +161,11 @@ class HfLoraSftTrain:
         import torch
 
         tokenizer = AutoTokenizer.from_pretrained(self.model_id)
-        model = AutoModelForCausalLM.from_pretrained(self.model_id, torch_dtype="auto")
+        # T4 (Turing) has no bf16 tensor cores; "auto" picks the checkpoint's
+        # dtype (bf16 for Qwen2.5), which runs on T4 via a slow fp32
+        # emulation path. fp16 is the fast path on this GPU (see generate.py).
+        dtype = torch.float16 if torch.cuda.is_available() else "auto"
+        model = AutoModelForCausalLM.from_pretrained(self.model_id, torch_dtype=dtype)
         if torch.cuda.is_available():
             model = model.to("cuda")
         peft_config = LoraConfig(
@@ -177,7 +181,7 @@ class HfLoraSftTrain:
             num_train_epochs=self.epochs,
             learning_rate=self.learning_rate,
             max_length=self.max_seq_length,
-            bf16=True,
+            fp16=torch.cuda.is_available(),
             report_to=[],
             save_strategy="no",
             logging_steps=10,

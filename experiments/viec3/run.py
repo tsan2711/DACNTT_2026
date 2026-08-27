@@ -65,8 +65,10 @@ def main(argv: list[str] | None = None) -> int:
         items.extend(load_gold(dataset, args.n, cache_dir))
         print(f"loaded {args.n} {dataset} problems", file=sys.stderr)
 
-    select_adapter = MathVerifyAdapter(args.select_preset)
-    exam_adapters = {name: MathVerifyAdapter(name) for name in exam_presets}
+    select_adapter = MathVerifyAdapter(args.select_preset, timeout_seconds=args.verify_timeout)
+    exam_adapters = {
+        name: MathVerifyAdapter(name, timeout_seconds=args.verify_timeout) for name in exam_presets
+    }
     if args.select_preset not in exam_adapters:
         exam_adapters[args.select_preset] = select_adapter
 
@@ -330,6 +332,17 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--temp", type=float, default=0.8)
     parser.add_argument("--select-preset", default="reward")
     parser.add_argument("--exam-presets", default="reward,default")
+    parser.add_argument(
+        "--verify-timeout",
+        type=int,
+        default=5,
+        help=(
+            "seconds math-verify may spend per parse/compare call before giving up "
+            "(logs 'Timeout during comparison' and counts as wrong, not a crash). "
+            "Lower it (e.g. 1-2) for quick test runs so a few pathological MATH "
+            "expressions can't eat minutes; keep the default 5 for paper-quality runs."
+        ),
+    )
     parser.add_argument("--model", default=None, help="default depends on --mode")
     parser.add_argument("--lora-iters", type=int, default=30, help="mlx mode only")
     parser.add_argument("--lora-layers", type=int, default=8, help="mlx mode only")

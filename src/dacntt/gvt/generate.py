@@ -142,11 +142,13 @@ class HfGenerate:
         adapter_path: str | None = None,
         max_tokens: int = 96,
         temp: float = 0.8,
+        gen_batch_size: int = 8,
     ) -> None:
         self.model_id = model_id
         self.adapter_path = adapter_path
         self.max_tokens = max_tokens
         self.temp = temp
+        self.gen_batch_size = gen_batch_size
         self._model = None
         self._tokenizer = None
 
@@ -157,36 +159,67 @@ class HfGenerate:
         self._ensure()
 
     def generate(self, problem: str, *, k: int = 1) -> list[str]:
+        return self.generate_batch([problem], k=k)[0]
+
+    def generate_batch(self, problems: Sequence[str], *, k: int = 1) -> list[list[str]]:
+        """Batch several problems into one model.generate() call. T4 sits mostly
+        idle generating one problem at a time (batch dim = k only); grouping
+        problems into gen_batch_size-sized chunks keeps the GPU fed and is the
+        main lever for wall-clock time at n=500 (see KAGGLE.md).
+        """
         import torch
 
         model, tokenizer = self._ensure()
-        prompt = tokenizer.apply_chat_template(
-            [{"role": "user", "content": user_prompt(problem)}],
-            add_generation_prompt=True,
-            tokenize=False,
-        )
-        inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-        with torch.no_grad():
-            out = model.generate(
-                **inputs,
-                max_new_tokens=self.max_tokens,
-                do_sample=True,
-                temperature=self.temp,
-                num_return_sequences=k,
-                pad_token_id=tokenizer.pad_token_id or tokenizer.eos_token_id,
-            )
-        prompt_len = inputs["input_ids"].shape[1]
-        return [
-            tokenizer.decode(row[prompt_len:], skip_special_tokens=True) for row in out
-        ]
+        results: list[list[str]] = []
+        for start in range(0, len(problems), self.gen_batch_size):
+            chunk = problems[start : start + self.gen_batch_size]
+            prompts = [
+                tokenizer.apply_chat_template(
+                    [{"role": "user", "content": user_prompt(p)}],
+                    add_generation_prompt=True,
+                    tokenize=False,
+                )
+                for p in chunk
+            ]
+            inputs = tokenizer(prompts, return_tensors="pt", padding=True).to(model.device)
+            with torch.no_grad():
+                out = model.generate(
+                    **inputs,
+                    max_new_tokens=self.max_tokens,
+                    do_sample=True,
+                    temperature=self.temp,
+                    num_return_sequences=k,
+                    pad_token_id=tokenizer.pad_token_id or tokenizer.eos_token_id,
+                )
+            prompt_len = inputs["input_ids"].shape[1]
+            decoded = [
+                tokenizer.decode(row[prompt_len:], skip_special_tokens=True) for row in out
+            ]
+            # generate() with batch>1 and num_return_sequences=k repeats each
+            # input k times contiguously (repeat_interleave on the batch dim),
+            # so decoded[i*k:(i+1)*k] are chunk[i]'s k samples, in chunk order.
+            for i in range(len(chunk)):
+                results.append(decoded[i * k : (i + 1) * k])
+        return results
 
     def _ensure(self):
         if self._model is None or self._tokenizer is None:
+            import torch
             from transformers import AutoModelForCausalLM, AutoTokenizer
 
             self._tokenizer = AutoTokenizer.from_pretrained(self.model_id)
+            if self._tokenizer.pad_token is None:
+                self._tokenizer.pad_token = self._tokenizer.eos_token
+            # left padding is required for batched decoder-only generation:
+            # right padding would leave the new tokens misaligned across rows.
+            self._tokenizer.padding_side = "left"
+
+            # T4 (Turing) has no bf16 tensor cores; "auto" picks the
+            # checkpoint's dtype, which for Qwen2.5 is bf16 and runs on T4 via
+            # a slow fp32 emulation path. fp16 is the fast path on this GPU.
+            dtype = torch.float16 if torch.cuda.is_available() else "auto"
             model = AutoModelForCausalLM.from_pretrained(
-                self.model_id, torch_dtype="auto", device_map="auto"
+                self.model_id, torch_dtype=dtype, device_map="auto"
             )
             if self.adapter_path:
                 from peft import PeftModel
