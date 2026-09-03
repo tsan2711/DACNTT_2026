@@ -38,4 +38,4 @@ List việc **cố ý chưa làm**, hoặc **không làm bằng LLM trong `rewri
 - [x] Việc 2 FN trên bài model (GSM8K 0%, MATH 7.8%)
 - [x] Việc 3 ống GVT + dry 100 đề + mlx toy (Mac, không phải số paper)
 - [x] Việc 3 Kaggle smoke test (20 bài GSM8K, 2 vòng, chạy sạch — 2026-08-26, sửa 3 lỗi version thư viện)
-- [ ] Việc 3 số paper: Kaggle T4, Qwen 0.5B rồi 1.5B, LoRA SFT (transformers+peft+TRL, không GRPO), k=8, GSM8K+MATH, train/test tách
+- [x] Việc 3 số paper: Kaggle T4, Qwen 0.5B rồi 1.5B, LoRA SFT, k=8, GSM8K+MATH, n=500, 5 vòng — cả 2 model chạy xong (2026-08-27, 2026-09-02). Kết quả: cả pass@1 lẫn pass@8 GIẢM ở cả 2 model, 1.5B sụp mạnh hơn 0.5B nhiều. Chi tiết `BAI-GIANG.md` mục 7b/7c. **Còn thiếu:** train/test tách riêng (đang dùng test cho cả select lẫn exam), lặp lại nhiều seed để đo phương sai — 2 giới hạn cần ghi rõ khi viết bài báo, chưa chặn việc viết.

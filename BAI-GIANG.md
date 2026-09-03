@@ -190,6 +190,95 @@ Với mỗi đề, cho máy làm **k lần** (ví dụ 8 lần):
 
 ---
 
+# 7b. Kết quả thật — lần chạy đầu tiên (n=500, Kaggle, 2026-08-27)
+
+**Dự đoán trước khi chạy** (đúng bảng ở mục 7): hoặc cả hai số cùng tăng (giỏi
+thật), hoặc pass@1 tăng còn pass@k đứng/giảm (chỉ học chữ). Hai kịch bản đó
+là tất cả những gì đoán trước.
+
+**Số thật ra được** (Qwen2.5-0.5B, GSM8K+MATH-500, 500 đề/bộ, k=8, 5 vòng):
+
+| Vòng | pass@1 | pass@8 |
+|---|---|---|
+| 0 | 31.1% | 60.5% |
+| 1 | 31.9% | 58.9% |
+| 2 | 29.9% | 56.1% |
+| 3 | 28.9% | 55.5% |
+| 4 | 27.4% | 54.9% |
+
+**Cả hai số cùng GIẢM** — không khớp kịch bản nào đã đoán trước. Đây là kịch
+bản thứ 3, chưa lường tới: máy **tệ đi thật** qua mỗi vòng, không phải chỉ
+"học viết chữ đẹp che giấu việc không giỏi thêm".
+
+Đi kèm: chữ viết vẫn đổi thật (`\boxed{}` giảm 5880→5513 lần trên 8000 lần
+viết, kiểu `\frac`/gán biến tăng dần) — nên phần "chữ hội tụ" trong giả
+thuyết vẫn đúng, chỉ là đi cùng cả hai số cùng giảm, không phải chỉ pass@1
+tăng. Bảng thêm/mất đề (A/C) xác nhận cùng chiều: mất đề nhiều hơn thêm đề ở
+cả 4/4 vòng.
+
+**Vì sao vẫn đáng viết vào bài báo, không phải kết quả "hỏng":** đây là bằng
+chứng máy chấm lệch làm hại pipeline tự-train — chỉ là hại theo kiểu mạnh
+hơn dự đoán ban đầu (tệ đi thẳng, không phải chỉ giả vờ giỏi). Số bài "giữ
+để ôn" mỗi vòng cũng giảm dần (2533→2123) — gợi ý cơ chế: tập ví dụ "đúng"
+bị verifier lọc ra ngày càng hẹp/lệch, vòng sau học từ tập đó nên tệ hơn —
+gần giống hiện tượng "model collapse" (mục 9 dưới, nhóm bài Shumailov) nhưng
+xảy ra trên dữ liệu ĐÃ LỌC qua verifier lệch, không phải toàn bộ dữ liệu tự
+sinh như bài gốc đó — đây chính là khác biệt cần nhấn khi trình bày.
+
+**Chưa kết luận chắc lúc viết đoạn trên:** mới 1 lần chạy, 1 cỡ model (0.5B).
+Đã chạy thêm 1.5B — xem mục 7c ngay dưới.
+
+---
+
+# 7c. Kết quả thật — 1.5B, cùng lệnh (n=500, Kaggle, 2026-09-02)
+
+**Chạy y hệt cấu hình 0.5B** (500 đề/bộ, k=8, 5 vòng), chỉ đổi model sang
+`Qwen2.5-1.5B-Instruct`. Mục đích: xem hiện tượng "cả hai số cùng giảm" ở
+mục 7b có lặp lại ở cỡ model khác không.
+
+| Vòng | pass@1 | pass@8 | Giữ/ôn |
+|---|---|---|---|
+| 0 | 50.0% | 72.6% | 3962 |
+| 1 | 46.2% | 71.5% | 3730 |
+| 2 | 44.5% | 70.2% | 3395 |
+| 3 | 32.4% | 63.6% | 2638 |
+| 4 | 18.6% | 48.6% | 1566 |
+
+**Lặp lại — và mạnh hơn nhiều.** So sánh trực tiếp với 0.5B (vòng 0 → vòng 4):
+
+| | pass@1 | pass@8 |
+|---|---|---|
+| 0.5B | 31.1%→27.4% (giảm 12%) | 60.5%→54.9% (giảm 9%) |
+| 1.5B | 50.0%→**18.6%** (giảm 63%) | 72.6%→**48.6%** (giảm 33%) |
+
+Model to hơn (1.5B, gấp 3 lần tham số) **sụp mạnh hơn hẳn** model nhỏ, không
+phải ổn định hơn như có thể đoán theo trực giác thường ("model to hơn thì
+chắc chắn hơn"). Xu hướng giảm ở 1.5B rất đều, tăng tốc dần (mức giảm mỗi
+vòng: −3.8, −1.7, −12.1, −13.8 điểm pass@1) — 5/5 vòng đều giảm, không có
+vòng nào tăng lại, khó coi là nhiễu ngẫu nhiên. Số bài giữ để ôn cũng sụp
+theo (3962→1566, mất gần 60%), và bảng A/C ở 2 vòng cuối lệch hẳn về phía
+mất đề (117 mất/51 thêm ở vòng 3; 194 mất/44 thêm ở vòng 4) — đúng dạng sụp
+tăng tốc, không phải trôi dạt đều đều.
+
+Văn phong cũng đổi mạnh hơn hẳn 0.5B: `\boxed{}` giảm hơn nửa (5608→2693
+trên 8000 lần viết), `$...$` tăng hơn gấp đôi (1453→3406), `\dfrac` tăng 10
+lần (24→241).
+
+**Đọc kết quả:** hiện tượng "verifier lệch làm pipeline tự-train sụp qua
+nhiều vòng" giờ có 2 cỡ model xác nhận cùng chiều, không phải trùng hợp của
+riêng 1 model. Đây đủ vững để đưa vào bài báo làm phát hiện chính — mạnh
+hơn cả giả thuyết ban đầu (dự đoán ở mục 7 chỉ tính tới "học viết chữ đẹp",
+không tính tới khả năng sụp thật, và càng không tính tới việc model to hơn
+lại sụp nặng hơn).
+
+**Còn thiếu để chắc chắn hoàn toàn:** đây vẫn chỉ 1 lần chạy/cỡ model (không
+lặp lại nhiều seed để đo phương sai), và cả 2 lần đều dùng `--dataset both`
+trên tập test (chưa tách train/test riêng — xem giới hạn đã ghi trong
+`experiments/viec3/KAGGLE.md`). Đủ để viết vào bài báo kèm đúng 2 giới hạn
+này, không đủ để tuyên bố tuyệt đối.
+
+---
+
 # 8. Máy và phần mềm (đã chốt)
 
 | Việc | Dùng gì |
