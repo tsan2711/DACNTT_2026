@@ -7,16 +7,17 @@ việc gì còn lại.
 
 ---
 
-## Tiêu đề (nháp)
+## Tiêu đề
 
-*"When the Grader Has a Style: How a Format-Biased Verifier Degrades
-Iterative Self-Training in Small Reasoning Models"*
+**"When the Grader Has a Style: Format-Biased Verifiers Cause Capability
+Collapse in Iterative Self-Training of Small Reasoning Models"**
 
-(nháp tiếng Việt: "Khi máy chấm có gu: verifier lệch-vì-văn-phong làm hỏng
-tự-huấn-luyện lặp vòng ở model suy luận nhỏ")
+(tiếng Việt: "Khi máy chấm có gu: verifier lệch-vì-văn-phong gây sụp năng
+lực trong tự-huấn-luyện lặp vòng ở model suy luận nhỏ")
 
-**[CẦN LÀM]** — chốt lại sau khi có kết luận cuối, tên hiện tại nhấn đúng
-phát hiện chính (sụp, không chỉ "học chữ").
+**[XONG]** — chốt sau khi nội dung ổn định (2026-09-03). Đổi từ "Degrades"
+sang "Cause Capability Collapse" để nhấn đúng phát hiện chính (sụp năng
+lực thật, không chỉ học lệch văn phong) — khớp với Abstract/Conclusion.
 
 ---
 
@@ -40,15 +41,18 @@ to a shrinking-training-pool mechanism: the verifier-accepted example pool
 shrinks every round (by ~60% at round 5 for the 1.5B model), so each
 round's fresh LoRA adapter is trained on an increasingly narrow, biased
 sample. Unlike prior work that studies verifier bias in a single round
-(TinyV, From Accuracy to Robustness) or multi-round self-training with a
-near-perfect verifier (ReST-EM, Teacher-Free Self-Training), we are — to
-our knowledge — the first to combine format-biased verification with
-multi-round self-training and measure both capability and stylistic drift
-together, on a realistic rule-based math verifier.
+(TinyV, From Accuracy to Robustness, Imperfect Verifiers) or runs
+multi-round self-training without characterizing — or, in one case,
+with an explicitly exact, unbiased — verifier (ReST-EM; Teacher-Free
+Self-Training, whose verifier is defined by exact string equality), we
+are — to our knowledge — the first to combine a *measured, directionally
+biased* verifier with multi-round self-training and track both capability
+and stylistic drift together.
 
-**[XONG]** khung nội dung, số liệu thật đã có. **[CẦN LÀM]** rút gọn còn
-~150-200 từ đúng chuẩn abstract khi nộp, và xác nhận lại câu so sánh với
-Teacher-Free sau khi đọc bản đầy đủ (không chỉ abstract).
+**[XONG]** khung nội dung, số liệu thật đã có, câu so sánh với Related
+Work đã khớp sau khi đọc bản đầy đủ 4 bài (2026-09-03). **[CẦN LÀM]** rút
+gọn còn ~150-200 từ đúng chuẩn abstract khi nộp — hiện đang dài hơn mức
+chuẩn vì viết đủ ý trước, cắt gọn câu chữ sau.
 
 ---
 
@@ -141,23 +145,45 @@ verifier của họ không lệch, phát hiện này giải thích được bằ
 sharpening (tập trung xác suất vào lời giải đã biết) — không cần và không
 có yếu tố verifier-lệch như bài này.
 
-**Ba bài khác** — From Accuracy to Robustness (2505.22203, xác nhận
-verifier luật gạch nhầm vì định dạng trong RLVR toán, nhưng chỉ 1 vòng),
-TinyV (2505.14625, đo FN ~38% nhưng SỬA verifier bằng LLM phụ trợ thay vì
-giữ nguyên và đo hậu quả), Imperfect Verifiers (2510.00915, có framework
-nhiễu ρ0/ρ1 nhưng cho 1 vòng RL, không phải self-training SFT nhiều vòng)
-— đều chỉ chạm 1 trong 2 điều kiện cần (verifier lệch HOẶC nhiều vòng),
-không cả hai.
+**From Accuracy to Robustness (Huang et al., 2505.22203)** — đọc bản đầy đủ
+— đo trực tiếp recall của verifier luật trong RLVR toán: **trung bình chỉ
+86% recall (tức ~14% false negative)**, có bộ verifier tụt còn 78% recall
+(Skywork-OR1). Đây là số liệu độc lập, cùng chiều với FN ~7.8% đo được ở
+`math-verify`/MATH trong bài này (mục 3) — củng cố rằng lệch verifier không
+phải hiện tượng hiếm hay đặc thù của riêng `math-verify`. Tuy huấn luyện
+RL của họ chạy 500-600 bước, **bài không theo dõi hệ thống recall của
+verifier thay đổi ra sao theo thời gian huấn luyện** — họ ghi nhận một vấn
+đề khác (reward hacking khi dùng verifier học được/model-based), không
+phải hiện tượng sụp năng lực do verifier luật lệch mà bài này đo.
 
-**Chốt, sau khi đọc bản đầy đủ (không chỉ dựa abstract):** chưa bài nào
-ghép đủ 3 mảnh — verifier lệch-vì-format thật (không phải nhiễu giả lập) +
-lặp nhiều vòng self-training + đo cả năng lực (pass@1/pass@k) lẫn hội tụ
-văn phong đầu ra cùng lúc. Quan sát gần nhất (ReST-EM's APPS regression ở
-vòng 2) gợi ý hiện tượng có thể đã từng xuất hiện trong dữ liệu người khác
-nhưng chưa ai truy đến nguyên nhân verifier-lệch — đây là khoảng trống bài
-này lấp, đã xác nhận qua khảo sát 29 bài (`papers/KHAO-SAT.md`, tra lại 2
-lần: WebSearch/WebFetch 2026-08-23, Semantic Scholar 2026-08-24) và đọc
-trực tiếp bản đầy đủ 2 bài gần nhất (2026-09-03).
+**Imperfect Verifiers (Cai et al., 2510.00915)** — đọc bản đầy đủ — có
+framework nhiễu hình thức nhất: verifier trả về đúng/sai với xác suất
+ρ₀ (khen nhầm) và ρ₁ (gạch nhầm) cố định, thử nghiệm với ρ₀=0.1, ρ₁=0.2.
+Điểm mấu chốt, trích trực tiếp từ Section 3.1 của họ: *"real-world noise
+can depend on content, formatting, prompt style"* — họ **tự nêu ra** đúng
+loại lệch mà bài này đo, nhưng chủ động **giả định tỷ lệ nhiễu cố định,
+không phụ thuộc nội dung** để đơn giản hoá bài toán, và chỉ chạy **1 vòng
+RL** (GRPO) — không nghiên cứu nhiễu tích luỹ qua nhiều vòng. Bài này lấp
+đúng khoảng trống họ tự nêu ra nhưng không giải quyết.
+
+**TinyV (Xu et al., 2505.14625)** đo FN trực tiếp (~38% trên tập họ xét) và
+xác nhận verifier luật hay gạch nhầm — nhưng hướng giải quyết của họ là
+**sửa** verifier (thêm một verifier phụ bằng LLM để cứu lại các ca gạch
+nhầm), chỉ trong 1 lần đánh giá. Bài này đi hướng ngược lại: **không sửa
+verifier**, chỉ đo hậu quả khi giữ nguyên verifier lệch và lặp nhiều vòng.
+
+**Chốt, sau khi đọc bản đầy đủ cả 4 bài gần nhất (không chỉ dựa abstract):**
+chưa bài nào ghép đủ 3 mảnh — verifier lệch-vì-format thật (không phải
+nhiễu giả lập cố định) + lặp nhiều vòng self-training + đo cả năng lực
+(pass@1/pass@k) lẫn hội tụ văn phong đầu ra cùng lúc. Đáng chú ý: 2 bài
+độc lập (ReST-EM, Imperfect Verifiers) đều **chạm gần** khoảng trống này —
+ReST-EM tự ghi nhận regression ở vòng 2 trên APPS mà không điều tra
+nguyên nhân, Imperfect Verifiers tự nêu ra khả năng "nhiễu phụ thuộc định
+dạng" mà không nghiên cứu — gợi ý đây là khoảng trống mà chính các tác giả
+khác cũng đã thoáng nhận ra nhưng chưa ai theo tới cùng. Đã xác nhận qua
+khảo sát 29 bài (`papers/KHAO-SAT.md`, tra lại 2 lần: WebSearch/WebFetch
+2026-08-23, Semantic Scholar 2026-08-24) và đọc trực tiếp bản đầy đủ 4 bài
+gần nhất (2026-09-03).
 
 ---
 
@@ -204,12 +230,16 @@ và `results/viec3/qwen15b-n500/table.md`.
 Cả 4 chuỗi đều giảm đơn điệu hoặc gần đơn điệu (0.5B pass@1 có 1 điểm tăng
 nhẹ ở vòng 1, còn lại giảm đều) — không phải dao động nhiễu ngẫu nhiên.
 
+![pass@1 và pass@8 qua 5 vòng, 2 cỡ model](figures/pass_at_k_by_round.png)
+
 ### 4.2 Kích thước tập huấn luyện co hẹp dần
 
 | Model | Vòng 0 | Vòng 4 | Giảm |
 |---|---|---|---|
 | 0.5B (n giữ để ôn) | 2533 | 2123 | −16% |
 | 1.5B (n giữ để ôn) | 3962 | 1566 | **−60%** |
+
+![Số mẫu được giữ để dạy lại co hẹp dần qua từng vòng](figures/selected_pool_by_round.png)
 
 ### 4.3 Văn phong hội tụ
 
@@ -228,9 +258,6 @@ nhẹ ở vòng 1, còn lại giảm đều) — không phải dao động nhi�
 
 C vượt A ở cả 4/4 vòng, khoảng cách nới rộng mạnh ở 2 vòng cuối — đúng dạng
 sụp tăng tốc.
-
-**[CẦN LÀM]** vẽ biểu đồ (line chart pass@1/pass@8 theo vòng, 2 model) —
-chữ số dạng bảng khó thuyết phục bằng hình khi trình bày.
 
 ---
 
@@ -325,12 +352,43 @@ output theo từng vòng).
 
 ---
 
-## Việc còn lại để hoàn thiện bản thảo, theo thứ tự
+## References
 
-1. ~~Đọc bản đầy đủ Teacher-Free Self-Training~~ — **Xong (2026-09-03)**, đọc qua `arxiv.org/html/2606.07856`: xác nhận họ chạy 3 vòng thật, verifier so khớp chuỗi tuyệt đối (không lệch), pass@8/pass@64 đo model cuối cùng chứ không phải theo từng vòng — đã sửa lại câu so sánh trong mục 2 cho đúng.
-2. ~~Đọc bản đầy đủ ReST-EM~~ — **Xong (2026-09-03)**, đọc qua `arxiv.org/html/2312.06585`: lấy được chi tiết k=32 mẫu/đề (MATH), và phát hiện họ tự ghi nhận regression ở vòng 2 trên APPS — đã thêm vào mục 2.
-3. ~~Viết văn xuôi mục 1, 2, 3, 5, 7~~ — **Xong (2026-09-03)**.
-4. **Vẽ biểu đồ cho mục 4** — còn thiếu, làm khi có thời gian ngồi máy (không cần AI, Excel/Sheets vẽ line chart pass@1/pass@8 theo vòng, 2 model, là đủ).
-5. **Quyết định ngôn ngữ nộp** (Việt/Anh) — vẫn chờ câu trả lời `CAU-HOI-THAY.md`, chưa hỏi được.
-6. **Chốt lại tiêu đề** (mục đầu file) sau khi bản thân nội dung đã ổn định — hiện dùng tạm.
-7. Đọc kỹ 2 bài còn lại trong danh sách ưu tiên của `papers/KHAO-SAT.md` nếu cần trích dẫn sâu hơn: From Accuracy to Robustness (2505.22203), Imperfect Verifiers (2510.00915) — hiện chỉ trích từ abstract, chưa đọc bản đầy đủ như 2 bài trên.
+**[XONG]** — 8 bài được trích dẫn thật trong bài (không phải cả 29 bài
+khảo sát), tác giả/ngày lấy từ `papers/KHAO-SAT.md` (đã tra qua
+WebSearch/WebFetch + Semantic Scholar, xác nhận lại trực tiếp trên arXiv
+với 2 bài có tên tác giả từng lệch giữa các nguồn).
+
+1. Cai, X.-Q., Wang, W., Liu, F., Liu, T., Niu, G., & Sugiyama, M. (2025). *Reinforcement Learning with Verifiable yet Noisy Rewards under Imperfect Verifiers.* arXiv:2510.00915.
+2. Cobbe, K., Kosaraju, V., Bavarian, M., et al. (2021). *Training Verifiers to Solve Math Word Problems.* arXiv:2110.14168. (nguồn bộ đề GSM8K)
+3. Hendrycks, D., Burns, C., Kadavath, S., et al. (2021). *Measuring Mathematical Problem Solving With the MATH Dataset.* arXiv:2103.03874. (nguồn bộ đề MATH/MATH-500)
+4. Huang, Y., Zeng, W., Zeng, X., Zhu, Q., & He, J. (2025). *From Accuracy to Robustness: A Study of Rule- and Model-based Verifiers in Mathematical Reasoning.* arXiv:2505.22203.
+5. Shumailov, I., Shumaylov, Z., Zhao, Y., Papernot, N., Anderson, R., & Gal, Y. (2024). *AI models collapse when trained on recursively generated data.* Nature. DOI: 10.1038/s41586-024-07566-y.
+6. Singh, A., Co-Reyes, J. D., Agarwal, R., et al. (2023). *Beyond Human Data: Scaling Self-Training for Problem-Solving with Language Models.* arXiv:2312.06585. (ReST-EM)
+7. Strozzi, I. L. (2026). *Teacher-Free Self-Training Amplifies but Does Not Compound: A Pass@k Crossover on a Free-Verifier Domain.* arXiv:2606.07856.
+8. Xu, Z., Li, Y., Jiang, F., Ramasubramanian, B., Niu, L., Lin, B., & Poovendran, R. (2025). *TinyV: Reducing False Negatives in Verification Improves RL for LLM Reasoning.* arXiv:2505.14625.
+
+Format hiện tại là APA-rút-gọn (tên/năm/tiêu đề in nghiêng/arXiv ID). **Nếu
+trường yêu cầu format khác (IEEE, ACM...) — đổi lại sau khi biết qua
+`CAU-HOI-THAY.md`, nội dung/thứ tự tác giả đã đúng, chỉ cần đổi cách trình
+bày.**
+
+---
+
+## Việc còn lại để hoàn thiện bản thảo
+
+Đã xong hết phần làm được mà không cần thầy trả lời (2026-09-03):
+
+1. ~~Đọc bản đầy đủ Teacher-Free Self-Training~~ — **Xong**: xác nhận 3 vòng thật, verifier không lệch, pass@8/pass@64 đo model cuối chứ không theo từng vòng — đã sửa câu so sánh ở mục 2.
+2. ~~Đọc bản đầy đủ ReST-EM~~ — **Xong**: k=32 mẫu/đề (MATH), họ tự ghi nhận regression vòng 2 trên APPS — đã thêm vào mục 2.
+3. ~~Đọc bản đầy đủ From Accuracy to Robustness~~ — **Xong**: recall verifier luật trung bình 86% (FN ~14%), cùng chiều với số của bài này — đã thêm vào mục 2.
+4. ~~Đọc bản đầy đủ Imperfect Verifiers~~ — **Xong**: họ tự nêu "nhiễu phụ thuộc định dạng" trong Section 3.1 nhưng không nghiên cứu — trích dẫn trực tiếp, thêm vào mục 2.
+5. ~~Viết văn xuôi mục 1, 2, 3, 5, 7~~ — **Xong**.
+6. ~~Vẽ biểu đồ~~ — **Xong**: 2 hình (`figures/pass_at_k_by_round.png`, `figures/selected_pool_by_round.png`), đã chèn vào mục 4.
+7. ~~Soạn References~~ — **Xong**: 8 bài trích dẫn thật, đủ tên tác giả/năm/arXiv ID.
+8. ~~Chốt tiêu đề~~ — **Xong**.
+
+**Chỉ còn lại việc phải chờ người khác (thầy), không tự làm tiếp được:**
+
+9. **Quyết định ngôn ngữ nộp và format trích dẫn** (Việt/Anh, APA/IEEE...) — chờ câu trả lời `CAU-HOI-THAY.md`, hỏi được lúc nào dịch/đổi format lúc đó.
+10. **Đọc lại toàn bài 1 lượt kiểm tra mạch lạc** (proofread) — nên làm ngay trước khi trình bày, không phụ thuộc thầy trả lời.
