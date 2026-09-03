@@ -54,60 +54,126 @@ Teacher-Free sau khi đọc bản đầy đủ (không chỉ abstract).
 
 ## 1. Introduction
 
-**[CẦN LÀM]** viết văn xuôi đầy đủ. Ý chính theo thứ tự:
+**[XONG]**
 
-1. GVT-style self-training (STaR/ReST family) là hướng phổ biến để giảm
-   phụ thuộc dữ liệu người gán nhãn.
-2. Giả định ngầm: verifier đáng tin cậy 100%. Giả định này gần như luôn sai
-   trong thực tế với verifier luật (rule-based) trên toán — dẫn số liệu
-   Việc 1/Việc 2 (FN thật đo được: GSM8K ~0%, MATH ~7.8%, một số kiểu viết
-   bị gạch 100% dù đúng giá trị).
-3. Câu hỏi: verifier lệch đó có hại gì khi LẶP NHIỀU VÒNG, không phải 1 lần?
-4. Đóng góp (contributions), liệt kê rõ 3 gạch đầu dòng:
-   - Đo thật hiện tượng verifier lệch tích luỹ qua 5 vòng, 2 cỡ model.
-   - Phát hiện: không chỉ "học lệch văn phong" mà là **sụp khả năng thật**
-     (pass@1 và pass@k cùng giảm) — mạnh hơn giả thuyết ban đầu trong tài
-     liệu (dự đoán chỉ tính tới 2 kịch bản: giỏi thật, hoặc học-chữ-mà-
-     không-giỏi-thêm; kết quả rơi vào kịch bản thứ 3 chưa lường).
-   - Phát hiện phụ: mức độ sụp tăng theo cỡ model (1.5B sụp mạnh hơn 0.5B).
+Các hệ thống suy luận toán học gần đây thường được cải thiện bằng cách cho
+chính model tự sinh lời giải, giữ lại những lời giải "đúng" theo một máy
+chấm tự động (verifier), rồi huấn luyện lại chính model đó trên tập vừa
+giữ — lặp lại nhiều vòng. Cách làm này, mà chúng tôi gọi là vòng lặp
+**Generate-Verify-Train (GVT)**, là nền tảng của cả một họ phương pháp
+(STaR, ReST/ReST-EM, RFT) được ưa chuộng vì không cần người gán nhãn thêm:
+verifier tự động đóng vai trò "giáo viên", chỉ cần biết đúng/sai, không cần
+lời giải mẫu.
+
+Toàn bộ họ phương pháp này dựa trên một giả định ngầm: verifier phân biệt
+đúng/sai một cách đáng tin cậy. Giả định đó gần như luôn sai trong thực tế
+khi verifier là verifier **luật** (rule-based) — loại verifier phổ biến
+nhất cho toán, vì rẻ, nhanh, không cần train riêng. Verifier luật (như
+`math-verify`, dùng trong bài này) chỉ trích xuất đáp án cuối cùng trong
+bài làm rồi so với đáp án sách sau khi chuẩn hoá — nó **không đọc lời
+giải**, và bước chuẩn hoá không bao giờ phủ hết mọi cách viết tương đương.
+Hệ quả là verifier luật gạch nhầm (false negative) những lời giải **đúng**
+nhưng viết theo cách nó không nhận ra. Đo trực tiếp trên `math-verify`
+(mục 3, thí nghiệm sơ bộ của chúng tôi): tỷ lệ gạch nhầm gần 0% trên
+GSM8K (đáp án số nguyên đơn giản) nhưng lên tới ~7.8% trên MATH (đáp án có
+phân số, LaTeX phức tạp), và một số cách viết hợp lệ (ví dụ dùng `\dfrac`
+thay vì `\frac`) bị gạch **100%** dù đáp án đúng giá trị. Quan trọng hơn:
+độ lệch này **có hướng** — verifier gần như không bao giờ khen nhầm (false
+positive ≈ 0%), chỉ gạch nhầm theo đúng 1 chiều.
+
+Câu hỏi trung tâm của bài này: khi một verifier lệch-có-hướng như vậy được
+dùng làm bộ lọc trong vòng lặp GVT, **lặp lại nhiều vòng** (không phải 1
+lần) sẽ gây hậu quả gì? Các nghiên cứu trước đây đã đo một trong hai vế —
+hoặc verifier lệch nhưng chỉ xét 1 vòng huấn luyện (TinyV, Imperfect
+Verifiers, From Accuracy to Robustness), hoặc lặp nhiều vòng nhưng verifier
+gần như hoàn hảo (ReST-EM, Teacher-Free Self-Training) — chưa nghiên cứu
+nào ghép cả hai điều kiện cùng lúc và đo cả năng lực thật (pass@1, pass@k)
+lẫn sự hội tụ văn phong đầu ra qua các vòng (mục 2).
+
+**Đóng góp của bài này:**
+
+- Đo thực nghiệm hiện tượng verifier lệch-vì-format tích luỹ qua 5 vòng
+  GVT, trên 2 cỡ model (Qwen2.5-0.5B và 1.5B-Instruct), 2 bộ đề (GSM8K,
+  MATH-500), với `math-verify` — verifier luật thật, không giả lập.
+- Phát hiện chính: hậu quả không chỉ là "học lệch văn phong" như giả thuyết
+  ban đầu dự đoán (model chỉ đứng yên hoặc giả vờ giỏi) — mà là **sụp năng
+  lực thật**: cả pass@1 lẫn pass@8 cùng giảm đơn điệu qua các vòng ở cả hai
+  cỡ model, đi kèm hội tụ văn phong đầu ra.
+- Phát hiện phụ, phản trực giác: mức độ sụp **tăng theo cỡ model** — model
+  1.5B (gấp 3 lần tham số) sụp mạnh hơn hẳn model 0.5B (pass@1 giảm 63% so
+  với 12%), không ổn định hơn như có thể kỳ vọng ở model lớn hơn.
 
 ---
 
-## 2. Related Work — khác biệt đã xác nhận qua khảo sát 29 bài
+## 2. Related Work — khác biệt đã xác nhận qua khảo sát 29 bài + đọc bản đầy đủ
 
-**[XONG]** bảng dưới, dựa trên `papers/KHAO-SAT.md` (đã tra lại qua
-WebSearch/WebFetch/Semantic Scholar). **[CẦN LÀM]** viết thành văn xuôi liền
-mạch thay vì bảng khi hoàn thiện bản nộp.
+**[XONG]** — đã đọc bản đầy đủ (không chỉ abstract) của ReST-EM và
+Teacher-Free Self-Training qua `arxiv.org/html/...` để xác nhận chi tiết
+dưới đây, không đoán từ abstract.
 
-| Bài | Khung self-training nhiều vòng? | Verifier lệch-vì-format? | Đo văn phong hội tụ? | Khác biệt với bài này |
-|---|---|---|---|---|
-| ReST-EM (2312.06585) | Có — đúng khung GVT | Không nhắc tới | Không | Họ tin verifier sạch; bài này không tin, đo trực tiếp hậu quả |
-| Teacher-Free Self-Training (2606.07856) | Có (đo pass@8 vs pass@64) | **Không** — verifier "chính xác tuyệt đối" (tự thừa nhận, "free exact verifier") | Không | Verifier của họ không lệch; bài này dùng verifier có FN thật đo được |
-| From Accuracy to Robustness (2505.22203) | Không — 1 vòng RLVR | **Có** — xác nhận verifier luật gạch nhầm vì format | Không | Họ dừng ở 1 vòng; bài này đo tích luỹ qua nhiều vòng |
-| TinyV (2505.14625) | Không — 1 lần train | Có, đo FN ~38% | Không | Cùng hướng nhưng họ SỬA verifier; bài này giữ nguyên verifier, chỉ đo hậu quả |
-| Imperfect Verifiers (2510.00915) | Không — 1 vòng RL | Có, dạng nhiễu ρ0/ρ1 | Không | Có framework nhiễu nhưng không phải self-training nhiều vòng |
+**ReST-EM (Singh et al., 2312.06585)** dùng đúng khung 3 bước GVT (sinh →
+lọc bằng phản hồi nhị phân → SFT lại → lặp), sinh 32 mẫu/đề cho MATH (64
+cho APPS) ở bước E. Verifier cho MATH so đáp án cuối với đáp án chuẩn,
+nhưng bài không đặc tả cơ chế so sánh có khoan dung định dạng hay không —
+tức là hoàn toàn có thể verifier của họ cũng mắc lỗi false-negative giống
+`math-verify`, chỉ là họ không đo/không nhắc tới. Kết quả của họ trên MATH:
+"cải thiện test nhỏ dần sau vòng đầu tiên"; trên APPS họ tự ghi nhận **một
+vòng bị regression (tụt điểm) ở vòng 2** — gần với hiện tượng "sụp" mà bài
+này đo được, nhưng ReST-EM không phân tích nguyên nhân, không liên hệ tới
+verifier hay văn phong, và không thấy lặp lại quan sát này trên MATH (bộ đề
+chính họ báo cáo). Họ cũng tự nhận một giới hạn liên quan: pass@1 cải
+thiện rõ nhưng "chưa hẳn thu hẹp khoảng cách với pass@K" — cùng tinh thần
+"sharpening không phải mở rộng năng lực" nhưng đo và diễn giải khác bài
+này.
 
-**Chốt:** chưa bài nào ghép đủ 3 mảnh (verifier lệch-vì-format + nhiều vòng
-+ đo văn phong hội tụ). Đây là khoảng trống bài này lấp — đã xác nhận qua
-29 bài, xác nhận lại 2 lần (2026-08-23, 2026-08-24).
+**Teacher-Free Self-Training (Strozzi, 2606.07856)** cũng chạy **3 vòng
+self-training tuần tự** (v0→v1→v2, đúng nghĩa GVT lặp vòng, không phải 1
+lần train duy nhất) trên miền FlashFill-kiểu "trapdoor" (sinh rẻ, khó đảo
+ngược, kiểm chứng miễn phí). Điểm khác biệt quyết định: verifier của họ
+**so khớp chuỗi tuyệt đối** ("correctness is decided by exact string
+equality, so the verifier has zero learned opinion") — nghĩa là **không hề
+lệch**, đối lập trực tiếp với `math-verify`. Chỉ số pass@8/pass@64 của họ
+đo **model cuối cùng sau khi train xong**, ở hai ngân sách lấy mẫu khác
+nhau (không phải bảng pass@1/pass@k theo từng vòng như bài này) — họ thấy
+model train xong thắng ở ngân sách nhỏ (pass@8) nhưng thua model gốc ở
+ngân sách lớn (pass@64), kết luận "khuếch đại nhưng không cộng dồn". Vì
+verifier của họ không lệch, phát hiện này giải thích được bằng riêng cơ chế
+sharpening (tập trung xác suất vào lời giải đã biết) — không cần và không
+có yếu tố verifier-lệch như bài này.
 
-**[CẦN LÀM — ưu tiên cao]:** đọc **bản đầy đủ** (không chỉ abstract) của
-Teacher-Free Self-Training để xác nhận chắc: pass@8/pass@64 của họ có phải
-đo qua **nhiều vòng self-training lặp lại** (giống GVT) hay chỉ so 1 model
-đã train với chính base model ở các ngân sách khác nhau. Điều này quyết
-định câu so sánh trong Related Work có chính xác không.
+**Ba bài khác** — From Accuracy to Robustness (2505.22203, xác nhận
+verifier luật gạch nhầm vì định dạng trong RLVR toán, nhưng chỉ 1 vòng),
+TinyV (2505.14625, đo FN ~38% nhưng SỬA verifier bằng LLM phụ trợ thay vì
+giữ nguyên và đo hậu quả), Imperfect Verifiers (2510.00915, có framework
+nhiễu ρ0/ρ1 nhưng cho 1 vòng RL, không phải self-training SFT nhiều vòng)
+— đều chỉ chạm 1 trong 2 điều kiện cần (verifier lệch HOẶC nhiều vòng),
+không cả hai.
+
+**Chốt, sau khi đọc bản đầy đủ (không chỉ dựa abstract):** chưa bài nào
+ghép đủ 3 mảnh — verifier lệch-vì-format thật (không phải nhiễu giả lập) +
+lặp nhiều vòng self-training + đo cả năng lực (pass@1/pass@k) lẫn hội tụ
+văn phong đầu ra cùng lúc. Quan sát gần nhất (ReST-EM's APPS regression ở
+vòng 2) gợi ý hiện tượng có thể đã từng xuất hiện trong dữ liệu người khác
+nhưng chưa ai truy đến nguyên nhân verifier-lệch — đây là khoảng trống bài
+này lấp, đã xác nhận qua khảo sát 29 bài (`papers/KHAO-SAT.md`, tra lại 2
+lần: WebSearch/WebFetch 2026-08-23, Semantic Scholar 2026-08-24) và đọc
+trực tiếp bản đầy đủ 2 bài gần nhất (2026-09-03).
 
 ---
 
 ## 3. Method
 
-**[XONG]** nội dung kỹ thuật, đã chạy thật. **[CẦN LÀM]** viết văn xuôi.
+**[XONG]**
 
 - **Vòng lặp GVT:** generate (k mẫu/đề) → verify (`math-verify==0.9.0`,
   antlr4 4.13.2) → select (giữ mẫu verifier chấm đúng) → train (LoRA mới
   từ base, không cộng dồn qua vòng) → lặp.
 - **Model:** Qwen2.5-0.5B-Instruct, Qwen2.5-1.5B-Instruct.
-- **Dữ liệu:** GSM8K + MATH-500, 500 đề/bộ, k=8 mẫu/đề/vòng, 5 vòng.
+- **Dữ liệu:** GSM8K + MATH-500, 500 đề/bộ, k=8 mẫu/đề/vòng, 5 vòng. Cả
+  bước `select` (chọn mẫu để dạy) lẫn `exam` (đo pass@1/pass@k) đều chạy
+  trên **tập test** của GSM8K/MATH-500 — chưa tách riêng train/test (giới
+  hạn, xem mục 6.2). Mỗi cấu hình model×dataset chỉ chạy **1 lần** (chưa
+  lặp seed để đo phương sai — giới hạn, xem mục 6.1).
 - **Train:** LoRA (r=16, alpha=32), SFT qua `transformers`+`peft`+TRL
   `SFTTrainer`, 1 epoch/vòng, không phải GRPO/RL trực tiếp — quyết định có
   ghi lại lý do trong `HUONG-DAN.md` (GRPO không khớp thiết kế select→train
@@ -118,10 +184,6 @@ Teacher-Free Self-Training để xác nhận chắc: pass@8/pass@64 của họ c
   A/B/C (đề mới giải được / ổn định / mất đề) so vòng liền trước.
 - **Hạ tầng:** Kaggle T4, chạy qua `experiments/viec3/run.py --mode hf`
   (code: `src/dacntt/gvt/`).
-
-**[CẦN LÀM]** ghi rõ 2 giới hạn kỹ thuật vào chính mục Method (không chỉ
-Limitations): (1) select và exam đều dùng tập TEST của GSM8K/MATH-500, chưa
-tách train/test riêng; (2) mỗi cấu hình chỉ chạy 1 lần, chưa lặp seed.
 
 ---
 
@@ -174,19 +236,43 @@ chữ số dạng bảng khó thuyết phục bằng hình khi trình bày.
 
 ## 5. Discussion — vì sao sụp, vì sao 1.5B sụp nặng hơn
 
-**[CẦN LÀM]** viết đầy đủ, giữ đúng mức độ chắc chắn (giả thuyết, chưa
-chứng minh):
+**[XONG]**
 
-- Cơ chế đề xuất: mỗi vòng train 1 adapter LoRA MỚI (từ base) chỉ trên tập
-  mẫu verifier-chấp-nhận của vòng trước; vì verifier lệch, tập đó vừa co
-  hẹp vừa nghiêng về 1 kiểu viết — vòng sau học từ tập càng hẹp/lệch hơn.
-  Đây là một dạng feedback loop tự-siết, gần với "model collapse"
-  (Shumailov et al., xem `papers/KHAO-SAT.md` nhóm 4) nhưng xảy ra trên dữ
-  liệu ĐÃ QUA LỌC của verifier lệch, không phải toàn bộ dữ liệu tự sinh.
-- Giả thuyết vì sao 1.5B sụp nặng hơn: cùng 1 epoch, model có nhiều tham số
-  hơn có thể khớp (overfit) nhanh hơn vào đúng tập mẫu đã hẹp — **chưa
-  chứng minh trực tiếp**, cần thêm thí nghiệm (ví dụ đo train loss/overfit
-  tốc độ mỗi vòng) nếu muốn khẳng định chắc thay vì chỉ nêu giả thuyết.
+**Cơ chế đề xuất — vòng lặp tự-siết qua tập huấn luyện co hẹp.** Trong
+thiết kế GVT của bài này, mỗi vòng huấn luyện một adapter LoRA **mới**
+từ base model, chỉ trên đúng tập mẫu mà verifier chấp nhận ở vòng ngay
+trước đó — không cộng dồn qua các vòng. Vì verifier lệch có hướng (chỉ
+gạch nhầm, gần như không khen nhầm), tập mẫu "được chấp nhận" ở mỗi vòng
+vừa **co hẹp dần** (mục 4.2: 1.5B mất 60% số mẫu qua 5 vòng) vừa **nghiêng
+về đúng 1 kiểu viết** mà verifier ưa (mục 4.3). Vòng sau vì vậy học từ một
+tập mẫu vừa nhỏ hơn vừa kém đa dạng hơn vòng trước — và vì tập đó đến từ
+chính output của model vòng trước (đã bị lọc qua verifier lệch), sai lệch
+không tự triệt tiêu mà **cộng dồn qua từng vòng**. Đây là một dạng vòng lặp
+tự-siết (self-reinforcing feedback loop), có họ hàng gần với hiện tượng
+"model collapse" khi train liên tục trên dữ liệu tự sinh (Shumailov et
+al., xem `papers/KHAO-SAT.md` nhóm 4) — nhưng khác ở một điểm quan trọng:
+model collapse cổ điển xảy ra khi train trên **toàn bộ** phân phối đầu ra
+tự sinh (không lọc), trong khi hiện tượng ở đây xảy ra ngay cả khi chỉ
+train trên đúng tập đã **lọc qua verifier tưởng-là-đáng-tin**. Nói cách
+khác: lọc bằng verifier không ngăn được collapse nếu bản thân bộ lọc đó
+lệch có hướng — nó chỉ đổi hình dạng của collapse (co hẹp và lệch về 1
+kiểu viết) thay vì ngăn nó.
+
+**Vì sao 1.5B sụp nặng hơn 0.5B.** Đây là quan sát phản trực giác nhất của
+bài — thường kỳ vọng model lớn hơn ổn định hơn, không phải ngược lại.
+Giả thuyết hợp lý nhất (nhưng **chưa được chứng minh trực tiếp** trong
+nghiên cứu này): với cùng cấu hình huấn luyện (LoRA rank 16, 1 epoch/vòng),
+model có nhiều tham số hơn có khả năng khớp (fit) nhanh và chặt hơn vào
+đúng tập mẫu đã cho — kể cả khi tập đó nhỏ và lệch. Việc khớp nhanh hơn vào
+một tập ngày càng hẹp có thể đẩy nhanh tốc độ mất đa dạng/năng lực tổng
+quát so với model nhỏ hơn, vốn khớp chậm hơn nên "giữ lại" được nhiều hành
+vi tổng quát hơn qua mỗi vòng. Một khả năng khác không loại trừ được: hai
+model có learning rate/hyperparameter hiệu dụng khác nhau về mặt thực tế dù
+cùng con số cấu hình (cùng learning rate danh nghĩa nhưng ảnh hưởng khác
+nhau lên model có kích thước khác nhau). Để khẳng định chắc cơ chế nào
+đúng, cần thêm thí nghiệm trực tiếp đo tốc độ overfit (train loss trên tập
+giữ lại mỗi vòng, hoặc độ đa dạng của output trước khi lọc qua verifier) —
+nằm ngoài phạm vi số liệu hiện có của bài này.
 
 ---
 
@@ -194,32 +280,57 @@ chứng minh):
 
 **[XONG]** liệt kê trung thực:
 
-1. Mỗi cấu hình (model × dataset) chỉ chạy **1 lần** — chưa đo phương sai
+6.1. Mỗi cấu hình (model × dataset) chỉ chạy **1 lần** — chưa đo phương sai
    qua nhiều seed. Xu hướng giảm khá đều nên khó là nhiễu thuần, nhưng
    không loại trừ hoàn toàn.
-2. `select`/`exam` đều dùng **tập test** GSM8K/MATH-500, chưa tách train/
+6.2. `select`/`exam` đều dùng **tập test** GSM8K/MATH-500, chưa tách train/
    test riêng — nếu cần chuẩn academic chặt, phải tách trước khi coi là số
    liệu cuối cùng.
-3. Chỉ 2 cỡ model (0.5B, 1.5B), chưa rõ xu hướng "to hơn sụp nặng hơn" có
+6.3. Chỉ 2 cỡ model (0.5B, 1.5B), chưa rõ xu hướng "to hơn sụp nặng hơn" có
    tiếp tục ở cỡ lớn hơn (7B+) hay đảo chiều ở đâu đó.
-4. Chỉ 5 vòng — chưa biết đường cong có tiếp tục giảm, chững lại, hay hồi
+6.4. Chỉ 5 vòng — chưa biết đường cong có tiếp tục giảm, chững lại, hay hồi
    phục nếu chạy thêm vòng.
 
 ---
 
 ## 7. Conclusion
 
-**[CẦN LÀM]** viết sau khi mục 1 (Introduction) và mục 5 (Discussion) chốt
-— tránh viết trước rồi phải sửa lại khi phần thân đổi.
+**[XONG]**
+
+Chúng tôi đo trực tiếp hậu quả của việc dùng một verifier luật lệch-có-
+hướng (rejecting đúng-nhưng-khác-định-dạng, gần như không bao giờ chấp
+nhận sai) làm bộ lọc trong vòng lặp tự-huấn-luyện GVT, lặp qua 5 vòng, trên
+2 cỡ model suy luận toán nhỏ. Kết quả không khớp với 2 kịch bản dự đoán ban
+đầu (giỏi thật lên đều; hoặc chỉ học lệch văn phong trong khi năng lực
+đứng yên) — thay vào đó, cả pass@1 lẫn pass@8 cùng **giảm đơn điệu** ở cả
+hai model, đi kèm hội tụ văn phong đầu ra và co hẹp mạnh tập huấn luyện qua
+mỗi vòng. Mức độ sụp tăng theo cỡ model, trái với trực giác thường gặp.
+
+Thông điệp chính cho người xây các pipeline self-training tương tự (GVT,
+STaR, ReST-EM và họ hàng): pass@1 tăng qua các vòng **không đủ** để kết
+luận model đang cải thiện — cần theo dõi song song pass@k (khả năng retry)
+và độ đa dạng văn phong đầu ra, đặc biệt khi verifier là verifier luật
+(hầu như luôn có false-negative thật trong thực tế, như đo được ở mục 3).
+Khoảng trống mà 29 bài khảo sát trước đó chưa lấp (verifier lệch-vì-format
++ nhiều vòng + đo cả năng lực lẫn văn phong cùng lúc) hoá ra không chỉ là
+khoảng trống lý thuyết — số liệu thật cho thấy hậu quả có thể nghiêm trọng
+hơn nhiều so với giả thuyết "chỉ học lệch văn phong" ban đầu.
+
+**Hướng tiếp theo:** (1) lặp lại thí nghiệm với nhiều seed để đo phương
+sai; (2) tách train/test riêng thay vì dùng tập test cho cả select lẫn
+exam; (3) thử một cỡ model thứ ba (lớn hơn 1.5B) để xem xu hướng "to hơn
+sụp nặng hơn" có tiếp tục hay có điểm đảo chiều; (4) thí nghiệm trực tiếp
+kiểm chứng giả thuyết overfit-nhanh-hơn ở mục 5 (đo train loss/độ đa dạng
+output theo từng vòng).
 
 ---
 
 ## Việc còn lại để hoàn thiện bản thảo, theo thứ tự
 
-1. Đọc bản đầy đủ Teacher-Free Self-Training (2606.07856) — xác nhận rõ
-   cấu trúc nhiều-vòng của họ trước khi viết chắc câu so sánh ở mục 2.
-2. Đọc bản đầy đủ ReST-EM (2312.06585) — lấy số liệu bảng của họ (nếu có)
-   để trích dẫn cụ thể thay vì chỉ nói chung chung "không đo văn phong".
-3. Viết văn xuôi đầy đủ mục 1, 2, 3, 5, 7 (hiện đang là gạch đầu dòng/bảng).
-4. Vẽ biểu đồ cho mục 4.
-5. Quyết định ngôn ngữ nộp (Việt/Anh) sau khi có câu trả lời `CAU-HOI-THAY.md`.
+1. ~~Đọc bản đầy đủ Teacher-Free Self-Training~~ — **Xong (2026-09-03)**, đọc qua `arxiv.org/html/2606.07856`: xác nhận họ chạy 3 vòng thật, verifier so khớp chuỗi tuyệt đối (không lệch), pass@8/pass@64 đo model cuối cùng chứ không phải theo từng vòng — đã sửa lại câu so sánh trong mục 2 cho đúng.
+2. ~~Đọc bản đầy đủ ReST-EM~~ — **Xong (2026-09-03)**, đọc qua `arxiv.org/html/2312.06585`: lấy được chi tiết k=32 mẫu/đề (MATH), và phát hiện họ tự ghi nhận regression ở vòng 2 trên APPS — đã thêm vào mục 2.
+3. ~~Viết văn xuôi mục 1, 2, 3, 5, 7~~ — **Xong (2026-09-03)**.
+4. **Vẽ biểu đồ cho mục 4** — còn thiếu, làm khi có thời gian ngồi máy (không cần AI, Excel/Sheets vẽ line chart pass@1/pass@8 theo vòng, 2 model, là đủ).
+5. **Quyết định ngôn ngữ nộp** (Việt/Anh) — vẫn chờ câu trả lời `CAU-HOI-THAY.md`, chưa hỏi được.
+6. **Chốt lại tiêu đề** (mục đầu file) sau khi bản thân nội dung đã ổn định — hiện dùng tạm.
+7. Đọc kỹ 2 bài còn lại trong danh sách ưu tiên của `papers/KHAO-SAT.md` nếu cần trích dẫn sâu hơn: From Accuracy to Robustness (2505.22203), Imperfect Verifiers (2510.00915) — hiện chỉ trích từ abstract, chưa đọc bản đầy đủ như 2 bài trên.
