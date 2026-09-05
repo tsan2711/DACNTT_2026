@@ -38,19 +38,49 @@ def run_rounds(
     extra_exam: bool = False,
     locked_exam: str = "reward",
     on_round: Callable[[list[RoundRecord]], None] | None = None,
+    train_item_ids: frozenset[str] | None = None,
+    test_item_ids: frozenset[str] | None = None,
+    select_all: bool = False,
 ) -> list[RoundRecord]:
     """on_round, if given, runs after each round is appended — lets the
     caller write partial results to disk as it goes, so a long run (e.g.
     Kaggle, killed by a session time limit) doesn't lose everything if it
-    doesn't reach the end."""
+    doesn't reach the end.
+
+    ``train_item_ids``/``test_item_ids`` (Giai đoạn 2): if given, restrict
+    training examples to ``train_item_ids`` and pass@*/styles-ABC scoring to
+    ``test_item_ids`` — a held-out split, instead of both using every item in
+    ``items``. Generation still runs over all of ``items`` either way (same
+    generate cost, just partitioned after). Leave both ``None`` for the old
+    behaviour (select and exam share the same full set).
+
+    ``select_all`` (Giai đoạn 4 ablation): skip the verifier gate at select
+    time, train on every generated solution regardless of correctness — see
+    ``select_batch``.
+    """
     records: list[RoundRecord] = []
     prev_flags: list[list[bool]] | None = None
     for index in range(rounds):
-        record = _one_exam(items, generator, exam_adapters, k, index, prev_flags, locked_exam)
-        examples = _select_examples(items, record.generations, select_adapter)
+        record = _one_exam(
+            items,
+            generator,
+            exam_adapters,
+            k,
+            index,
+            prev_flags,
+            locked_exam,
+            test_item_ids=test_item_ids,
+        )
+        examples = _select_examples(
+            items,
+            record.generations,
+            select_adapter,
+            train_item_ids=train_item_ids,
+            select_all=select_all,
+        )
         record.n_selected = len(examples)
         if train:
-            trainer.train(examples)
+            trainer.train(examples, round=index)
             record.n_examples_trained = len(examples)
             if examples:
                 reload = getattr(generator, "reload", None)
@@ -63,7 +93,16 @@ def run_rounds(
             on_round(records)
     if extra_exam:
         records.append(
-            _one_exam(items, generator, exam_adapters, k, rounds, prev_flags, locked_exam)
+            _one_exam(
+                items,
+                generator,
+                exam_adapters,
+                k,
+                rounds,
+                prev_flags,
+                locked_exam,
+                test_item_ids=test_item_ids,
+            )
         )
         if on_round is not None:
             on_round(records)
@@ -78,17 +117,31 @@ def _one_exam(
     round_index: int,
     prev_flags: list[list[bool]] | None,
     locked_exam: str,
+    *,
+    test_item_ids: frozenset[str] | None = None,
 ) -> RoundRecord:
     generate_batch = getattr(generator, "generate_batch", None)
     if callable(generate_batch):
         generations = generate_batch([item.problem for item in items], k=k)
     else:
         generations = [generator.generate(item.problem, k=k) for item in items]
+
+    if test_item_ids is None:
+        exam_items, exam_generations = items, generations
+    else:
+        paired = [
+            (item, texts)
+            for item, texts in zip(items, generations)
+            if _item_key(item) in test_item_ids
+        ]
+        exam_items = [p[0] for p in paired]
+        exam_generations = [p[1] for p in paired]
+
     flags: dict[str, list[list[bool]]] = {}
     for preset, adapter in exam_adapters.items():
         flags[preset] = [
             [adapter.verify(item.gold, text).accepted for text in texts]
-            for item, texts in zip(items, generations)
+            for item, texts in zip(exam_items, exam_generations)
         ]
     ks = sorted({1, k})
     pass_table = {
@@ -113,9 +166,18 @@ def _select_examples(
     items: Sequence[GoldItem],
     generations: Sequence[Sequence[str]],
     adapter: MathVerifyAdapter,
+    *,
+    train_item_ids: frozenset[str] | None = None,
+    select_all: bool = False,
 ) -> list[TrainExample]:
     examples: list[TrainExample] = []
     for item, texts in zip(items, generations):
-        for solution in select_batch(item.gold, texts, adapter):
+        if train_item_ids is not None and _item_key(item) not in train_item_ids:
+            continue
+        for solution in select_batch(item.gold, texts, adapter, select_all=select_all):
             examples.append(TrainExample(item.problem, solution))
     return examples
+
+
+def _item_key(item: GoldItem) -> str:
+    return f"{item.dataset}:{item.item_id}"

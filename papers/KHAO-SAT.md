@@ -1,4 +1,9 @@
-# Khảo sát rộng — 29 bài, đã tra lại qua WebSearch/WebFetch (2026-08-23)
+# Khảo sát rộng — 29 bài (2026-08-23) + 3 bài tra lại (2026-09-04), qua WebSearch/WebFetch
+
+> **Cập nhật 2026-09-04:** tra lại theo yêu cầu của thầy ("kiểm xem có bài nào
+> làm đúng cái mình đưa ra chưa"). Không có bài nào trùng. 3 bài mới cần biết
+> tới ở **Nhóm 7** cuối file — đáng chú ý nhất là `2605.02909`, phải trả lời
+> trong Related Work vì kết luận của họ nghe như ngược chiều.
 
 Đọc sau khi thuộc `TOI-HIEU.md` và `BAI-GIANG.md`. File này **không sửa** `papers/TOM-TAT.md` — 5 bài cũ vẫn ở đó, số arXiv của cả 5 bài đã được tra lại ở đây và **đúng** (không đổi).
 
@@ -89,6 +94,18 @@ Không bài nào bác bỏ claim của Bi. Đề tài vẫn "còn đất": chưa
 | Teacher-Free Self-Training Amplifies but Does Not Compound | (đã liệt kê ở Nhóm 3) | 2606.07856 | 6/2026 | — | **Đụng thẳng nhất** (xem Kết luận ở đầu file). |
 | When Good Verifiers Go Bad: Self-Improving VLMs Can Regress on New Tasks | Jianzhe Lin | [2606.14629](https://arxiv.org/abs/2606.14629) | 6/2026 | Verifier tốt trên task A (MathVista) nhưng lệch nặng trên task B (MMMU, độ chính xác verifier rơi còn 8–23%); dùng verifier lệch mà tự tin cao để train lại VLM gây tụt điểm 3.4–10.9 điểm dù loss huấn luyện vẫn giảm. | Đụng gần — đúng cơ chế "verifier lệch, càng tự tin sai càng hại nhiều", nhưng domain VLM đa nhiệm, không phải toán/math-verify, không đo pass@1/pass@k hay chữ viết. |
 | Self-Authored Verification Is Unreliable in Heuristic Self-Improving Agents | Diandian Guo, Cong Cao, et al. | [2607.24300](https://arxiv.org/abs/2607.24300) | 7/2026 | Agent tự viết code + tự kiểm tra code qua nhiều vòng: điểm tự chấm cao dần nhưng hiệu năng thật khi triển khai lại giảm — gọi là "khoảng hở verifier-triển khai"; đề xuất thêm một tín hiệu chấp nhận từ bên ngoài để chặn. | Đụng gần — đúng ý "verifier tự có trong vòng lặp làm điểm giả tăng qua nhiều vòng", nhưng đây là agent code tự-sinh-tự-chấm (giống Self-Rewarding LM, không phải hai máy tách biệt như đề Bi), và verifier ở đây không lệch theo kiểu cố định (gạch-vì-chữ) mà lệch ngẫu nhiên/tự tin giả. |
+
+### Nhóm 7 — Tra lại 2026-09-04 (bài ra sau khảo sát gốc, đã WebFetch xác nhận title + arXiv ID + ngày)
+
+Tra lại sau khi thầy yêu cầu "kiểm lại xem có bài nào làm đúng cái mình đưa ra chưa" (buổi trước). **Vẫn không có bài nào ghép đủ 3 mảnh của đề Bi** (verifier luật lệch-vì-format thật + nhiều vòng SFT self-training + đo cả pass@1/pass@k lẫn hội tụ văn phong). Ba bài dưới đây là mới hoặc mới được cập nhật, cần biết tới:
+
+| Bài | Tác giả | arXiv | Ngày | Làm gì | Đụng câu hỏi của Bi? |
+|---|---|---|---|---|---|
+| Delay, Plateau, or Collapse: Evaluating the Impact of Systematic Verification Error on RLVR | Kazuki Egashira, Mark Vero, Jasper Dekoninck, Florian E. Dörner, Robin Staab, Martin Vechev | [2605.02909](https://arxiv.org/abs/2605.02909) | 4/2026 (v1), 17/8/2026 (v2) | Phân loại lỗi verifier trong **RLVR 1 vòng** trên tác vụ số học tổng hợp: **false negative có hệ thống ≈ nhiễu ngẫu nhiên (chỉ làm chậm, không gây sụp)**; chính **false positive** mới gây plateau/collapse. Kết luận: chất lượng verifier phải hiểu vượt quá tỉ lệ lỗi mức-mẫu. | **Đụng gần và cần xử lý trong Related Work** — kết luận của họ ("FN chỉ làm chậm, không sụp") *nghe như ngược chiều* phát hiện của Bi. Nhưng: (a) họ chạy **RLVR 1 vòng**, không phải nhiều vòng SFT self-training; (b) domain là số học tổng hợp, verifier mô phỏng — không phải `math-verify` thật trên GSM8K/MATH; (c) **không đo hội tụ văn phong**; (d) cơ chế sụp của Bi là **tập huấn luyện co hẹp qua từng vòng** (chỉ tồn tại khi lặp vòng + train lại từ base), không phải nhiễu gradient trong 1 vòng RL. Bài này làm rõ hơn *vì sao* đóng góp của Bi không trùng: Bi đo đúng chế độ (multi-round SFT) mà họ không xét. |
+| When Sample Selection Bias Precipitates Model Collapse | Xinbao Qiao, Xianglong Du, Wei Liu, Jingqi Zhang, Peihua Mai, Meng Zhang, Yan Pang | [2606.13732](https://arxiv.org/abs/2606.13732) | 11/6/2026 (v1), 2/7/2026 (rev) | Lý thuyết: khi bộ chọn/verifier chỉ "nhìn" được một lát cắt hẹp, lệch của phân phối đích thì **chọn lọc bằng verifier tự nó thành lệch** và *tăng tốc* model collapse, kéo theo suy giảm đa dạng theo luật lũy thừa. ICML 2026. | Không đụng thẳng — lý thuyết tổng quát, không phải toán/`math-verify`/pass@k/văn phong. **Hữu ích làm chỗ dựa lý thuyết** cho cơ chế "tập co hẹp + lệch → sụp" ở mục 5 của DRAFT: đúng ý "lọc bằng verifier lệch không cứu được collapse, chỉ đổi hình dạng nó". |
+| Escaping Model Collapse via Synthetic Data Verification: Near-term Improvements and Long-term Convergence | Bingji Yi, Qiyuan Liu, Yuwei Cheng, Haifeng Xu | [2510.16657](https://arxiv.org/abs/2510.16657) | 18/10/2025 (v1), 16/7/2026 (v3) | Lý thuyết + toy (linear regression, VAE/MNIST, 1 LLM nhỏ SmolLM2-135M): thêm verifier ngoài giúp tránh collapse **trong ngắn hạn**, nhưng "trừ khi verifier hoàn hảo, lợi ích sớm sẽ chững lại và có thể đảo chiều" do lệch verifier. | Không đụng thẳng — không phải toán, không pass@k, không văn phong, model chỉ 135M. Hữu ích trích dẫn cho luận điểm chung "lọc bằng verifier không hoàn hảo → cải thiện sớm rồi đảo chiều", cùng chiều phát hiện của Bi ở quy mô/đo lường khác. |
+
+**Chốt lại 2026-09-04:** đề tài vẫn còn đất. Bài duy nhất cần chủ động trả lời trong Related Work là **2605.02909** (vì kết luận nghe ngược chiều) — cách trả lời: nêu rõ họ xét RLVR 1 vòng + verifier mô phỏng, Bi xét multi-round SFT self-training + verifier luật thật, và cơ chế "tập huấn luyện co hẹp qua từng vòng" chỉ xuất hiện ở chế độ Bi đo.
 
 ---
 

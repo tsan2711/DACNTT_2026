@@ -177,3 +177,94 @@ nguyên nhân chính khiến 1 vòng mất ~6.7 tiếng — thời gian đó ch�
 GENERATE (500+500 đề × k=8 lần sinh trên T4).
 
 Không chạy full trên Mac (không có CUDA).
+
+## Ô 5 — Giai đoạn 1–4 (papers/KE-HOACH-MO-RONG.md, chạy A/B/C)
+
+**Cập nhật 2026-09-05 — bỏ thiết kế `--dataset both`, chuyển sang cô lập
+từng bộ đề.** Lý do: phân tích lại 2 lần chạy gốc (tách pass@1/pass@k theo
+GSM8K/MATH-500 từ `generations.jsonl` tìm lại được trên Kaggle) cho thấy
+`--dataset both` khiến một adapter chung train mỗi vòng trên tập gộp cả hai
+bộ — nhiễm chéo giữa hai domain, không tách được "tại verifier lệch" khỏi
+"tại lây từ bộ kia". Xem chi tiết ở đầu `papers/KE-HOACH-MO-RONG.md`.
+
+Cờ dùng ở đây (Track A, không đổi hành vi mặc định — không truyền gì thì
+chạy y hệt như trước):
+
+- `--dataset math500` hoặc `--dataset gsm8k`: chạy **một** bộ đề, không gộp
+  — cô lập hoàn toàn, tránh nhiễm chéo. (Khác `--dataset both` dùng ở 2 lần
+  chạy gốc.)
+- `--holdout-frac 0.3`: tách 30% đề riêng cho `exam`, không lẫn vào `select`
+  — dùng cho cả A/B/C, cũng là cách vá luôn Giai đoạn 2 (tách train/test).
+- `--patch-verifier`: vá `\dfrac`/`\tfrac` → `\frac` trước khi `math-verify`
+  chấm — chỉ dùng cho chạy B.
+- `--seed N`: cố định `random`/`torch` — dùng cùng seed cho A/B/C (so sánh
+  công bằng), đổi seed khi lặp lại ở Giai đoạn 2.
+- `--no-filter`: bỏ hẳn bước lọc verifier — dùng cho ablation Giai đoạn 3.
+
+```bash
+# A — MATH-500 cô lập, verifier gốc (headline mới + mốc so sánh cho B)
+python -m experiments.viec3.run --mode hf --model Qwen/Qwen2.5-1.5B-Instruct \
+  --dataset math500 --n 500 --rounds 5 --k 8 --max-tokens 512 \
+  --seed 1 --holdout-frac 0.3 \
+  --out /kaggle/working/results/viec3/a-math500-original
+
+# B — MATH-500 cô lập, verifier vá (control: đúng 1 biến khác A)
+python -m experiments.viec3.run --mode hf --model Qwen/Qwen2.5-1.5B-Instruct \
+  --dataset math500 --n 500 --rounds 5 --k 8 --max-tokens 512 \
+  --seed 1 --holdout-frac 0.3 --patch-verifier \
+  --out /kaggle/working/results/viec3/b-math500-patched
+
+# C — GSM8K cô lập, verifier gốc (verifier gần sạch tự nhiên ở bộ này —
+# không cần --patch-verifier, \dfrac/\tfrac gần như không xuất hiện)
+python -m experiments.viec3.run --mode hf --model Qwen/Qwen2.5-1.5B-Instruct \
+  --dataset gsm8k --n 500 --rounds 5 --k 8 --max-tokens 512 \
+  --seed 1 --holdout-frac 0.3 \
+  --out /kaggle/working/results/viec3/c-gsm8k-isolated
+
+# Giai đoạn 2 — seed thứ 2/3, lặp lại đúng cấu hình được chọn làm headline
+# (nhiều khả năng là A hoặc B), chỉ đổi --seed
+python -m experiments.viec3.run --mode hf --model Qwen/Qwen2.5-1.5B-Instruct \
+  --dataset math500 --n 500 --rounds 5 --k 8 --max-tokens 512 \
+  --seed 2 --holdout-frac 0.3 \
+  --out /kaggle/working/results/viec3/seed2-math500
+
+# Giai đoạn 3 — ablation không lọc, cùng dataset/model với headline
+python -m experiments.viec3.run --mode hf --model Qwen/Qwen2.5-1.5B-Instruct \
+  --dataset math500 --n 500 --rounds 5 --k 8 --max-tokens 512 \
+  --seed 1 --holdout-frac 0.3 --no-filter \
+  --out /kaggle/working/results/viec3/no-filter-math500
+```
+
+**Sau MỖI lần chạy (dù full hay bị Kaggle ngắt giữa chừng), tải về máy/Drive
+trước khi đóng notebook:**
+
+- `--out/generations.jsonl` — bắt buộc, cần cho `analyze_by_dataset.py` (dù
+  giờ mỗi lần chỉ có 1 dataset, vẫn cần để soát lại số) và
+  `analyze_mechanism.py` (Giai đoạn 4).
+- `--out/train_logs/round_*.json` — train-loss cho Giai đoạn 4, chỉ
+  `HfLoraSftTrain` mới ghi.
+- `--out/table.md` + `manifest.json` — như cũ.
+
+Hai lần chạy gốc (`qwen05b-n500`, `qwen15b-n500`, dùng `--dataset both`) đã
+tìm lại được `generations.jsonl` từ Kaggle output (2026-09-05) — giữ nguyên
+làm số tham chiếu/pooled, không chạy lại. Số chính của bài từ nay lấy từ
+A/B/C (cô lập), không phải 2 lần chạy gộp cũ.
+
+### Ngân sách thời gian thật (quan trọng — đọc trước khi lên lịch)
+
+Đo thật ở mục "Thời gian thô" phía trên: **0.5B, 500+500 đề (`both`), k=8,
+1 vòng ≈ 6.7 tiếng.** Vì A/B/C chỉ chạy **một** bộ đề (n=500, không phải
+n=1000 như `both`), ước tính mỗi vòng của A/B/C nhẹ hơn khoảng **một nửa**
+— tức 1 lần chạy full 5 vòng của A/B/C ước tính **~15-17 tiếng cho 0.5B**,
+1.5B chưa đo thật nhưng kỳ vọng chậm hơn. Vẫn vượt trần 12h/phiên nhưng gần
+vừa 1 tuần quota/lần, đỡ hơn hẳn ~33h của thiết kế `both` cũ.
+
+Hệ quả: mỗi lần A/B/C/seed/ablation vẫn cần chia nhiều phiên nối tiếp
+(`_save_partial` đã tự ghi kết quả sau mỗi vòng nên phiên sau đọc tiếp
+được), nhưng nhẹ hơn thiết kế cũ đáng kể — 6 lần chạy cô lập tổng GPU-giờ
+ước tính **thấp hơn hoặc tương đương** 5 lần chạy `both` của kế hoạch trước.
+
+Nếu vẫn quá chậm so với deadline thật: cân nhắc giảm `--k` (8→4) hoặc
+`--rounds` (5→3) cho **cả 3 chạy A/B/C cùng lúc** (không phải chỉ một trong
+ba — giữ cấu hình giống hệt nhau giữa A/B/C mới so sánh được) — đánh đổi độ
+chi tiết lấy tốc độ, ghi rõ trong Limitations nếu làm vậy.

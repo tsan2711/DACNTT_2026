@@ -124,6 +124,47 @@ def test_dry_rounds_select_then_measure() -> None:
     assert all(isinstance(ex, TrainExample) for ex in trainer.examples)
 
 
+def test_select_all_keeps_rejected_solutions_too() -> None:
+    """Giai đoạn 4 ablation: verifier gate skipped, every generated solution
+    becomes a training example — even ones the same adapter would reject."""
+    adapter = _adapter({r"\boxed{10}": True})
+    kept = select_batch("10", [r"\boxed{10}", "11", "nope"], adapter, select_all=True)
+    assert kept == [r"\boxed{10}", "11", "nope"]
+
+
+def test_holdout_split_train_and_exam_never_overlap() -> None:
+    """Giai đoạn 2: `select` only trains on train_item_ids, `exam` only scores
+    test_item_ids — the fix for select+exam sharing the same test set."""
+    items = [_item(str(i), f"q{i}?", "10") for i in range(4)]
+    generator = ScriptedGenerate(
+        {f"q{i}?": [r"\boxed{10}", "11"] for i in range(4)}
+    )
+    adapter = _adapter({r"\boxed{10}": True, "11": False})
+    trainer = NoOpTrain()
+    train_ids = frozenset({"toy:0", "toy:1"})
+    test_ids = frozenset({"toy:2", "toy:3"})
+
+    records = run_rounds(
+        items,
+        generator=generator,
+        trainer=trainer,
+        select_adapter=adapter,
+        exam_adapters={"reward": adapter},
+        rounds=1,
+        k=2,
+        train=True,
+        train_item_ids=train_ids,
+        test_item_ids=test_ids,
+    )
+
+    # exam only scored the 2 held-out items, not all 4
+    assert len(records[0].flags["reward"]) == 2
+    # every trained example's problem came from the train split ("q0?"/"q1?"),
+    # never from the held-out exam split ("q2?"/"q3?")
+    trained_problems = {ex.problem for ex in trainer.examples}
+    assert trained_problems == {"q0?", "q1?"}
+
+
 def test_gold_loads_problem_text() -> None:
     from pathlib import Path
 

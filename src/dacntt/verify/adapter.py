@@ -2,11 +2,18 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import Any
 
 from dacntt.verify.presets import PRESETS, extraction_config
+
+# Việc 1: \dfrac / \tfrac are rejected 100% of the time on MATH-500 even
+# though the value is correct (parse_empty — math-verify doesn't recognise
+# the command). Used for the Giai đoạn 1 control run: same dataset, same
+# model, only the verifier changes (\dfrac/\tfrac -> \frac before parsing).
+_DFRAC_TFRAC = re.compile(r"\\[dt]frac(?=\{|\s)")
 
 ParseFn = Callable[..., Sequence[Any]]
 VerifyFn = Callable[..., bool]
@@ -35,16 +42,21 @@ class MathVerifyAdapter:
         parse_fn: ParseFn | None = None,
         verify_fn: VerifyFn | None = None,
         timeout_seconds: int = 5,
+        normalize_frac_commands: bool = False,
     ) -> None:
         if preset not in PRESETS:
             raise ValueError(f"unknown preset {preset!r}; expected one of {PRESETS}")
         self.preset = preset
         self.timeout_seconds = timeout_seconds
+        self.normalize_frac_commands = normalize_frac_commands
         self._parse = parse_fn
         self._verify = verify_fn
         self._pred_config = None if parse_fn is not None else extraction_config(preset)
 
     def verify(self, gold: str, prediction: str) -> VerifyResult:
+        if self.normalize_frac_commands:
+            gold = _DFRAC_TFRAC.sub(r"\\frac", gold)
+            prediction = _DFRAC_TFRAC.sub(r"\\frac", prediction)
         parse_fn, verify_fn = self._resolve_fns()
         gold_parsed, gold_timeout, gold_empty = self._parse_one(parse_fn, gold, for_gold=True)
         if gold_timeout:

@@ -55,6 +55,23 @@ def test_timeout_does_not_kill_run() -> None:
     assert result.reason_guess == "timeout"
 
 
+def test_normalize_frac_commands_flips_dfrac_tfrac_to_frac() -> None:
+    """Giai đoạn 1 control (papers/KE-HOACH-MO-RONG.md): the one variable
+    that changes vs. the original verifier. Real math-verify, not a fake —
+    this is the exact fix that must turn Việc 1's 100%-rejected \\dfrac case
+    into an accept."""
+    plain = MathVerifyAdapter("reward")
+    patched = MathVerifyAdapter("reward", normalize_frac_commands=True)
+    gold, pred = "1/2", r"\dfrac{1}{2}"
+
+    assert plain.verify(gold, pred).accepted is False
+    assert plain.verify(gold, pred).reason_guess == "parse_empty"
+
+    result = patched.verify(gold, pred)
+    assert result.accepted is True
+    assert result.reason_guess == "ok"
+
+
 def test_empty_parse_is_parse_empty() -> None:
     result = MathVerifyAdapter(
         "default",

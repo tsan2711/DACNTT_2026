@@ -22,3 +22,10 @@ results/viec2/*
 results/viec3/mlx-toy/adapters/
 results/viec3/**/sft_data/
 *.safetensors
+
+# Raw per-run logs (Giai đoạn 0/5): tens of MB each (5 rounds x 1000 items x
+# k=8 solutions), one per Kaggle run — keep on local disk/Drive, not in git.
+# Derived summaries (table.md, manifest.json, mechanism.md) still get
+# committed as before.
+results/viec3/**/generations.jsonl
+results/viec3/**/train_logs/

@@ -23,8 +23,13 @@ class TrainExample:
 class Train(Protocol):
     """Dạy lại chính SLM bằng những bài được giữ, rồi lặp."""
 
-    def train(self, examples: Sequence[TrainExample]) -> None:
-        """Update the generator from accepted solutions."""
+    def train(self, examples: Sequence[TrainExample], *, round: int | None = None) -> None:
+        """Update the generator from accepted solutions.
+
+        ``round`` (Giai đoạn 5, optional): the GVT round index, so an
+        implementation that logs per-round training loss (see
+        ``HfLoraSftTrain``) can namespace its output. Ignored otherwise.
+        """
         ...
 
 
@@ -35,7 +40,7 @@ class NoOpTrain:
         self.examples: list[TrainExample] = []
         self.adapter_path: str | None = None
 
-    def train(self, examples: Sequence[TrainExample]) -> None:
+    def train(self, examples: Sequence[TrainExample], *, round: int | None = None) -> None:
         self.examples.extend(examples)
 
 
@@ -63,7 +68,7 @@ class MlxLoraTrain:
         self.examples: list[TrainExample] = []
         self.last_returncode: int | None = None
 
-    def train(self, examples: Sequence[TrainExample]) -> None:
+    def train(self, examples: Sequence[TrainExample], *, round: int | None = None) -> None:
         self.examples.extend(examples)
         if not examples:
             return
@@ -131,6 +136,7 @@ class HfLoraSftTrain:
         target_modules: Sequence[str] = ("q_proj", "v_proj"),
         max_seq_length: int = 512,
         learning_rate: float = 1e-5,
+        log_dir: Path | None = None,
     ) -> None:
         self.model_id = model_id
         self.adapter_path = adapter_path
@@ -141,18 +147,22 @@ class HfLoraSftTrain:
         self.target_modules = tuple(target_modules)
         self.max_seq_length = max_seq_length
         self.learning_rate = learning_rate
+        # Giai đoạn 5: per-round trainer.state.log_history (loss/epoch/step),
+        # so a later pass can compare how fast 0.5B vs 1.5B fit each round's
+        # shrinking, skewed pool — see papers/KE-HOACH-MO-RONG.md.
+        self.log_dir = log_dir or (adapter_path.parent / "train_logs")
         self.examples: list[TrainExample] = []
 
-    def train(self, examples: Sequence[TrainExample]) -> None:
+    def train(self, examples: Sequence[TrainExample], *, round: int | None = None) -> None:
         self.examples.extend(examples)
         if not examples:
             return
         data_dir = self.adapter_path.parent / "sft_data"
         _write_sft_jsonl(data_dir, examples)
         self.adapter_path.mkdir(parents=True, exist_ok=True)
-        self._train_lora(data_dir / "train.jsonl")
+        self._train_lora(data_dir / "train.jsonl", round=round)
 
-    def _train_lora(self, train_jsonl: Path) -> None:
+    def _train_lora(self, train_jsonl: Path, *, round: int | None = None) -> None:
         from datasets import load_dataset
         from peft import LoraConfig
         from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -196,6 +206,13 @@ class HfLoraSftTrain:
         trainer.train()
         trainer.model.save_pretrained(str(self.adapter_path))
         tokenizer.save_pretrained(str(self.adapter_path))
+        if round is not None:
+            self._save_train_log(trainer.state.log_history, round)
+
+    def _save_train_log(self, log_history: list[dict], round: int) -> None:
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+        path = self.log_dir / f"round_{round}.json"
+        path.write_text(json.dumps(log_history, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def _write_sft_jsonl(data_dir: Path, examples: Sequence[TrainExample]) -> None:

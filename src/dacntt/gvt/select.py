@@ -26,8 +26,18 @@ def select_batch(
     gold: str,
     solutions: Sequence[str],
     adapter: MathVerifyAdapter,
+    *,
+    select_all: bool = False,
 ) -> list[str]:
-    """Verify each solution against gold; keep the ones the teacher accepts."""
+    """Verify each solution against gold; keep the ones the teacher accepts.
+
+    ``select_all=True`` is the Giai đoạn 4 ablation: skip the verifier gate
+    entirely and keep every generated solution, to test whether the shrinking
+    training pool alone (independent of verifier bias) is enough to cause the
+    same decline — see papers/KE-HOACH-MO-RONG.md.
+    """
+    if select_all:
+        return list(solutions)
     gate = KeepIfAccepted()
     kept: list[str] = []
     for solution in solutions:

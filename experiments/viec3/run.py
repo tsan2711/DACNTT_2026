@@ -6,7 +6,20 @@ Mac toy (not paper numbers):
 
 Paper numbers (Kaggle T4, needs CUDA — will not run on Mac):
   python -m experiments.viec3.run --mode hf --dataset both --n 500 --rounds 5 --k 8 \
-      --model Qwen/Qwen2.5-0.5B-Instruct --max-tokens 512 --out results/viec3/kaggle-0.5b
+      --model Qwen/Qwen2.5-0.5B-Instruct --max-tokens 512 --seed 1 \
+      --out results/viec3/kaggle-0.5b
+
+Giai đoạn 1-4 runs (papers/KE-HOACH-MO-RONG.md — R1..R5, all --model
+Qwen/Qwen2.5-1.5B-Instruct --dataset both --n 500 --rounds 5 --k 8
+--max-tokens 512, only the flags below differ):
+  R1 đối chứng verifier: --seed 1 --holdout-frac 0.3 --patch-verifier
+  R2 headline, tách train/test: --seed 1 --holdout-frac 0.3
+  R3 seed thứ 2: --seed 2 --holdout-frac 0.3
+  R4 seed thứ 3: --seed 3 --holdout-frac 0.3
+  R5 ablation không lọc: --seed 1 --holdout-frac 0.3 --no-filter
+Download results/viec3/<out>/generations.jsonl and train_logs/*.json off
+Kaggle after every run — they don't survive session cleanup otherwise, and
+Giai đoạn 5's analysis needs both.
 
 See experiments/viec3/KAGGLE.md for setup.
 """
@@ -25,6 +38,7 @@ os.environ.setdefault("CUDA_VISIBLE_DEVICES", "0")
 import argparse
 import csv
 import json
+import random
 import sys
 from pathlib import Path
 
@@ -57,6 +71,9 @@ def main(argv: list[str] | None = None) -> int:
     out_dir: Path = args.out
     cache_dir: Path = args.cache
 
+    if args.seed is not None:
+        _seed_everything(args.seed)
+
     if args.model is None:
         args.model = DEFAULT_HF_MODEL if mode == "hf" else DEFAULT_MLX_MODEL
 
@@ -65,15 +82,44 @@ def main(argv: list[str] | None = None) -> int:
         items.extend(load_gold(dataset, args.n, cache_dir))
         print(f"loaded {args.n} {dataset} problems", file=sys.stderr)
 
-    select_adapter = MathVerifyAdapter(args.select_preset, timeout_seconds=args.verify_timeout)
+    train_ids, test_ids = _split_train_test(items, args.holdout_frac, args.seed)
+    if train_ids is not None:
+        print(
+            f"holdout split: {len(train_ids)} select / {len(test_ids)} exam "
+            f"(holdout_frac={args.holdout_frac}, seed={args.seed})",
+            file=sys.stderr,
+        )
+
+    select_adapter = MathVerifyAdapter(
+        args.select_preset,
+        timeout_seconds=args.verify_timeout,
+        normalize_frac_commands=args.patch_verifier,
+    )
     exam_adapters = {
-        name: MathVerifyAdapter(name, timeout_seconds=args.verify_timeout) for name in exam_presets
+        name: MathVerifyAdapter(
+            name,
+            timeout_seconds=args.verify_timeout,
+            normalize_frac_commands=args.patch_verifier,
+        )
+        for name in exam_presets
     }
     if args.select_preset not in exam_adapters:
         exam_adapters[args.select_preset] = select_adapter
 
     generator, trainer, note = _backend(mode, args, out_dir, items)
     print(note, file=sys.stderr)
+    if args.patch_verifier:
+        print(
+            "verifier patched: \\dfrac/\\tfrac -> \\frac before parsing "
+            "(Giai đoạn 1 control — see papers/KE-HOACH-MO-RONG.md)",
+            file=sys.stderr,
+        )
+    if args.no_filter:
+        print(
+            "select_all=True: training on every generated solution, verifier "
+            "gate skipped (Giai đoạn 4 ablation)",
+            file=sys.stderr,
+        )
 
     def _save_partial(records_so_far: list[RoundRecord]) -> None:
         # Written after every round, not just at the end, so a run killed
@@ -82,7 +128,7 @@ def main(argv: list[str] | None = None) -> int:
         write_reports(records_so_far, items, out_dir, args.k, args.select_preset)
         write_manifest(
             out_dir / "manifest.json",
-            _manifest(args, mode, note, records_so_far, items),
+            _manifest(args, mode, note, records_so_far, items, train_ids, test_ids),
         )
         print(
             f"  ...round {records_so_far[-1].round} done, "
@@ -102,11 +148,58 @@ def main(argv: list[str] | None = None) -> int:
         extra_exam=args.extra_exam,
         locked_exam=args.select_preset,
         on_round=_save_partial,
+        train_item_ids=train_ids,
+        test_item_ids=test_ids,
+        select_all=args.no_filter,
     )
     write_reports(records, items, out_dir, args.k, args.select_preset)
-    write_manifest(out_dir / "manifest.json", _manifest(args, mode, note, records, items))
+    write_manifest(
+        out_dir / "manifest.json", _manifest(args, mode, note, records, items, train_ids, test_ids)
+    )
     print(f"wrote {out_dir / 'table.md'}", file=sys.stderr)
     return 0
+
+
+def _seed_everything(seed: int) -> None:
+    random.seed(seed)
+    try:
+        import torch
+
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+    except ImportError:
+        pass
+
+
+def _split_train_test(
+    items: list, holdout_frac: float, seed: int | None
+) -> tuple[frozenset[str] | None, frozenset[str] | None]:
+    """Giai đoạn 2: hold out ``holdout_frac`` of each dataset for `exam`
+    only, so `select` (training) never sees the problems `exam` scores on.
+    Split per-dataset (not globally) so GSM8K and MATH-500 stay represented
+    in both halves. ``holdout_frac=0`` (default) keeps the old behaviour —
+    select and exam share every item — for backward compatibility with
+    existing dry/mlx runs and tests.
+    """
+    if holdout_frac <= 0:
+        return None, None
+    # Keyed (dataset, item_id) — GSM8K ids are plain integers ("0", "1", …)
+    # and could otherwise collide with a MATH-500 id if it ever fell back to
+    # a bare index instead of its usual path-like unique_id.
+    rng = random.Random(seed if seed is not None else 0)
+    by_dataset: dict[str, list[str]] = {}
+    for item in items:
+        by_dataset.setdefault(item.dataset, []).append(item.item_id)
+    test_ids: set[str] = set()
+    for dataset, dataset_ids in by_dataset.items():
+        ids = sorted(dataset_ids)
+        rng.shuffle(ids)
+        n_test = max(1, round(len(ids) * holdout_frac)) if ids else 0
+        test_ids.update(f"{dataset}:{item_id}" for item_id in ids[:n_test])
+    all_ids = {f"{item.dataset}:{item.item_id}" for item in items}
+    train_ids = all_ids - test_ids
+    return frozenset(train_ids), frozenset(test_ids)
 
 
 def _backend(mode: str, args: argparse.Namespace, out_dir: Path, items: list):
@@ -286,7 +379,15 @@ def _write_generations(records: list[RoundRecord], items: list, path: Path) -> N
                 )
 
 
-def _manifest(args, mode: str, note: str, records: list[RoundRecord], items: list) -> dict:
+def _manifest(
+    args,
+    mode: str,
+    note: str,
+    records: list[RoundRecord],
+    items: list,
+    train_ids: frozenset[str] | None = None,
+    test_ids: frozenset[str] | None = None,
+) -> dict:
     from datetime import date, datetime, timezone
 
     return {
@@ -304,6 +405,15 @@ def _manifest(args, mode: str, note: str, records: list[RoundRecord], items: lis
         "select_preset": args.select_preset,
         "exam_presets": [p.strip() for p in args.exam_presets.split(",") if p.strip()],
         "locked_exam": args.select_preset,
+        # Giai đoạn 0-4 (papers/KE-HOACH-MO-RONG.md): reproducibility + the
+        # control/ablation knobs. Defaults (seed=None, patch_verifier=False,
+        # holdout_frac=0, no_filter=False) reproduce the original 2 runs.
+        "seed": args.seed,
+        "patch_verifier": args.patch_verifier,
+        "holdout_frac": args.holdout_frac,
+        "n_select_items": len(train_ids) if train_ids is not None else len(items),
+        "n_exam_items": len(test_ids) if test_ids is not None else len(items),
+        "no_filter": args.no_filter,
         "model": args.model if mode in ("mlx", "hf") else "scripted-from-gold",
         "train": {"mlx": "mlx-lora-sft", "hf": "hf-lora-sft"}.get(mode, "noop"),
         "lora_iters": args.lora_iters if mode == "mlx" else 0,
@@ -365,6 +475,35 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     )
     parser.add_argument("--out", type=Path, default=_REPO_ROOT / "results" / "viec3")
     parser.add_argument("--cache", type=Path, default=_REPO_ROOT / "data" / "gold")
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Giai đoạn 0/3: fixes random/torch RNG for the whole run, so a "
+        "repeat run with the same seed is comparable and a different seed "
+        "gives an independent replicate for variance (see KE-HOACH-MO-RONG.md)",
+    )
+    parser.add_argument(
+        "--patch-verifier",
+        action="store_true",
+        help="Giai đoạn 1 control: normalize \\dfrac/\\tfrac -> \\frac before "
+        "verify, isolating verifier bias as the one changed variable "
+        "(same dataset/model/rounds as the original run)",
+    )
+    parser.add_argument(
+        "--holdout-frac",
+        type=float,
+        default=0.0,
+        help="Giai đoạn 2: fraction of each dataset held out for `exam` only "
+        "(never seen by `select`/training); 0 keeps the old shared-set "
+        "behaviour",
+    )
+    parser.add_argument(
+        "--no-filter",
+        action="store_true",
+        help="Giai đoạn 4 ablation: skip the verifier gate at select time, "
+        "train on every generated solution regardless of correctness",
+    )
     return parser.parse_args(argv)
 
 
