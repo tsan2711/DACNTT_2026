@@ -2,7 +2,7 @@
 
 Đọc từ `generations.jsonl` (đa dạng trước lọc) và `train_logs/round_*.json` (loss cuối mỗi vòng, chỉ có nếu chạy `--mode hf`). Không cần GPU để chạy file này.
 
-## runA_seed0 (`results/viec3/qwen15b-math500-a`)
+## A_seed0 (`results/viec3/qwen15b-math500-a`)
 
 **Đa dạng output trước khi lọc qua verifier.** Text thô gần như luôn ~1.0 (sampling ở temperature>0 hiếm khi lặp y hệt từng chữ) — cột đáng đọc là đáp án đã trích (`extract_final`+chuẩn hoá), vì đó mới bắt được hội tụ thật (nhiều cách viết khác nhau nhưng cùng ra một đáp án):
 
@@ -24,7 +24,7 @@
 | 3 | 0.4081 | 42 |
 | 4 | 0.4257 | 42 |
 
-## runA_seed1 (`results/viec3/qwen15b-math500-a-seed1`)
+## A_seed1 (`results/viec3/qwen15b-math500-a-seed1`)
 
 **Đa dạng output trước khi lọc qua verifier.** Text thô gần như luôn ~1.0 (sampling ở temperature>0 hiếm khi lặp y hệt từng chữ) — cột đáng đọc là đáp án đã trích (`extract_final`+chuẩn hoá), vì đó mới bắt được hội tụ thật (nhiều cách viết khác nhau nhưng cùng ra một đáp án):
 
@@ -46,7 +46,7 @@
 | 3 | 0.3573 | 41 |
 | 4 | 0.4277 | 40 |
 
-## runB_seed0 (`results/viec3/qwen15b-math500-b`)
+## B_seed0 (`results/viec3/qwen15b-math500-b`)
 
 **Đa dạng output trước khi lọc qua verifier.** Text thô gần như luôn ~1.0 (sampling ở temperature>0 hiếm khi lặp y hệt từng chữ) — cột đáng đọc là đáp án đã trích (`extract_final`+chuẩn hoá), vì đó mới bắt được hội tụ thật (nhiều cách viết khác nhau nhưng cùng ra một đáp án):
 
@@ -68,7 +68,29 @@
 | 3 | 0.3723 | 42 |
 | 4 | 0.4417 | 42 |
 
-## runC_seed0 (`results/viec3/qwen15b-gsm8k-c`)
+## B_seed1 (`results/viec3/qwen15b-math500-b-seed1`)
+
+**Đa dạng output trước khi lọc qua verifier.** Text thô gần như luôn ~1.0 (sampling ở temperature>0 hiếm khi lặp y hệt từng chữ) — cột đáng đọc là đáp án đã trích (`extract_final`+chuẩn hoá), vì đó mới bắt được hội tụ thật (nhiều cách viết khác nhau nhưng cùng ra một đáp án):
+
+| Vòng | n đề | unique text/k | unique đáp án/k | % đề cả k lần ra CÙNG 1 đáp án |
+|---|---|---|---|---|
+| 0 | 500 | 1.000 | 0.528 | 16.0% |
+| 1 | 500 | 1.000 | 0.542 | 15.2% |
+| 2 | 500 | 1.000 | 0.544 | 14.0% |
+| 3 | 500 | 0.999 | 0.545 | 13.2% |
+| 4 | 500 | 1.000 | 0.543 | 12.8% |
+
+**Train loss cuối mỗi vòng** (SFTTrainer, trên đúng tập được giữ vòng đó):
+
+| Vòng | Loss cuối | Số bước log |
+|---|---|---|
+| 0 | 0.3418 | 41 |
+| 1 | 0.4058 | 40 |
+| 2 | 0.3498 | 41 |
+| 3 | 0.3905 | 41 |
+| 4 | 0.3862 | 40 |
+
+## C_seed0 (`results/viec3/qwen15b-gsm8k-c`)
 
 **Đa dạng output trước khi lọc qua verifier.** Text thô gần như luôn ~1.0 (sampling ở temperature>0 hiếm khi lặp y hệt từng chữ) — cột đáng đọc là đáp án đã trích (`extract_final`+chuẩn hoá), vì đó mới bắt được hội tụ thật (nhiều cách viết khác nhau nhưng cùng ra một đáp án):
 

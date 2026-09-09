@@ -38,24 +38,24 @@ models on mathematical reasoning without human labels, assuming the
 verifier reliably separates correct from incorrect solutions. We tested
 whether a rule-based verifier with a \emph{directional} bias --- rejecting
 correct solutions in unexpected formats while almost never accepting
-incorrect ones --- causes capability collapse over several rounds. We first measured the bias on \texttt{math-verify}:
+incorrect ones --- causes capability collapse over several rounds. We measured the bias on \texttt{math-verify}:
 \verb|\dfrac|/\verb|\tfrac| rewrites of correct answers are rejected
-$100\%$ of the time, with a false-negative rate of $7.8\%$ on MATH-500 and
-$0\%$ on GSM8K. Five GVT rounds on a \emph{pooled} GSM8K\,+\,MATH-500 set
-appeared to confirm the hypothesis: Qwen2.5-1.5B pass@1 fell
+$100\%$ of the time. Five GVT rounds on a \emph{pooled} GSM8K\,+\,MATH-500
+set appeared to confirm the hypothesis: Qwen2.5-1.5B pass@1 fell
 $50.0\%\to18.6\%$ and pass@8 $72.6\%\to48.6\%$. That design, however,
 trains one shared LoRA adapter on the pooled filtered set and scores on the
-selection items, so it separates neither verifier bias from cross-dataset
+selection items, separating neither verifier bias from cross-dataset
 interference nor capability loss from fit to the evaluation set. We re-ran
 with each dataset isolated on its own adapter, a held-out $30\%$ exam
-split, and the single-variable control the original lacked: the same
-MATH-500 run with the format bias patched. The collapse then largely
-disappears --- pass@8 is flat on both datasets --- and patching changes
-nothing measurable (pass@1 $32.0\%\to29.3\%$ unpatched versus
-$32.0\%\to28.7\%$ patched). Our hypothesis is unsupported: the collapse was
-substantially an artifact of the pooled, non-held-out design. We report
-this as a cautionary methodological result; our isolated runs use one seed
-each.
+split, and the control the original lacked: the same run with the format
+bias patched. The collapse disappears --- pass@8 is flat throughout --- and
+patching changes nothing measurable across two paired seeds. The reason is
+prevalence: the affected format occurs in $\approx0.55\%$ of generations
+and never on GSM8K, so a $100\%$ rejection rate discards half a percent of
+the training pool. Published verifier-bias rates are conditional
+severities; practical impact is severity $\times$ prevalence, which must be
+measured in the target pipeline. Our striking initial collapse was
+substantially an artifact of the pooled, non-held-out design.
 
 \keywords{self-training \and verifier bias \and mathematical reasoning
 \and small language models \and experimental confounds \and pass@k.}
@@ -147,9 +147,15 @@ give qualitatively different answers to the same question: dramatic
 collapse under the first, essentially flat pass@8 under the second.
 \item We report the single-variable control that the pooled design could
 not support: repairing the verifier's format bias, with everything else
-held fixed, produces no measurable difference. On this evidence the
-hypothesis that directional verifier bias drives the decline is
-\emph{not supported}.
+held fixed, produces no measurable difference across two paired seeds. On
+this evidence the hypothesis that directional verifier bias drives the
+decline is \emph{not supported}.
+\item We identify why, and argue the point generalises: the bias is severe
+when triggered ($100\%$ rejection) but rare in practice (the affected
+format appears in $\approx0.55\%$ of generations, and never on GSM8K).
+Reported verifier-bias rates are conditional severities; their practical
+impact is severity $\times$ prevalence, and prevalence must be measured in
+the pipeline where the verifier will actually be used.
 \item We draw the methodological consequence: GVT-style experiments that
 pool several datasets into one training mixture, or that score on the
 selection set, can manufacture a collapse signal that isolation and
@@ -537,6 +543,8 @@ A, seed 1 (MATH-500, orig.) & pass@1 & 36.7\% & 32.7\% & 32.7\% & 31.3\% & 33.3\
 A, seed 1 (MATH-500, orig.) & pass@8 & 58.7\% & 60.7\% & 59.3\% & 59.3\% & 58.7\% & $\phantom{-}0.0$ pt \\
 B, seed 0 (MATH-500, patched) & pass@1 & 32.0\% & 28.7\% & 28.7\% & 28.7\% & 28.7\% & $-3.3$ pt \\
 B, seed 0 (MATH-500, patched) & pass@8 & 57.3\% & 55.3\% & 52.0\% & 57.3\% & 53.3\% & $-4.0$ pt \\
+B, seed 1 (MATH-500, patched) & pass@1 & 37.3\% & 32.0\% & 32.7\% & 31.3\% & 33.3\% & $-4.0$ pt \\
+B, seed 1 (MATH-500, patched) & pass@8 & 59.3\% & 60.7\% & 58.0\% & 58.7\% & 58.7\% & $-0.6$ pt \\
 C, seed 0 (GSM8K, orig.) & pass@1 & 66.7\% & 66.7\% & 65.3\% & 63.3\% & 54.0\% & $-12.7$ pt \\
 C, seed 0 (GSM8K, orig.) & pass@8 & 92.7\% & 90.7\% & 93.3\% & 90.0\% & 90.0\% & $-2.7$ pt \\
 \bottomrule
@@ -603,14 +611,79 @@ answer diversity is likewise near-identical between the two
 (Table~\ref{tab:answer-diversity}), as are their per-round training losses
 ($0.38\to0.43$ for A, $0.39\to0.44$ for B).
 
+The pattern repeats at seed~1, where the agreement is closer still: from
+round~2 onward the two runs report \emph{identical} pass@1
+($32.7\%$, $31.3\%$, $33.3\%$), and their end-to-end changes are $-3.4$
+versus $-4.0$ points. Across both seeds, no round shows a difference larger
+than $2.7$ points in pass@1, and the differences have no consistent sign.
+
 Repairing the verifier's measured format bias produces no measurable
-improvement. The gap it produces is roughly an eighth of the spread that
-re-partitioning the same problem set produces on its own
-(Section~\ref{sec:seedvar}). Within the precision of this experiment, the
-hypothesis that directional format bias in the verifier drives multi-round
-degradation is \emph{not supported}. We note that Run~B has so far been
-executed at seed~0 only, so this null result rests on a single paired
-comparison.
+improvement. Within the precision of this experiment --- now two paired
+seeds --- the hypothesis that directional format bias in the verifier
+drives multi-round degradation is \emph{not supported}.
+Section~\ref{sec:prevalence} explains why.
+
+\subsection{Why the Patch Does Nothing: Severity Without Prevalence}
+\label{sec:prevalence}
+
+A null result is more useful when the mechanism behind it is identified,
+and our style counts supply one directly.
+
+Round~0 gives an unusually clean measurement. At a fixed seed, Runs A and B
+generate from the same base model with the same sampling seed and have not
+yet trained on anything, so their round-0 generations are identical --- the
+style counts confirm this exactly (e.g.\ $29$ \verb|\dfrac| occurrences in
+both runs at seed~1). The \emph{only} difference at round~0 is which
+verifier scores those identical solutions. The patch's direct scoring
+effect is therefore isolated with no confounds at all, and it is: zero
+problems out of $150$ at seed~0 ($32.0\%$ both), and one problem out of
+$150$ at seed~1 ($36.7\%$ versus $37.3\%$).
+
+The reason is prevalence. Table~\ref{tab:prevalence} counts how often the
+patched format class actually occurs in the model's output. Across $4{,}000$
+generations per round on MATH-500, \verb|\dfrac| appears in $20$--$29$ of
+them --- about $0.55\%$ --- and \verb|\tfrac| never appears at all. On
+GSM8K, whose answers are integers, \verb|\dfrac| occurs zero times in every
+round, which is why no patched GSM8K run is worth spending compute on.
+
+\begin{table}[t]
+\caption{Occurrences of the patched format class among the $4{,}000$
+generations produced per round. The bias is severe when triggered
+($100\%$ rejection, Section~\ref{sec:verifier}) but is triggered rarely.}
+\label{tab:prevalence}
+\centering
+\begin{tabular}{llccccc}
+\toprule
+Dataset & Token & R0 & R1 & R2 & R3 & R4 \\
+\midrule
+MATH-500 & \verb|\dfrac| & 23--29 & 23 & 22 & 21--22 & 20--22 \\
+MATH-500 & \verb|\tfrac| & 0 & 0 & 0 & 0 & 0 \\
+GSM8K & \verb|\dfrac| & 0 & 0 & 0 & 0 & 0 \\
+GSM8K & \verb|\tfrac| & 0 & 0 & 0 & 0 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This resolves an apparent tension in our own measurements. The format probe
+of Section~\ref{sec:verifier} reports $100\%$ rejection for
+\verb|\dfrac|/\verb|\tfrac|, which sounds severe, but it measures severity
+\emph{conditional on the format occurring}. The quantity that governs the
+training pool is severity $\times$ prevalence: $100\%$ of $0.55\%$ is
+$0.55\%$ of solutions wrongly discarded per round. A pool reduced by half a
+percent cannot plausibly drive a twenty-point capability change. Our own
+false-negative audit points the same way in retrospect: of the ten
+MATH-500 false negatives we found, only two were format rewrites, while
+eight were wrong-token extraction from long solutions --- a failure mode the
+patch does not address.
+
+We think this is the most transferable lesson of the study. Verifier-bias
+figures in the literature, including the $\sim$14\% false-negative rate
+of~\cite{ref_robustness} and the large rejected fractions
+of~\cite{ref_tinyv}, are conditional severity figures measured on some
+reference distribution. Whether such a bias matters in a given pipeline
+depends on how often the affected forms appear in \emph{that pipeline's}
+model output, which is a cheap thing to count and which we did not count
+until after the hypothesis had failed.
 
 \subsection{Pre-Filter Answer Diversity Increases, It Does Not Collapse}
 \label{sec:answer-diversity}
@@ -644,8 +717,10 @@ A (seed 0), unique answers / $k$ & 0.542 & 0.545 & 0.545 & 0.546 & 0.554 \\
 A (seed 0), \% all-$k$ agree & 14.6\% & 13.4\% & 13.2\% & 12.2\% & 12.0\% \\
 A (seed 1), unique answers / $k$ & 0.528 & 0.539 & 0.548 & 0.543 & 0.549 \\
 A (seed 1), \% all-$k$ agree & 16.0\% & 15.2\% & 13.2\% & 13.8\% & 12.6\% \\
-B, unique answers / $k$ & 0.542 & 0.546 & 0.545 & 0.547 & 0.555 \\
-B, \% all-$k$ agree & 14.6\% & 13.8\% & 14.2\% & 12.2\% & 12.2\% \\
+B (seed 0), unique answers / $k$ & 0.542 & 0.546 & 0.545 & 0.547 & 0.555 \\
+B (seed 0), \% all-$k$ agree & 14.6\% & 13.8\% & 14.2\% & 12.2\% & 12.2\% \\
+B (seed 1), unique answers / $k$ & 0.528 & 0.542 & 0.544 & 0.545 & 0.543 \\
+B (seed 1), \% all-$k$ agree & 16.0\% & 15.2\% & 14.0\% & 13.2\% & 12.8\% \\
 C, unique answers / $k$ & 0.359 & 0.364 & 0.413 & 0.444 & 0.500 \\
 C, \% all-$k$ agree & 33.6\% & 32.4\% & 25.2\% & 18.8\% & 16.0\% \\
 \bottomrule
@@ -756,12 +831,11 @@ metric reported.
 \label{sec:limitations}
 
 \begin{enumerate}
-\item \emph{Limited seed replication.} Run~A has been executed at two
-seeds, which agree; every other configuration was executed once. This bears
-most heavily on the null control: Runs A and B agree at seed~0, which is
-consistent with the bias having no effect, but a second paired seed is
-needed before the null should be treated as settled. Repeating Run~B, and
-then Run~C, is the immediate next step.
+\item \emph{Limited seed replication.} Runs A and B have each been executed
+at two seeds, which agree, so the null control rests on two paired
+comparisons rather than one. Run~C and the pooled runs were executed once;
+replicating Run~C is the immediate next step, since its $12.7$-point pass@1
+decline is the one effect in this study that exceeds the noise floor.
 \item \emph{Small exam set.} Design~I scores on $150$ held-out problems,
 where one problem is $0.67$ points, and re-partitioning alone moves round-0
 pass@1 by $4.7$ points (Section~\ref{sec:seedvar}). Differences of a few
@@ -799,12 +873,14 @@ Rebuilding the experiment to isolate each dataset on its own adapter, to
 score on a held-out split, and to include the matched patched-verifier
 control changes the answer. The collapse does not reproduce: pass@8 is flat
 in every isolated run, and the MATH-500 result replicates across two seeds.
-The control comes out null: repairing the verifier's measured
+The control comes out null at both seeds: repairing the verifier's measured
 $100\%$-rejection format class alters neither pass@1, pass@8, answer
-diversity, nor training loss, and the difference it makes is several times
-smaller than the spread produced by re-partitioning the evaluation set.
-What remains is a mild first-attempt erosion on GSM8K, larger than that
-noise floor but so far measured at one seed.
+diversity, nor training loss. The reason is that the affected format occurs
+in about half a percent of generations, so a rejection rate of $100\%$
+conditional on that format removes half a percent of the training pool ---
+severity and prevalence are different quantities, and only the second one
+governs the pipeline. What remains is a mild first-attempt erosion on
+GSM8K, larger than the noise floor but so far measured at one seed.
 
 The finding we can defend is therefore methodological rather than
 mechanistic. Pooling several datasets into one training mixture, and

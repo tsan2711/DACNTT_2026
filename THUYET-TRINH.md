@@ -79,9 +79,33 @@ toàn bộ hiệu ứng em đang đo**. Cái này quan trọng: nó cho em một
 biết một khác biệt phải lớn cỡ nào mới đáng tin — và chênh lệch giữa A với B
 (0.6 điểm) thì nhỏ hơn thước đo đó nhiều lần.
 
-**Em nói thẳng phần chưa chắc:** lần B mới chạy 1 seed, nên kết luận "vá
-không có tác dụng" cần thêm một cặp seed nữa mới chốt hẳn. Đó là lần chạy kế
-tiếp của em.
+**Và em đã tìm ra VÌ SAO bản vá không có tác dụng — đây là phần em thấy giá
+trị nhất.** Em đếm lại xem cái kiểu viết `\dfrac` đó **thực tế xuất hiện bao
+nhiêu lần**: trong 4000 lời giải mỗi vòng, nó chỉ xuất hiện khoảng **22 lần,
+tức 0.55%**. Còn `\tfrac` thì **không xuất hiện lần nào**. Trên GSM8K thì
+bằng **0** tuyệt đối.
+
+Nghĩa là: máy chấm gạch kiểu viết đó **100%** — nghe rất nặng — nhưng đó là
+mức độ nặng **khi nó xảy ra**. Cái thật sự ảnh hưởng tới tập dạy là
+**mức nặng × tần suất** = 100% × 0.55% = **0.55% bài bị loại oan mỗi vòng**.
+Tập dạy hụt nửa phần trăm thì không thể nào gây sụp 20 điểm được.
+
+Em còn đo được trực tiếp: ở vòng 0, hai lần chạy A và B dùng **cùng** model
+gốc, **cùng** seed, chưa học gì cả — nên sinh ra **đúng cùng một bộ bài
+làm**. Khác nhau duy nhất là máy chấm nào chấm. Kết quả: bản vá làm đổi kết
+quả của **0 đề (seed 0) và 1 đề (seed 1) trên 150 đề**. Đó là toàn bộ sức
+mạnh của cái đòn bẩy mà cả giả thuyết ban đầu dựa vào.
+
+**Bài học em rút ra, và em nghĩ nó đáng viết vào bài nhất:** các con số
+"máy chấm sai bao nhiêu %" mà các bài báo khác công bố đều là mức-nặng-có-
+điều-kiện, đo trên một tập dữ liệu tham chiếu của họ. Muốn biết nó có hại
+trong hệ thống của mình không thì phải **đếm tần suất trong chính output
+model của mình** — việc rất rẻ, mà em đã không làm cho tới khi giả thuyết
+sụp đổ rồi mới nghĩ ra.
+
+**Em nói thẳng phần chưa chắc:** lần chạy C (GSM8K) rơi 12.7 điểm vẫn chưa
+lặp lại được lần nào — đó là hiện tượng duy nhất còn chưa giải thích được,
+và là lần chạy kế tiếp của em.
 
 ---
 

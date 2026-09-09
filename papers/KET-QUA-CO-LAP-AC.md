@@ -6,8 +6,8 @@
 > viết thẳng vào `papers/latex/paper.tex` — câu chuyện "dự đoán sai → thu gọn
 > scope" chính là thứ làm bài thuyết phục hơn, không phải thứ để giấu.
 >
-> Cập nhật lần cuối: 2026-09-09 (bộ 3 A/B/C + seed 1 của A). Còn thiếu:
-> seed 1 của B, seed 3, ablation không lọc.
+> Cập nhật lần cuối: 2026-09-10 (A và B đều đã có 2 seed; C mới 1 seed).
+> Còn thiếu: seed 1 của C, ablation không lọc.
 
 ---
 
@@ -24,6 +24,7 @@ Tất cả: `--mode hf --model Qwen/Qwen2.5-1.5B-Instruct --n 500 --rounds 5
 | B | `math500` + `--patch-verifier` | `results/viec3/qwen15b-math500-b/` | 2026-09-06 | ~ (chưa ghi) |
 | C | `gsm8k` | `results/viec3/qwen15b-gsm8k-c/` | 2026-09-06 | ~5.5 giờ |
 | A-seed1 | `math500`, `--seed 1` | `results/viec3/qwen15b-math500-a-seed1/` | 2026-09-08 | ~ (chưa ghi) |
+| B-seed1 | `math500`, `--patch-verifier`, `--seed 1` | `results/viec3/qwen15b-math500-b-seed1/` | 2026-09-09 | ~ (chưa ghi) |
 
 **Lưu ý về `--seed`:** seed điều khiển **cả** cách chia train/test. Đổi seed
 ⇒ 150 đề thi khác hẳn ⇒ vòng 0 (model gốc, chưa train) cũng ra điểm khác.
@@ -72,6 +73,49 @@ holdout — chấm trên chính đề đã train): `results/viec3/qwen15b-n500/`
 đứng; pass@8 phẳng. Đây là lần **đầu tiên** trong cả đề tài một dự đoán
 (đưa ra sau khi có A/B/C) được xác nhận đúng.
 
+### ⭐⭐ PHÁT HIỆN LỚN NHẤT: severity ≠ prevalence — lý do bản vá vô tác dụng
+
+Đây là mảnh ghép giải thích mà bài thiếu suốt từ đầu. Nó biến kết quả null
+từ "không hiểu vì sao" thành "hiểu rõ vì sao".
+
+**Đo trực tiếp tác dụng của bản vá, không confound gì cả.** Ở **vòng 0**,
+A và B cùng seed thì dùng cùng model gốc, cùng seed sinh, **chưa train gì**
+→ sinh ra **đúng cùng một bộ lời giải** (kiểm chứng: số đếm `\dfrac` trùng
+khít, seed 1 đều = 29). Khác biệt duy nhất ở vòng 0 là **verifier nào chấm**.
+Kết quả:
+
+| | pass@1 vòng 0 (A, gốc) | pass@1 vòng 0 (B, vá) | chênh |
+|---|---|---|---|
+| seed 0 | 32.0% | 32.0% | **0 đề / 150** |
+| seed 1 | 36.7% | 37.3% | **1 đề / 150** |
+
+Tức là toàn bộ đòn bẩy nhân quả của giả thuyết, đo sạch không nhiễu, tác
+động lên **0–1 đề trên 150**.
+
+**Vì sao ít vậy — đếm tần suất `\dfrac`/`\tfrac` thật sự xuất hiện:**
+
+| Bộ đề | Token | Số lần / 4000 lời giải mỗi vòng |
+|---|---|---|
+| MATH-500 | `\dfrac` | 20–29 (**≈0.55%**) |
+| MATH-500 | `\tfrac` | **0** (không bao giờ xuất hiện) |
+| GSM8K | `\dfrac`, `\tfrac` | **0** ở mọi vòng |
+
+**Lý luận chốt:** format probe đo được "gạch 100%" — nhưng đó là **severity
+có điều kiện** (khi format xuất hiện). Cái chi phối tập train là
+**severity × prevalence** = 100% × 0.55% = **0.55% lời giải bị loại oan mỗi
+vòng**. Tập train hụt nửa phần trăm thì không thể gây sụp 20 điểm.
+
+Kiểm chứng chéo: trong 10 false negative đã audit thủ công trên MATH-500,
+chỉ **2** là format rewrite, **8** là verifier trích nhầm token từ lời giải
+dài — mà bản vá **không** xử lý nhóm 8 đó.
+
+**Bài học tổng quát (phần đáng giá nhất để viết vào bài):** các con số
+verifier-bias trong literature (14% FN của From-Accuracy-to-Robustness, tỉ
+lệ gạch lớn của TinyV) đều là **severity có điều kiện** đo trên một phân bố
+tham chiếu nào đó. Muốn biết nó có hại trong pipeline của mình không thì
+phải đếm **prevalence trong chính output model của mình** — việc rất rẻ, mà
+nhóm em không đếm cho tới khi giả thuyết đã sụp đổ.
+
 ### ⭐ Phương sai do chia tập đề — con số hiệu chỉnh quan trọng nhất
 
 Vòng 0 là **model gốc, chưa train gì**. Hai seed lẽ ra phải đo cùng một
@@ -118,6 +162,16 @@ Hệ quả cho cách viết bài:
   kể.** Đây là control sạch nhất trong cả 3 lần chạy (chỉ đổi 1 biến) và là
   bằng chứng trực tiếp bác bỏ giả thuyết gốc, không còn phải suy luận qua
   nhiễm chéo hay thiết kế đo nữa.
+
+### Run B, seed 1
+
+| Vòng | 0 | 1 | 2 | 3 | 4 |
+|---|---|---|---|---|---|
+| pass@1 | 37.3% | 32.0% | 32.7% | 31.3% | 33.3% |
+| pass@8 | 59.3% | 60.7% | 58.0% | 58.7% | 58.7% |
+
+**So A-seed1 vs B-seed1:** từ vòng 2 trở đi pass@1 **trùng khít** (32.7,
+31.3, 33.3 ở cả hai). Cặp control giờ có 2 seed, cả 2 đều null.
 
 ### Run C — GSM8K cô lập, verifier gốc
 
@@ -178,7 +232,7 @@ sửa điểm này — "style hội tụ, nội dung đáp án phân tán".)
 
 ---
 
-## 4. Kết luận rút được (2026-09-06)
+## 4. Kết luận rút được (cập nhật 2026-09-10)
 
 ### Đủ vững để viết — kết quả âm tính / phương pháp luận
 
@@ -199,14 +253,21 @@ sửa điểm này — "style hội tụ, nội dung đáp án phân tán".)
   Đây là phát biểu vững nhất hiện có.
 - **Phương sai do chia tập đề ≈ 4.7 điểm pass@1** ở vòng 0 (mục 2). Cho ta
   thang nhiễu định lượng để đọc mọi con số khác trong bài.
+- **Vá verifier không có tác dụng — đã có 2 cặp seed xác nhận** (A vs B ở
+  seed 0 và seed 1; ở seed 1 pass@1 từ vòng 2 trở đi trùng khít). Cặp
+  control coi như đã chốt.
+- **Đã giải thích được VÌ SAO null: severity ≠ prevalence** (mục 2). Format
+  bị gạch 100% nhưng chỉ xuất hiện ở ≈0.55% lời giải (và 0% trên GSM8K), nên
+  chỉ ~0.55% tập train bị loại oan — không đủ gây sụp. Đo trực tiếp ở vòng 0:
+  bản vá đổi kết quả của **0–1 đề trên 150**.
 
 ### Tạm thời — cần thêm seed mới chốt
 
 - Erosion pass@1 của Run C (−12.7 điểm GSM8K, dồn vào vòng cuối) — mới 1
   seed. Cần C-seed1 để biết thật hay nhiễu. Lưu ý: −12.7 vẫn **lớn hơn**
   thang nhiễu 4.7 điểm, nên nhiều khả năng là thật, nhưng chưa chứng minh.
-- Kết luận null A vs B mới có ở seed 0. **B-seed1 là việc chạy kế tiếp** —
-  nếu B-seed1 cũng ≈ A-seed1 thì phần control coi như chốt.
+  **Đây là nội dung *dương* duy nhất còn sống của bài** — mọi thứ khác đã
+  chốt thành kết quả null/phương pháp luận.
 - Vòng lặp cô lập làm **tăng** độ phân tán đáp án (rõ ở GSM8K, nhẹ ở
   MATH-500 nhưng nhất quán qua cả 2 seed).
 
@@ -283,10 +344,13 @@ Log cũ chỉ là mốc tham chiếu lỏng, không dùng làm bằng chứng nh
       không dùng làm nguồn viết bài nữa.
 - [x] **Seed 1 cho Run A** — xong 2026-09-08/09. Xác nhận seed 0 (pass@8
       phẳng ở cả hai), và cho ra thang nhiễu 4.7 điểm. Đã đưa vào paper.tex.
-- [ ] **Seed 1 cho Run B** — **việc chạy kế tiếp**. Cần để phần control
-      (A vs B) có 2 seed như A. Sau khi có: bỏ hedging "one seed" còn lại ở
-      §4.4 paper.tex.
-- [ ] Seed 1 cho Run C — để biết −12.7 điểm pass@1 của GSM8K thật hay nhiễu.
+- [x] **Seed 1 cho Run B** — xong 2026-09-09/10. Null lặp lại ở seed thứ 2
+      (từ vòng 2 pass@1 trùng khít A). Cặp control coi như **đã chốt**. Đồng
+      thời phát hiện severity≠prevalence (xem mục 2) — mảnh giải thích cơ
+      chế mà bài thiếu suốt từ đầu. Đã đưa vào paper.tex §4.5.
+- [ ] **Seed 1 cho Run C** — **việc chạy kế tiếp, ưu tiên cao nhất**. −12.7
+      điểm pass@1 của GSM8K là hiệu ứng duy nhất vượt thang nhiễu 4.7 điểm,
+      và là nội dung *dương* duy nhất còn sống của bài.
 - [ ] Ablation `--no-filter` trên cấu hình headline.
 - [ ] Vẽ lại hình cho Design I (hiện chỉ có 2 hình của Design P). Cần một
       hình A/B/C pass@1+pass@8 theo vòng để Results §4.3 không chỉ có bảng.
