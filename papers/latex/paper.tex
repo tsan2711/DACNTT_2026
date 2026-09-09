@@ -551,7 +551,21 @@ C, seed 0 (GSM8K, orig.) & pass@8 & 92.7\% & 90.7\% & 93.3\% & 90.0\% & 90.0\% &
 \end{tabular}
 \end{table}
 
-Run~C retains a residual effect worth naming: GSM8K pass@1 falls $12.7$
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{isolated_by_round.png}
+\caption{Design~I: pass@1 (left) and pass@8 (right) on the held-out exam
+set, by round. Colour identifies the run, line style the seed, marker the
+run again, so the figure survives greyscale printing. Runs A and B ---
+identical except for the verifier patch --- track each other closely at both
+seeds. pass@8 is flat in every run, in contrast to the $22$--$26$ point
+declines of Design~P (Fig.~\ref{fig:passk}). The one visible movement is
+Run~C's pass@1 in the final round.}
+\label{fig:isolated}
+\end{figure}
+
+Figure~\ref{fig:isolated} plots the same data. Run~C retains a residual
+effect worth naming: GSM8K pass@1 falls $12.7$
 points while its pass@8 does not move. The model does not lose the ability
 to reach a correct answer within eight attempts; it becomes less reliable
 at producing one on the first. Almost the entire drop occurs in the final
