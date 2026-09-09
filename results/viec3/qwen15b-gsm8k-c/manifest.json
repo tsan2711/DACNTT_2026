@@ -1,0 +1,43 @@
+{
+  "date": "2026-09-06",
+  "utc": "2026-09-06T05:56:09Z",
+  "viec": 3,
+  "mode": "hf",
+  "note": "mode=hf: Qwen/Qwen2.5-1.5B-Instruct LoRA SFT via transformers+peft+TRL. Kaggle T4 — paper numbers path (experiments/viec3/KAGGLE.md).",
+  "paper_quality": false,
+  "n": 500,
+  "rounds": 5,
+  "k": 8,
+  "max_tokens": 512,
+  "datasets": [
+    "gsm8k"
+  ],
+  "select_preset": "reward",
+  "exam_presets": [
+    "reward",
+    "default"
+  ],
+  "locked_exam": "reward",
+  "seed": 0,
+  "patch_verifier": false,
+  "holdout_frac": 0.3,
+  "n_select_items": 350,
+  "n_exam_items": 150,
+  "no_filter": false,
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "train": "hf-lora-sft",
+  "lora_iters": 0,
+  "lora_r": 16,
+  "lora_alpha": 32,
+  "hf_epochs": 1.0,
+  "math_verify_version": "0.9.0",
+  "antlr4_version": "4.13.2",
+  "mlx_lm_version": "not-installed",
+  "transformers_version": "5.0.0",
+  "peft_version": "0.19.1",
+  "trl_version": "1.12.0",
+  "n_records": 5,
+  "gold_urls": {
+    "gsm8k": "https://raw.githubusercontent.com/openai/grade-school-math/master/grade_school_math/data/test.jsonl"
+  }
+}

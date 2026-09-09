@@ -1,4 +1,22 @@
-# Khung bài báo — bản nháp (2026-09-03)
+# Khung bài báo — bản nháp (2026-09-03) — ⚠️ ĐÃ LỖI THỜI
+
+> **CẢNH BÁO (2026-09-09): file này giữ lại kết luận CŨ đã bị bác bỏ.**
+> Toàn bộ nội dung dưới đây dựng trên giả thuyết "verifier lệch-vì-văn-phong
+> gây sụp năng lực" — giả thuyết đó đã bị **bác bỏ trực tiếp** bởi thí
+> nghiệm đối chứng Run B (vá verifier, giữ nguyên mọi biến khác → không đổi
+> gì đo được). Xem `papers/KET-QUA-CO-LAP-AC.md`.
+>
+> **Nguồn đúng để đọc/sửa bây giờ:**
+> - Bản thảo bài báo: `papers/latex/paper.tex` (đã viết lại 2026-09-09)
+> - Số liệu + suy luận + việc còn lại: `papers/KET-QUA-CO-LAP-AC.md`
+> - Kịch bản trình bày: `THUYET-TRINH.md`
+>
+> Giữ file này lại **chỉ để tra cứu lịch sử** (câu chuyện ban đầu trông thế
+> nào, để viết phần "dự đoán sai" cho trung thực). **Không dùng nó làm nguồn
+> để viết bài.** Nếu cần một bản nháp tiếng Việt cập nhật, viết file mới
+> thay vì sửa file này.
+
+---
 
 Viết bằng tiếng Việt để dễ chỉnh, dịch sang tiếng Anh sau khi nội dung chốt
 (nếu yêu cầu nộp là tiếng Anh — kiểm tra `CAU-HOI-THAY.md`). Mỗi mục ghi rõ

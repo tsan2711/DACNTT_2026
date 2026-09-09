@@ -219,6 +219,29 @@ thêm thông tin.
 Không có ô nào trong bảng trên là "hỏng đề tài" — ô nào cũng cho một câu
 chuyện viết được, chỉ khác mức độ rộng/hẹp của claim chính.
 
+> **Cập nhật 2026-09-08 — A, B, C đã chạy đủ cả 3, kết quả rơi vào HÀNG THỨ 4
+> chưa có trong bảng trên** (cả 3 hàng đều giả định A "Sụp"). Số thật:
+>
+> | | A (MATH-500 gốc) | B (MATH-500 vá) | C (GSM8K gốc) |
+> |---|---|---|---|
+> | pass@1 vòng 0→4 | 32.0 → 29.3 (−2.7, rồi đứng) | 32.0 → 28.7 (−3.3, gần trùng A) | 66.7 → 54.0 (−12.7, dồn vòng cuối) |
+> | pass@8 vòng 0→4 | 57.3 → 56.0 (đứng) | 57.3 → 53.3 (dao động, gần trùng A) | 92.7 → 90.0 (đứng) |
+> | đa dạng đáp án | đi ngang (0.542→0.554) | đi ngang (0.542→0.555) | **tăng** (0.359→0.500) |
+>
+> **Kết luận hàng thứ 4:** A không sụp; **B ≈ A gần như trùng nhau** — vá
+> đúng chỗ verifier lệch không đổi gì đáng kể, đây là control 1-biến sạch
+> nên bác bỏ được **trực tiếp** giả thuyết gốc, không chỉ suy luận gián
+> tiếp qua nhiễm chéo; C chỉ erode pass@1 nhẹ ở vòng cuối, pass@8 giữ. Cú
+> sụp nặng (pass@8 −22…−26) của mọi lần chạy `--dataset both` cũ **không
+> tái lập** khi cô lập — phần lớn là hiện vật thiết kế đo (một adapter
+> chung trên hỗn hợp domain đã lọc + chấm trên chính đề đã train). ⇒ Claim
+> bài **thu hẹp** thành cảnh báo phương pháp luận về đánh giá GVT/STaR/
+> ReST-EM trên tập gộp nhiều bộ đề. Số liệu đầy đủ, 5 điểm "dự đoán sai",
+> caveat so-sánh, và việc còn phải làm: **`papers/KET-QUA-CO-LAP-AC.md`**
+> (nguồn chính để viết Results mới). Còn thiếu để chốt: seed lặp (ưu tiên
+> cao nhất còn lại — mọi kết luận trên mới 1 seed/nhánh), ablation
+> `--no-filter`.
+
 **Chi phí ước tính:** 3 lần chạy, mỗi lần n=500 (một bộ đề, không gộp) — mỗi
 lần ước tính **nhẹ hơn khoảng một nửa** so với 1 lần chạy `--dataset both`
 cũ (n=1000). Tổng 3 lần cô lập ước tính **thấp hơn hoặc tương đương** 2 lần

@@ -29,3 +29,10 @@ results/viec3/**/sft_data/
 # committed as before.
 results/viec3/**/generations.jsonl
 results/viec3/**/train_logs/
+# Raw Kaggle console logs downloaded alongside results (~1MB each, pure
+# stdout spam — same rationale as above).
+results/viec3/**/notebook*.log
+
+# Repo bundle uploaded to Kaggle as a dataset — build artifact, regenerate
+# instead of tracking.
+dacntt2026-kaggle.zip

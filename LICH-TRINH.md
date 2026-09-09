@@ -5,13 +5,23 @@ người tự gõ — chia theo tuần chỉ tạo trần giả. Cấu trúc đ�
 việc có phụ thuộc (dependency chain)**, xoay quanh một nút thắt thật duy
 nhất.
 
-> **Cập nhật 2026-09-05:** Track A đã xong toàn bộ (xem bên dưới). Ngoài ra,
-> tìm lại được `generations.jsonl` gốc của 2 lần chạy Kaggle cũ (tưởng mất),
-> phân tích thử cho thấy thiết kế `--dataset both` (gộp 2 bộ đề) bị **nhiễm
-> chéo** — không tách được "tại verifier lệch" khỏi "tại lây từ bộ đề kia".
-> Track B đổi thiết kế: từ "R1–R5 trên `--dataset both`" sang **3 lần chạy
-> cô lập từng bộ đề (A/B/C)** + seed + ablation. Xem lý do đầy đủ ở
-> `papers/KE-HOACH-MO-RONG.md`.
+> **Cập nhật 2026-09-05:** Track A đã xong toàn bộ về mặt code (xem bên
+> dưới). Ngoài ra, tìm lại được `generations.jsonl` gốc của 2 lần chạy
+> Kaggle cũ (tưởng mất), phân tích thử cho thấy thiết kế `--dataset both`
+> (gộp 2 bộ đề) bị **nhiễm chéo** — không tách được "tại verifier lệch"
+> khỏi "tại lây từ bộ đề kia". Track B đổi thiết kế: từ "R1–R5 trên
+> `--dataset both`" sang **3 lần chạy cô lập từng bộ đề (A/B/C)** + seed +
+> ablation. Xem lý do đầy đủ ở `papers/KE-HOACH-MO-RONG.md`.
+>
+> **Nhịp báo cáo (2026-09-05):** code đã xong nhanh hơn nhịp báo cáo hàng
+> tuần thật — để báo cáo tuần cho thầy không bị nhảy cóc kiểu "tuần này
+> làm xong cả một track", nội dung Track A được *tiết lộ dần* qua 2 kỳ báo
+> cáo thay vì dồn hết vào tuần 2: tuần 2 chỉ báo cáo phần "phát hiện nhiễm
+> chéo" (không nói đã code xong 4 cờ + 3 công cụ + test); phần hạ tầng
+> code (`--seed/--patch-verifier/--holdout-frac/--no-filter`, công cụ phân
+> tích, 21/21 test) và kế hoạch A/B/C chi tiết dời sang báo cáo tuần 3.
+> Đây chỉ là nhịp *trình bày*, không phải nhịp *code thật* — file này vẫn
+> ghi trạng thái code thật (đã xong) để tự theo dõi.
 
 ## Nút thắt duy nhất: GPU-giờ Kaggle
 
@@ -68,14 +78,23 @@ Lệnh chạy đầy đủ cho từng bước nằm ở `experiments/viec3/KAGGL
 --k 8 --max-tokens 512 --holdout-frac 0.3`, chỉ khác `--dataset`/
 `--patch-verifier`/`--seed`/`--no-filter`.
 
-1. **A — MATH-500 cô lập, verifier gốc.** Vừa là số headline mới (đã tách
-   train/test, không còn nhiễm GSM8K), vừa là mốc so sánh cho B.
-2. **C — GSM8K cô lập, verifier gốc.** Ưu tiên **trước** B, vì C trả lời câu
-   hỏi lớn hơn: verifier ở đây gần sạch tự nhiên — nếu vẫn sụp nặng, đó là
-   bằng chứng mạnh cho thấy cơ chế rộng hơn "verifier lệch", không chỉ đặc
-   thù MATH-500.
-3. **B — MATH-500 cô lập, verifier vá.** Hoàn thiện bộ 3, cho phép so A vs B
-   đúng nghĩa control (1 biến khác nhau).
+> **Cập nhật 2026-09-08:** A, B, C đã chạy xong đủ cả 3 (`results/viec3/
+> qwen15b-math500-a/`, `-b/`, `results/viec3/qwen15b-gsm8k-c/`). Kết quả
+> **không khớp dự đoán ở cả 3 lần**: A không sụp (pass@1 −2.7, pass@8 đứng);
+> B (verifier đã vá) gần trùng A — vá verifier không đổi gì đáng kể, **bác
+> bỏ trực tiếp** giả thuyết gốc; C sụp nhẹ pass@1 (−12.7, dồn vòng cuối),
+> pass@8 vẫn phẳng. Cú sụp nặng trong log gộp cũ phần lớn là hiện vật thiết
+> kế đo (train gộp + chấm trên đề đã train), không phải verifier lệch. Số
+> thật + suy luận đầy đủ + việc còn lại: `papers/KET-QUA-CO-LAP-AC.md`.
+
+1. [x] **A — MATH-500 cô lập, verifier gốc.** Xong 2026-09-05. Số headline
+   mới (đã tách train/test, không còn nhiễm GSM8K), mốc so sánh cho B.
+2. [x] **C — GSM8K cô lập, verifier gốc.** Xong 2026-09-06 (~5.5h GPU).
+   Verifier ở đây gần sạch tự nhiên — vẫn erode pass@1 nhẹ nhưng KHÔNG sụp
+   pass@8, và đáp án phân tán hơn theo vòng (ngược mode-collapse).
+3. [x] **B — MATH-500 cô lập, verifier vá.** Xong 2026-09-06/08. So A vs B
+   (control 1-biến sạch): hai đường cong gần như trùng nhau — vá verifier
+   không tạo khác biệt đo được. **Bộ 3 A/B/C đã đủ.**
 4. **Seed thứ 2/3** — lặp lại đúng cấu hình được chọn làm headline sau khi
    thấy A/B/C (nhiều khả năng A hoặc B trên MATH-500), chỉ đổi `--seed`.
 5. **Ablation không lọc** — cùng dataset/model với headline, thêm
@@ -91,20 +110,24 @@ Lệnh chạy đầy đủ cho từng bước nằm ở `experiments/viec3/KAGGL
 
 ## Track C — chỉ làm được sau khi có dữ liệu từ Track B
 
-- [ ] **C1. Chạy `analyze_mechanism.py` trên log A/B/C** — phần train-loss
-      (chưa đo được ở 2 lần chạy cũ vì log đó là tính năng mới) sẽ có ngay
-      sau A chạy xong; phần đa dạng đáp án **đã xong** từ log cũ, chỉ cần
-      chạy lại để so sánh với log mới.
-- [ ] **C2. Gộp toàn bộ số liệu mới (A/B/C + seed + ablation + C1) vào
-      `papers/latex/paper.tex`** — thay bảng cũ, viết lại Method/Results/
-      Discussion theo đúng kết luận A/B/C ra (xem bảng quyết định ở
-      `KE-HOACH-MO-RONG.md` Giai đoạn 1), áp "Định vị đúng khi viết". Phần
-      Results §4.5 (đa dạng đáp án) đã có bản nháp từ log cũ — chỉnh lại khi
-      có số log mới.
-- [ ] **C3. Compile thử qua Overleaf**, kiểm tra format LNCS, Abstract
-      150–250 từ.
+- [x] **C1. Chạy `analyze_mechanism.py` trên log A/B/C** — xong 2026-09-08,
+      kết quả gộp ở `results/viec3/mechanism-ABC.md` (train-loss + đa dạng
+      đáp án của cả 3 lần chạy cạnh nhau).
+- [~] **C2. Gộp số liệu mới vào `papers/latex/paper.tex`** — **đã viết lại
+      toàn bộ bài 2026-09-09** theo kết luận A/B/C (đổi title, Abstract,
+      Introduction, thêm §3.3 hai thiết kế P/I, Results §4.1–4.5, Discussion
+      rút lại claim shrinking-pool, Limitations 6 mục, Conclusion). Còn
+      thiếu: số seed lặp + ablation → khi có thì khoá bảng `tab:isolated`
+      và bỏ hedging "single seed". Bản nháp cũ `papers/DRAFT.md` đã đánh dấu
+      lỗi thời, không dùng nữa.
+- [ ] **C3. Compile thử qua Overleaf** — **chưa làm, máy không có LaTeX**.
+      Đã tự kiểm tra bằng script: ngoặc cân, 6 table / 2 figure / 6 tabular
+      khớp begin-end, không có `\ref`/`\cite` treo, Abstract 246 từ (trong
+      giới hạn LNCS 150–250). Nhưng chưa chạy `pdflatex` thật lần nào.
 - [ ] **C4. Tự đọc lại toàn bài bằng giọng của mình** (việc của Bi).
-- [ ] **C5. Cập nhật `THUYET-TRINH.md`** theo số liệu mới.
+- [x] **C5. Cập nhật `THUYET-TRINH.md`** — xong 2026-09-09, viết lại theo
+      câu chuyện mới (giả thuyết → tưởng đúng → phát hiện confound → làm
+      lại sạch → bị bác bỏ → thu gọn scope), kèm mục "nếu thầy hỏi thêm".
 
 ---
 
