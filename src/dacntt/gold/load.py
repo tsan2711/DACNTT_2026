@@ -7,7 +7,12 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
-from dacntt.gold.extract import extract_gsm8k_gold, extract_math500_gold
+from dacntt.gold.extract import (
+    extract_gsm8k_gold,
+    extract_math500_gold,
+    normalise_gsm8k_solution,
+    normalise_math500_solution,
+)
 from dacntt.gold.sources import DATASETS, GSM8K, MATH500, SOURCES, GoldSource
 
 _USER_AGENT = "dacntt-viec1/0.1 (research; gold answers only)"
@@ -19,6 +24,10 @@ class GoldItem:
     item_id: str
     gold: str
     problem: str = ""
+    #: The dataset's own worked solution, normalised to the answer format the
+    #: model is prompted for. Only used by the ``--train-on-gold`` control
+    #: (Giai đoạn 6); the GVT loop proper never reads it.
+    solution: str = ""
 
 
 def load_gold(
@@ -69,11 +78,13 @@ def _parse_jsonl(dataset: str, path: Path) -> list[GoldItem]:
 
 def _row_to_item(dataset: str, index: int, row: dict) -> GoldItem:
     if dataset == GSM8K:
+        gold = extract_gsm8k_gold(row["answer"])
         return GoldItem(
             dataset=dataset,
             item_id=str(index),
-            gold=extract_gsm8k_gold(row["answer"]),
+            gold=gold,
             problem=str(row.get("question", "")),
+            solution=normalise_gsm8k_solution(str(row.get("answer", "")), gold),
         )
     if dataset == MATH500:
         return GoldItem(
@@ -81,5 +92,8 @@ def _row_to_item(dataset: str, index: int, row: dict) -> GoldItem:
             item_id=str(row.get("unique_id", index)),
             gold=extract_math500_gold(row["answer"]),
             problem=str(row.get("problem", "")),
+            solution=normalise_math500_solution(
+                str(row.get("solution", "")), extract_math500_gold(row["answer"])
+            ),
         )
     raise ValueError(f"unknown dataset {dataset!r}")

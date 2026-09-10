@@ -132,6 +132,88 @@ def test_select_all_keeps_rejected_solutions_too() -> None:
     assert kept == [r"\boxed{10}", "11", "nope"]
 
 
+def test_train_on_gold_ignores_generations_entirely() -> None:
+    """Giai đoạn 6 control: with --train-on-gold the training set is the
+    dataset's reference solutions, one per train problem, regardless of what
+    the model generated or what the verifier thought of it."""
+    from dacntt.gold.load import GoldItem
+
+    items = [
+        GoldItem(
+            dataset="toy",
+            item_id=str(i),
+            gold="10",
+            problem=f"q{i}?",
+            solution=f"reference working {i}. The final answer is $\\boxed{{10}}$.",
+        )
+        for i in range(3)
+    ]
+    # Every generation is wrong, so a normal GVT round would train on nothing.
+    generator = ScriptedGenerate({f"q{i}?": ["99", "98"] for i in range(3)})
+    adapter = _adapter({"99": False, "98": False})
+    trainer = NoOpTrain()
+
+    records = run_rounds(
+        items,
+        generator=generator,
+        trainer=trainer,
+        select_adapter=adapter,
+        exam_adapters={"reward": adapter},
+        rounds=1,
+        k=2,
+        train_on_gold=True,
+    )
+
+    assert records[0].n_selected == 3, "one example per problem, not per sample"
+    assert [ex.solution for ex in trainer.examples] == [it.solution for it in items]
+    assert all("99" not in ex.solution for ex in trainer.examples)
+
+
+def test_train_on_gold_respects_the_holdout_split() -> None:
+    """The control must not leak exam problems into training just because it
+    stopped reading generations."""
+    from dacntt.gold.load import GoldItem
+
+    items = [
+        GoldItem(
+            dataset="toy", item_id=str(i), gold="10", problem=f"q{i}?", solution=f"sol{i}"
+        )
+        for i in range(4)
+    ]
+    generator = ScriptedGenerate({f"q{i}?": ["10", "11"] for i in range(4)})
+    trainer = NoOpTrain()
+
+    run_rounds(
+        items,
+        generator=generator,
+        trainer=trainer,
+        select_adapter=_adapter({"10": True, "11": False}),
+        exam_adapters={"reward": _adapter({"10": True, "11": False})},
+        rounds=1,
+        k=2,
+        train_item_ids=frozenset({"toy:0", "toy:1"}),
+        test_item_ids=frozenset({"toy:2", "toy:3"}),
+        train_on_gold=True,
+    )
+
+    assert [ex.solution for ex in trainer.examples] == ["sol0", "sol1"]
+
+
+def test_gsm8k_reference_solution_is_reformatted_for_the_prompt() -> None:
+    """Raw GSM8K solutions carry calculator spans and a `#### N` tail, neither
+    of which the model is prompted to produce. Training on them verbatim would
+    confound the control with a format shift."""
+    from dacntt.gold.extract import normalise_gsm8k_solution
+
+    raw = "She had 48 clips.\nShe sold <<48/2=24>>24 of them.\n#### 24"
+    out = normalise_gsm8k_solution(raw, "24")
+
+    assert "<<" not in out and ">>" not in out
+    assert "####" not in out
+    assert out.endswith("The final answer is $\\boxed{24}$.")
+    assert "She had 48 clips." in out
+
+
 def test_holdout_split_train_and_exam_never_overlap() -> None:
     """Giai đoạn 2: `select` only trains on train_item_ids, `exam` only scores
     test_item_ids — the fix for select+exam sharing the same test set."""

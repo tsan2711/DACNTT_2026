@@ -41,6 +41,7 @@ def run_rounds(
     train_item_ids: frozenset[str] | None = None,
     test_item_ids: frozenset[str] | None = None,
     select_all: bool = False,
+    train_on_gold: bool = False,
 ) -> list[RoundRecord]:
     """on_round, if given, runs after each round is appended — lets the
     caller write partial results to disk as it goes, so a long run (e.g.
@@ -57,6 +58,16 @@ def run_rounds(
     ``select_all`` (Giai đoạn 4 ablation): skip the verifier gate at select
     time, train on every generated solution regardless of correctness — see
     ``select_batch``.
+
+    ``train_on_gold`` (Giai đoạn 6 control): ignore the model's own
+    generations at select time and train on the dataset's reference solution
+    instead — one example per training problem, identical every round. This
+    is not a GVT variant; it is the control that separates "self-training
+    degrades the model" from "a short SFT pass on an already instruction-tuned
+    model degrades it regardless of where the text came from". Generation and
+    scoring are untouched, so the pass@* curve stays comparable. Note the
+    training set is smaller than the GVT pool (one solution per problem rather
+    than up to k), which is a difference the comparison has to carry.
     """
     records: list[RoundRecord] = []
     prev_flags: list[list[bool]] | None = None
@@ -77,6 +88,7 @@ def run_rounds(
             select_adapter,
             train_item_ids=train_item_ids,
             select_all=select_all,
+            train_on_gold=train_on_gold,
         )
         record.n_selected = len(examples)
         if train:
@@ -169,10 +181,15 @@ def _select_examples(
     *,
     train_item_ids: frozenset[str] | None = None,
     select_all: bool = False,
+    train_on_gold: bool = False,
 ) -> list[TrainExample]:
     examples: list[TrainExample] = []
     for item, texts in zip(items, generations):
         if train_item_ids is not None and _item_key(item) not in train_item_ids:
+            continue
+        if train_on_gold:
+            if item.solution:
+                examples.append(TrainExample(item.problem, item.solution))
             continue
         for solution in select_batch(item.gold, texts, adapter, select_all=select_all):
             examples.append(TrainExample(item.problem, solution))

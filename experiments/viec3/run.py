@@ -120,6 +120,19 @@ def main(argv: list[str] | None = None) -> int:
             "gate skipped (Giai đoạn 4 ablation)",
             file=sys.stderr,
         )
+    if args.train_on_gold:
+        missing = sum(1 for item in items if not item.solution)
+        if missing:
+            print(
+                f"WARNING: {missing}/{len(items)} items have no reference "
+                "solution; those problems contribute no training example",
+                file=sys.stderr,
+            )
+        print(
+            "train_on_gold=True: training on dataset reference solutions, not "
+            "model generations (Giai đoạn 6 control — NOT a GVT run)",
+            file=sys.stderr,
+        )
 
     def _save_partial(records_so_far: list[RoundRecord]) -> None:
         # Written after every round, not just at the end, so a run killed
@@ -151,6 +164,7 @@ def main(argv: list[str] | None = None) -> int:
         train_item_ids=train_ids,
         test_item_ids=test_ids,
         select_all=args.no_filter,
+        train_on_gold=args.train_on_gold,
     )
     write_reports(records, items, out_dir, args.k, args.select_preset)
     write_manifest(
@@ -414,6 +428,7 @@ def _manifest(
         "n_select_items": len(train_ids) if train_ids is not None else len(items),
         "n_exam_items": len(test_ids) if test_ids is not None else len(items),
         "no_filter": args.no_filter,
+        "train_on_gold": args.train_on_gold,
         "model": args.model if mode in ("mlx", "hf") else "scripted-from-gold",
         "train": {"mlx": "mlx-lora-sft", "hf": "hf-lora-sft"}.get(mode, "noop"),
         "lora_iters": args.lora_iters if mode == "mlx" else 0,
@@ -503,6 +518,15 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         action="store_true",
         help="Giai đoạn 4 ablation: skip the verifier gate at select time, "
         "train on every generated solution regardless of correctness",
+    )
+    parser.add_argument(
+        "--train-on-gold",
+        action="store_true",
+        help="Giai đoạn 6 control: train on the dataset's own reference "
+        "solution instead of the model's generations (one example per train "
+        "problem, same every round). Separates 'self-training degrades the "
+        "model' from 'any short SFT pass degrades an instruction-tuned model'. "
+        "Generation and scoring are unchanged, so pass@* stays comparable.",
     )
     return parser.parse_args(argv)
 
