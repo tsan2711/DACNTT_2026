@@ -1,13 +1,17 @@
 # Kịch bản nói — báo cáo tuần 1 đến tuần 3 (12/9/2026)
 
-Đi kèm `BaoCaoTienDo_Tuan1-3_52300057_52300006.pptx`, 16 slide.
-Tổng khoảng **13–15 phút**. Đọc to thử ít nhất một lần trước khi vào.
+Đi kèm `BaoCaoTienDo_Tuan1-3_52300057_52300006.pptx`, 17 slide.
+Tổng khoảng **14–16 phút**. Đọc to thử ít nhất một lần trước khi vào.
+
+**Lưu ý về cách xưng hô:** slide viết ở giọng trung tính, không có "em" hay
+"thầy" — vì slide là để cả phòng đọc. Còn lời nói thì vẫn xưng "em" bình
+thường, và mở đầu chào cả thầy lẫn các bạn.
 
 **Ba điều cần nhớ khi nói:**
 1. Đây là bài kể chuyện "em tưởng đúng, hoá ra sai". Đừng né chỗ sai —
-   nói thẳng thì thành điểm mạnh, nói vòng thì thầy sẽ hỏi tới.
+   nói thẳng thì thành điểm mạnh, nói vòng thì kiểu gì cũng bị hỏi tới.
 2. Chỗ quan trọng nhất là **slide 11** (hai đường chồng lên nhau). Nói chậm
-   lại ở đó, dừng 2 giây cho thầy nhìn hình.
+   lại ở đó, dừng 2 giây cho mọi người nhìn hình.
 3. Số nào cũng nói kèm ý nghĩa. Đừng đọc "hai mươi hai phẩy bốn điểm" trống
    không, mà nói "tụt hơn hai mươi điểm, tức là mất gần một phần ba".
 
@@ -15,9 +19,9 @@ Tổng khoảng **13–15 phút**. Đọc to thử ít nhất một lần trư�
 
 ## Slide 1 — Bìa  ·  ~20 giây
 
-> Dạ em chào thầy. Hôm nay em báo cáo ba tuần đầu của đề tài.
+> Dạ em chào thầy, chào các bạn. Hôm nay em báo cáo ba tuần đầu của đề tài.
 >
-> Em xin nói trước kết quả chính luôn cho thầy dễ theo dõi: em có một giả
+> Em xin nói trước kết quả chính cho dễ theo dõi: em có một giả
 > thuyết, em chạy thí nghiệm và ban đầu tưởng là đúng. Nhưng sau đó em phát
 > hiện cách đo của mình có lỗi. Em đo lại cho đúng, thì kết quả ngược lại.
 > Giả thuyết của em sai.
@@ -28,8 +32,8 @@ Tổng khoảng **13–15 phút**. Đọc to thử ít nhất một lần trư�
 
 ## Slide 2 — Nội dung  ·  ~15 giây
 
-> Em sẽ đi theo thứ tự này: đề tài là gì, máy chấm sai chỗ nào, rồi hai lần
-> chạy đầu, chỗ em thấy không ổn, và cuối cùng là em đo lại ra sao.
+> Phần trình bày đi theo thứ tự này: bối cảnh đề tài, lỗi của máy chấm, kết
+> quả hai tuần đầu, vấn đề trong thiết kế, và cuối cùng là thí nghiệm làm lại.
 
 ---
 
@@ -73,7 +77,7 @@ Tổng khoảng **13–15 phút**. Đọc to thử ít nhất một lần trư�
 > Đây là chỗ máy chấm sai. Giả sử đáp án đúng của bài là một nửa.
 >
 > Model viết `\frac{1}{2}` thì máy chấm nhận. Nhưng model viết `\dfrac{1}{2}`
-> thì máy chấm gạch. Thầy nhìn cột giữa — hai cách viết đó **hiện ra y hệt
+> thì máy chấm gạch. Mọi người nhìn cột giữa — hai cách viết đó **hiện ra y hệt
 > nhau**, cùng là một phần hai. Chỉ khác cách gõ thôi.
 >
 > Em thử 146 lần thì gạch cả 146 lần, không trượt lần nào.
@@ -84,7 +88,7 @@ Tổng khoảng **13–15 phút**. Đọc to thử ít nhất một lần trư�
 > bảy phẩy tám phần trăm. Riêng bộ GSM8K thì không gạch nhầm bài nào, vì đáp
 > án bộ đó toàn số nguyên, không có phân số.
 
-*Nếu thầy hỏi ngay "sao không sửa máy chấm đi" — trả lời: "Dạ em có sửa,
+*Nếu có người hỏi ngay "sao không sửa máy chấm đi" — trả lời: "Dạ có sửa,
 đó là thí nghiệm ở slide 11 ạ." Rồi đi tiếp, đừng nhảy cóc.*
 
 ---
@@ -111,7 +115,7 @@ Tổng khoảng **13–15 phút**. Đọc to thử ít nhất một lần trư�
 > Vòng nào cũng tụt, không vòng nào gượng lại. Đến đây em gần như tin chắc là
 > giả thuyết của mình đúng rồi.
 >
-> Nhưng có một chỗ em thấy lạ. Thầy nhìn hai dòng dưới: em tách số ra theo
+> Nhưng có một chỗ em thấy lạ. Mọi người nhìn hai dòng dưới: em tách số ra theo
 > từng bộ đề, thì **GSM8K lại tụt nhiều nhất** — hai mươi lăm điểm.
 >
 > Mà GSM8K chính là bộ mà máy chấm gần như không gạch nhầm bài nào. Theo giả
@@ -119,7 +123,8 @@ Tổng khoảng **13–15 phút**. Đọc to thử ít nhất một lần trư�
 >
 > Chi tiết này làm em quay lại soi thiết kế thí nghiệm.
 
-*Đây là bản lề của cả bài. Nói chậm đoạn "mà GSM8K chính là bộ...".*
+*Đây là bản lề của cả bài. Nói chậm đoạn "mà GSM8K chính là bộ...", và nhìn
+xuống phòng một nhịp — đây là lúc người nghe phải thấy có gì đó sai.*
 
 ---
 
@@ -127,7 +132,7 @@ Tổng khoảng **13–15 phút**. Đọc to thử ít nhất một lần trư�
 
 > Soi lại thì em thấy cách đo của mình có hai lỗi.
 >
-> **Lỗi thứ nhất.** Em gộp hai bộ đề lại rồi dạy chung một lần. Thầy nhìn
+> **Lỗi thứ nhất.** Em gộp hai bộ đề lại rồi dạy chung một lần. Mọi người nhìn
 > dòng cuối bảng: trong đống bài đem đi dạy mỗi vòng, GSM8K chiếm gần 70%,
 > vòng nào cũng vậy.
 >
@@ -151,7 +156,7 @@ Tổng khoảng **13–15 phút**. Đọc to thử ít nhất một lần trư�
 > Mỗi lần chỉ chạy một bộ đề thôi, không gộp nữa. Và em giữ riêng 30% số đề
 > làm đề thi, model chưa từng được học mấy đề đó.
 >
-> Thầy để ý hai dòng in đậm. Lần chạy A và lần chạy B **giống hệt nhau**, chỉ
+> Mọi người để ý hai dòng in đậm. Lần chạy A và lần chạy B **giống hệt nhau**, chỉ
 > khác đúng một chỗ: ở B em đã sửa lỗi của máy chấm.
 >
 > Nếu giả thuyết của em đúng, thì B phải khá hơn A rõ rệt. Đây là phép thử
@@ -166,7 +171,7 @@ Tổng khoảng **13–15 phút**. Đọc to thử ít nhất một lần trư�
 
 > Đây là kết quả. Trục đứng là pass@8, tức là model còn giải nổi bài không.
 >
-> Hai đường màu cam là cách đo cũ. Thầy thấy nó lao xuống, mất hai mươi hai
+> Hai đường màu cam là cách đo cũ. Mọi người thấy nó lao xuống, mất hai mươi hai
 > đến hai mươi sáu điểm.
 >
 > Ba đường còn lại là cách đo mới. Gần như nằm ngang. Không tụt.
@@ -185,7 +190,7 @@ Tổng khoảng **13–15 phút**. Đọc to thử ít nhất một lần trư�
 > Đường xanh là máy chấm để nguyên. Đường cam là máy chấm **đã sửa**. Mọi thứ
 > khác giống hệt nhau.
 >
-> Thầy thấy hai đường nằm chồng lên nhau. Ở lần chạy thứ hai, từ vòng 2 trở
+> Hai đường nằm chồng lên nhau. Ở lần chạy thứ hai, từ vòng 2 trở
 > đi, hai con số **giống hệt nhau**, không lệch một chữ số nào.
 >
 > Em sửa đúng cái lỗi mà cả đề tài cho là nguyên nhân. Sửa xong, điểm không
@@ -224,7 +229,7 @@ Tổng khoảng **13–15 phút**. Đọc to thử ít nhất một lần trư�
 
 ---
 
-## Slide 13 — Đề tài đi tiếp  ·  ~50 giây
+## Slide 13 — Phạm vi đề tài  ·  ~50 giây
 
 > Vậy đề tài đi tiếp thế nào.
 >
@@ -243,7 +248,36 @@ Tổng khoảng **13–15 phút**. Đọc to thử ít nhất một lần trư�
 
 ---
 
-## Slide 14 — Chỗ còn chưa chắc  ·  ~50 giây
+## Slide 14 — Đề tài tiếp theo  ·  ~70 giây
+
+> Từ kết quả ba tuần qua, em rút ra được một quy luật: tác động của lỗi máy
+> chấm bằng **mức nặng nhân tần suất**.
+>
+> Nhưng em mới đo được đúng một điểm trên quy luật đó thôi — cái điểm mà tần
+> suất quá thấp nên không thấy gì. Em chưa chứng minh được quy luật, em mới
+> chỉ dùng nó để giải thích một kết quả âm tính.
+>
+> Nên đề tài tiếp theo của em là đi đo cái ngưỡng đó. Cách làm rất đơn giản:
+> giữ nguyên toàn bộ vòng lặp, chỉ đổi chỗ máy chấm bị lệch thôi.
+>
+> Lần vừa rồi máy chấm gạch cách viết `\dfrac`, mà cách đó chỉ xuất hiện ở
+> khoảng nửa phần trăm số bài. Lần tới em sẽ bắt nó gạch cách viết `\boxed`
+> — cách này model dùng trong hơn một nửa số bài, tức là phổ biến gấp khoảng
+> **chín mươi lần**.
+>
+> Nếu lúc đó model bắt đầu tụt điểm thật, thì quy luật kia được chứng minh
+> bằng thực nghiệm. Và quan trọng hơn, đề tài sẽ có một con số dùng được cho
+> người khác: lỗi máy chấm phải phổ biến tới mức nào thì mới đáng lo.
+>
+> Đây là điểm em thấy đáng làm nhất, vì nó là kết quả dương chứ không phải
+> một kết luận âm tính nữa.
+
+*Đây là slide bán đề tài mới. Nói dứt khoát, đừng rào đón. Nhấn chữ
+"chín mươi lần" — đó là cái làm người nghe thấy thí nghiệm này hợp lý.*
+
+---
+
+## Slide 15 — Chỗ còn chưa chắc  ·  ~50 giây
 
 > Em xin nói một chỗ em còn chưa chắc.
 >
@@ -263,7 +297,7 @@ Tổng khoảng **13–15 phút**. Đọc to thử ít nhất một lần trư�
 
 ---
 
-## Slide 15 — Chỗ còn yếu  ·  ~40 giây
+## Slide 16 — Chỗ còn yếu  ·  ~40 giây
 
 > Em xin nói trước mấy chỗ còn yếu.
 >
@@ -277,7 +311,7 @@ Tổng khoảng **13–15 phút**. Đọc to thử ít nhất một lần trư�
 
 ---
 
-## Slide 16 — Tóm tắt  ·  ~30 giây
+## Slide 17 — Tóm tắt  ·  ~30 giây
 
 > Tóm lại ba tuần vừa rồi: em chạy bảy lần, khoảng 40 giờ GPU. Em dựng một
 > thí nghiệm để kiểm tra giả thuyết của chính mình, và nó cho thấy em sai. Lý
@@ -285,13 +319,14 @@ Tổng khoảng **13–15 phút**. Đọc to thử ít nhất một lần trư�
 >
 > Đề tài chuyển sang cảnh báo về cách đo. Nhỏ hơn, nhưng em chắc chắn.
 >
-> Sắp tới em chạy nốt thí nghiệm phân định, rồi viết lại bài báo.
+> Sắp tới em chạy thí nghiệm điều khiển tần suất lỗi, để tìm cái ngưỡng đó,
+> rồi viết lại bài báo.
 >
-> Em cảm ơn thầy. Mong thầy góp ý giúp em ạ.
+> Em cảm ơn thầy và các bạn đã theo dõi. Rất mong nhận được góp ý ạ.
 
 ---
 
-# Nếu thầy hỏi thêm
+# Nếu bị hỏi thêm
 
 **"Vậy ba tuần vừa rồi có phí không?"**
 > Dạ không ạ. Toàn bộ code, dữ liệu, và mấy lần chạy vẫn dùng được. Cái đổi
@@ -313,11 +348,17 @@ Tổng khoảng **13–15 phút**. Đọc to thử ít nhất một lần trư�
 > đường cũng chồng lên nhau. Còn phần so sánh cách đo cũ với cách đo mới thì
 > em chưa dám chắc hoàn toàn, vì đổi ba thứ cùng lúc.
 
+**"Đề tài mới có khác đề tài cũ nhiều quá không?"**
+> Dạ không ạ, vẫn cùng một câu hỏi gốc: lỗi máy chấm ảnh hưởng thế nào tới
+> tự học. Chỉ khác là trước em hỏi "có ảnh hưởng không", giờ em hỏi "ảnh
+> hưởng từ mức nào". Toàn bộ code và dữ liệu cũ vẫn dùng lại được, em chỉ
+> cần thêm một tuỳ chọn cho máy chấm thôi.
+
 **"Bước tiếp theo cụ thể là gì?"**
 > Dạ ba việc ạ. Một là chạy thí nghiệm dạy bằng lời giải mẫu, để biết cú tụt
-> là do tự học hay do việc dạy thêm. Hai là chạy lặp thêm cho lần chạy C.
-> Ba là viết lại bài báo — em viết lại phần lớn rồi, chờ số cuối để chốt bảng
-> kết quả.
+> là do tự học hay do việc dạy thêm. Hai là chạy thí nghiệm điều khiển tần
+> suất lỗi — bắt máy chấm gạch cách viết phổ biến, xem ngưỡng gây hại nằm ở
+> đâu. Ba là viết lại bài báo theo kết luận mới.
 
 **"Sao chỉ chạy model 1.5B, không chạy to hơn?"**
 > Dạ vì em chạy trên Kaggle miễn phí, mỗi phiên tối đa 12 tiếng. Một lần chạy
