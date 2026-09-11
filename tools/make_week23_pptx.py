@@ -1,0 +1,405 @@
+"""Combined week 2-3 progress deck.
+
+One arc instead of two: hypothesis -> apparent confirmation -> the confound
+-> the corrected experiment -> refutation -> cause -> narrowed scope. Told in
+one sitting it lands as rigour; split across two decks the second half reads
+as backtracking.
+
+Design constants match the week-2 deck (Cambria; red 7A1F2B, ink 2A251D,
+muted 5C5447, gold 9C772B) so the series stays visually consistent.
+"""
+
+from pptx import Presentation
+from pptx.util import Emu, Pt
+from pptx.dml.color import RGBColor
+from pptx.enum.text import PP_ALIGN
+from pptx.enum.shapes import MSO_CONNECTOR
+
+OUT = "/Users/tsangcuteso1/Documents/GitHub/DACNTT_2026/BaoCaoTienDo_Tuan2-3_52300057_52300006.pptx"
+
+RED = RGBColor(0x7A, 0x1F, 0x2B)
+INK = RGBColor(0x2A, 0x25, 0x1D)
+MUTED = RGBColor(0x5C, 0x54, 0x47)
+GOLD = RGBColor(0x9C, 0x77, 0x2B)
+HAIR = RGBColor(0xD8, 0xD2, 0xC6)
+FONT = "Cambria"
+
+L = 777240
+W = 10637215
+KICKER = "BÁO CÁO TUẦN 2–3 — VERIFIER LỆCH VĂN PHONG TRONG SELF-TRAINING"
+
+prs = Presentation()
+prs.slide_width = Emu(12191695)
+prs.slide_height = Emu(6858000)
+BLANK = prs.slide_layouts[6]
+
+
+def tb(slide, left, top, width, height, text, *, size, bold=False, color=INK,
+       align=PP_ALIGN.LEFT, spacing=None):
+    box = slide.shapes.add_textbox(Emu(left), Emu(top), Emu(width), Emu(height))
+    tf = box.text_frame
+    tf.word_wrap = True
+    for i, line in enumerate(text.split("\n")):
+        para = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        para.alignment = align
+        if spacing:
+            para.space_after = Pt(spacing)
+        run = para.add_run()
+        run.text = line
+        run.font.name = FONT
+        run.font.size = Pt(size)
+        run.font.bold = bold
+        run.font.color.rgb = color
+    return box
+
+
+def rule(slide, left, top, width, color=HAIR, pt=0.75):
+    c = slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, Emu(left), Emu(top),
+                                   Emu(left + width), Emu(top))
+    c.line.color.rgb = color
+    c.line.width = Pt(pt)
+    return c
+
+
+def vrule(slide, left, top, height, color=GOLD, pt=1.5):
+    c = slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, Emu(left), Emu(top),
+                                   Emu(left), Emu(top + height))
+    c.line.color.rgb = color
+    c.line.width = Pt(pt)
+    return c
+
+
+def header(slide, num, label, title):
+    tb(slide, L, 320040, 7315200, 274320, KICKER, size=9.5, color=MUTED)
+    tb(slide, 10042855, 320040, 1371600, 274320, f"{num:02d}", size=9.5, color=MUTED)
+    rule(slide, L, 621792, W)
+    tb(slide, L, 777240, W, 320040, label, size=13, bold=True, color=RED)
+    tb(slide, L, 1078992, W, 868680, title, size=27, bold=True, color=INK)
+
+
+def footnote(slide, text):
+    tb(slide, L, 6355080, W, 365760, text, size=9.5, color=MUTED)
+
+
+def table(slide, top, cols, rows, *, hsize=12, rsize=11.5, rowh=470000,
+          bold_row=None, mute_row=None):
+    """cols = [(x, width, heading)]; rows = [tuple of cell strings]."""
+    for x, w, h in cols:
+        tb(slide, x, top, w, 420000, h, size=hsize, bold=True, color=GOLD)
+    y = top + 420000
+    rule(slide, L, y, W)
+    for i, row in enumerate(rows):
+        bold = bold_row(i) if bold_row else False
+        col = MUTED if (mute_row and mute_row(i)) else INK
+        for (x, w, _), val in zip(cols, row):
+            tb(slide, x, y + 55000, w, 420000, val, size=rsize, bold=bold, color=col)
+        y += rowh
+        rule(slide, L, y, W)
+    return y
+
+
+def new():
+    return prs.slides.add_slide(BLANK)
+
+
+# ------------------------------------------------------------------ 1 title
+s = new()
+rule(s, L, 822960, 1005840)
+tb(s, L, 960120, W, 365760, "BÁO CÁO TIẾN ĐỘ — TUẦN 2 VÀ 3", size=14, bold=True, color=RED)
+tb(s, L, 1554480, 10515600, 1750000,
+   "Giả thuyết trung tâm bị bác bỏ bằng\nthí nghiệm đối chứng — và vì sao",
+   size=32, bold=True, color=INK)
+rule(s, L, 3400000, 10607040)
+tb(s, L, 3620000, 10515600, 1150000,
+   "Hai tuần: từ chỗ tưởng đã xác nhận được giả thuyết, đến chỗ phát hiện thiết kế đo có lỗ\n"
+   "hổng, làm lại cho sạch, và bác bỏ chính giả thuyết của mình. Báo cáo trình bày bằng\n"
+   "chứng, nguyên nhân đo được, và phạm vi đề tài thu hẹp lại như thế nào.",
+   size=16, color=MUTED, spacing=6)
+tb(s, L, 5806440, 8229600, 548640, "Nguyễn Tấn Sang   ·   12 tháng 9, 2026",
+   size=13, bold=True, color=INK)
+
+# ----------------------------------------------------------------- 2 agenda
+s = new()
+header(s, 1, "NỘI DUNG", "Những gì trình bày hôm nay")
+items = [
+    "Câu hỏi nghiên cứu và giả thuyết ban đầu",
+    "Kết quả đầu tiên: cả hai model đều sụp — tưởng đã xác nhận",
+    "Phát hiện: thiết kế đo có hai lỗ hổng",
+    "Làm lại cho sạch: 5 thí nghiệm cô lập, có đối chứng",
+    "Đối chứng quyết định, và vì sao kết quả lại như vậy",
+    "Đề tài thu hẹp lại ra sao, và việc còn phải làm",
+]
+y = 2057399
+for i, t in enumerate(items, 1):
+    tb(s, L, y, 548640, 420000, f"{i:02d}", size=14, bold=True, color=GOLD)
+    tb(s, 1417320, y, 9997135, 420000, t, size=14.5, color=INK)
+    rule(s, 1417320, y + 480000, 9997135)
+    y += 620000
+
+# ------------------------------------------------------- 3 question
+s = new()
+header(s, 2, "CÂU HỎI NGHIÊN CỨU", "Máy chấm tự động có làm ảo hoá việc “tự cải thiện”?")
+vrule(s, L, 1920239, 1150000)
+tb(s, 1033272, 1874519, 10381183, 1100000,
+   "“Cho model tự sinh lời giải, dùng máy chấm tự động lọc bài đúng, rồi dạy lại chính nó,\n"
+   "lặp nhiều vòng. Nếu máy chấm sai có quy luật, liệu model có chỉ giỏi lên ở việc viết\n"
+   "đúng kiểu máy chấm ưa, thay vì giỏi toán thật?”",
+   size=15, color=INK, spacing=4)
+rule(s, L, 3450000, W)
+tb(s, L, 3650000, W, 400000,
+   "Em đã đo độ lệch của máy chấm trước khi chạy, không phải giả định:",
+   size=13, bold=True, color=MUTED)
+for i, (big, cap) in enumerate([
+    ("100%", "Lời giải ĐÚNG nhưng viết \\dfrac thay vì\n\\frac bị gạch — 146/146 lần."),
+    ("7,8%", "Tỉ lệ gạch nhầm bài đúng trên MATH-500,\nkiểm tra thủ công từng bài."),
+    ("0%", "Trên GSM8K — đáp án là số nguyên,\nmáy chấm gần như không lệch."),
+]):
+    x = L + i * 3579000
+    tb(s, x, 4150000, 3400000, 650000, big, size=34, bold=True, color=GOLD)
+    tb(s, x, 4880000, 3400000, 1000000, cap, size=12, color=INK, spacing=3)
+footnote(s, "Giả thuyết: độ lệch một chiều này lặp qua nhiều vòng sẽ làm tập train co hẹp và lệch dần → model sụp.")
+
+# ------------------------------------------------------- 4 GVT process
+s = new()
+header(s, 3, "QUY TRÌNH", "Một vòng Generate → Verify → Train")
+for i, (h, d) in enumerate([
+    ("1. Generate", "Model sinh k lời giải cho mỗi đề\n(k=8), bằng sampling."),
+    ("2. Verify", "Máy chấm so đáp án cuối với đáp án\nchuẩn — chỉ giữ bài được chấm đúng."),
+    ("3. Train", "Fine-tune LoRA trên đúng các lời giải\nvừa giữ, rồi lặp lại vòng mới."),
+]):
+    x = L + i * 3579000
+    tb(s, x, 1947672, 3400000, 500000, h, size=16, bold=True, color=GOLD)
+    tb(s, x, 2500000, 3400000, 1300000, d, size=13, color=INK, spacing=4)
+rule(s, L, 4000000, W)
+tb(s, L, 4220000, W, 1300000,
+   "Điểm mấu chốt: mỗi vòng train một adapter MỚI từ model gốc, chỉ học trên tập bài mà máy chấm\n"
+   "đã chấp nhận ở vòng trước. Nếu máy chấm gạch oan theo một hướng cố định, tập train mỗi vòng\n"
+   "sẽ lệch dần theo hướng đó — và vì tập đó do chính vòng trước sinh ra, độ lệch không tự triệt tiêu.",
+   size=13, color=INK, spacing=5)
+tb(s, L, 5600000, W, 400000,
+   "Hai thước đo dùng xuyên suốt: pass@1 = làm 1 lần có đúng không. pass@8 = cho làm 8 lần, có lần nào đúng không.",
+   size=12, bold=True, color=MUTED)
+
+# ------------------------------------------------------- 5 first results
+s = new()
+header(s, 4, "KẾT QUẢ ĐẦU TIÊN", "Cả hai model đều sụp — tưởng đã xác nhận giả thuyết")
+cols = [(L, 3000000, "Đo trên"), (3977240, 2300000, "pass@1 vòng 0→4"),
+        (6277240, 2300000, "pass@8 vòng 0→4"), (8577240, 2600000, "Mức giảm pass@8")]
+rows = [
+    ("Qwen 0.5B — gộp 2 bộ đề", "31,1% → 27,4%", "60,5% → 54,9%", "−5,6 điểm"),
+    ("Qwen 1.5B — gộp 2 bộ đề", "50,0% → 18,6%", "72,6% → 48,6%", "−24,0 điểm"),
+    ("1.5B, tách riêng GSM8K", "69,6% → 26,6%", "91,4% → 65,8%", "−25,6 điểm"),
+    ("1.5B, tách riêng MATH-500", "30,4% → 10,6%", "53,8% → 31,4%", "−22,4 điểm"),
+]
+y = table(s, 2100000, cols, rows, bold_row=lambda i: i == 1)
+tb(s, L, y + 200000, W, 1100000,
+   "Giảm liên tục qua cả 5 vòng, không vòng nào tăng lại, và model to hơn sụp nặng hơn hẳn.\n"
+   "Nếu dừng ở đây, đây là một kết quả rất đẹp cho giả thuyết ban đầu.\n"
+   "Nhưng có một chi tiết không khớp: GSM8K — bộ mà máy chấm gần như KHÔNG lệch — lại sụp nhiều nhất.",
+   size=12.5, color=INK, spacing=5)
+footnote(s, "Kaggle T4; 500 đề mỗi bộ, k=8, 5 vòng; --dataset both (gộp cả hai bộ đề).")
+
+# ------------------------------------------------------- 6 the confound
+s = new()
+header(s, 5, "PHÁT HIỆN", "Thiết kế đo có hai lỗ hổng, không trả lời được câu hỏi")
+tb(s, L, 1947672, W, 400000,
+   "Lỗ hổng 1 — hai bộ đề bị trộn chung vào MỘT adapter khi train:",
+   size=13, bold=True, color=INK)
+cols = [(L, 3300000, "Tỉ lệ trong tập train"), (4177240, 1400000, "Vòng 0"),
+        (5577240, 1400000, "1"), (6977240, 1400000, "2"),
+        (8377240, 1400000, "3"), (9777240, 1400000, "4")]
+rows = [
+    ("Lời giải giữ — GSM8K", "2725", "2551", "2356", "1837", "1100"),
+    ("Lời giải giữ — MATH-500", "1237", "1179", "1039", "800", "466"),
+    ("% GSM8K trong tập train", "68,8%", "68,4%", "69,4%", "69,7%", "70,2%"),
+]
+y = table(s, 2450000, cols, rows, hsize=11.5, rsize=11.5, rowh=440000,
+          bold_row=lambda i: i == 2)
+tb(s, L, y + 150000, W, 700000,
+   "Tập train luôn nghiêng ~69% về GSM8K. Điểm của MATH-500 vì thế phụ thuộc vào chuyện xảy ra\n"
+   "bên GSM8K, và ngược lại — không cách nào tách “tại verifier lệch” khỏi “tại lây từ bộ kia”.",
+   size=12, color=INK, spacing=4)
+rule(s, L, y + 950000, W)
+tb(s, L, y + 1100000, W, 700000,
+   "Lỗ hổng 2 — chấm điểm trên chính những đề đã dùng để chọn bài train.\n"
+   "Nên “sụp” có thể chỉ là hết thuộc bài, không phải mất năng lực thật.",
+   size=13, bold=True, color=RED, spacing=4)
+
+# ------------------------------------------------------- 7 redesign
+s = new()
+header(s, 6, "LÀM LẠI CHO SẠCH", "Năm lần chạy cô lập, có đối chứng kiểm soát biến")
+tb(s, L, 1947672, W, 420000,
+   "Tất cả: Qwen2.5-1.5B, 500 đề, 5 vòng, k=8, tách riêng 30% đề làm đề thi chưa từng dùng để train.",
+   size=12.5, color=MUTED)
+cols = [(L, 2600000, "Lần chạy"), (3400000, 2500000, "Bộ đề"),
+        (5900000, 2500000, "Verifier"), (8400000, 1500000, "Seed"),
+        (9900000, 1500000, "GPU")]
+rows = [
+    ("A", "MATH-500", "gốc", "0", "~5 giờ"),
+    ("A — lặp lại", "MATH-500", "gốc", "1", "~5 giờ"),
+    ("B  (đối chứng)", "MATH-500", "ĐÃ VÁ", "0", "~5 giờ"),
+    ("B — lặp lại", "MATH-500", "ĐÃ VÁ", "1", "~5 giờ"),
+    ("C", "GSM8K", "gốc", "0", "~5,5 giờ"),
+]
+y = table(s, 2500000, cols, rows, hsize=12, rsize=12, rowh=480000)
+tb(s, L, y + 180000, W, 900000,
+   "A và B khác nhau đúng MỘT biến: verifier có được vá hay không. Đây là thí nghiệm đối chứng mà\n"
+   "thiết kế cũ không thể có — và là phép thử trực tiếp cho giả thuyết của đề tài.",
+   size=12.5, color=INK, spacing=4)
+footnote(s, "Tổng ~25 giờ GPU Kaggle, chia nhiều phiên; kết quả lưu sau mỗi vòng để không mất khi phiên bị ngắt.")
+
+# ------------------------------------------------------- 8 no collapse
+s = new()
+header(s, 7, "KẾT QUẢ", "Cú sụp không tái lập khi đo đúng cách")
+cols = [(L, 3200000, "Đo trên"), (3977240, 2300000, "pass@1 vòng 0→4"),
+        (6277240, 2300000, "pass@8 vòng 0→4"), (8577240, 2800000, "Kết luận")]
+rows = [
+    ("Thiết kế CŨ — gộp, GSM8K", "69,6% → 26,6%", "91,4% → 65,8%", "sụp nặng"),
+    ("Thiết kế CŨ — gộp, MATH-500", "30,4% → 10,6%", "53,8% → 31,4%", "sụp nặng"),
+    ("A — MATH-500 cô lập", "32,0% → 29,3%", "57,3% → 56,0%", "KHÔNG sụp"),
+    ("A — lặp lại seed khác", "36,7% → 33,3%", "58,7% → 58,7%", "KHÔNG sụp"),
+    ("C — GSM8K cô lập", "66,7% → 54,0%", "92,7% → 90,0%", "pass@8 giữ nguyên"),
+]
+y = table(s, 2000000, cols, rows, bold_row=lambda i: i >= 2,
+          mute_row=lambda i: i < 2)
+tb(s, L, y + 180000, W, 950000,
+   "Cột pass@8 là cột quan trọng: nó đo “model còn giải được bài không nếu cho thử 8 lần”.\n"
+   "Thiết kế cũ mất 22–26 điểm. Cô lập xong, pass@8 gần như đứng yên ở mọi lần chạy.\n"
+   "Phần “mất năng lực” biến mất — nó đến từ cách đo, không phải từ verifier.",
+   size=12.5, color=INK, spacing=4)
+
+# ------------------------------------------------------- 9 control
+s = new()
+header(s, 8, "ĐỐI CHỨNG QUYẾT ĐỊNH", "Vá verifier không thay đổi bất cứ điều gì")
+tb(s, L, 1947672, W, 400000,
+   "A và B giống hệt nhau mọi mặt, chỉ khác: B đã vá đúng chỗ verifier chấm sai.",
+   size=13, color=MUTED)
+cols = [(L, 2600000, "pass@1 mỗi vòng"), (3400000, 1500000, "Vòng 0"),
+        (4900000, 1500000, "1"), (6400000, 1500000, "2"),
+        (7900000, 1500000, "3"), (9400000, 1500000, "4")]
+rows = [
+    ("A seed 0 — verifier gốc", "32,0%", "29,3%", "28,0%", "29,3%", "29,3%"),
+    ("B seed 0 — ĐÃ VÁ", "32,0%", "28,7%", "28,7%", "28,7%", "28,7%"),
+    ("A seed 1 — verifier gốc", "36,7%", "32,7%", "32,7%", "31,3%", "33,3%"),
+    ("B seed 1 — ĐÃ VÁ", "37,3%", "32,0%", "32,7%", "31,3%", "33,3%"),
+]
+y = table(s, 2450000, cols, rows, hsize=11.5, rsize=11.5, rowh=460000,
+          bold_row=lambda i: i % 2 == 1)
+tb(s, L, y + 170000, W, 1000000,
+   "Hai đường gần như trùng nhau. Ở seed 1, từ vòng 2 trở đi con số GIỐNG HỆT nhau.\n"
+   "Vá đúng chỗ verifier lệch — thứ mà cả đề tài đặt giả thuyết là nguyên nhân — không tạo ra\n"
+   "khác biệt đo được, ở cả hai lần lặp độc lập.",
+   size=12.5, color=INK, spacing=4)
+footnote(s, "Đề thi 150 đề, nên 1 đề ≈ 0,67 điểm phần trăm. Khoảng cách A–B lớn nhất là 0,6 điểm — đúng một đề.")
+
+# ------------------------------------------------------- 10 why
+s = new()
+header(s, 9, "VÌ SAO", "Mức độ nặng khác với tần suất xảy ra")
+tb(s, L, 1947672, W, 900000,
+   "Đây là phần em thấy giá trị nhất: không chỉ biết “vá không có tác dụng”,\n"
+   "mà đo được vì sao nó không có tác dụng.",
+   size=13.5, color=INK, spacing=4)
+rule(s, L, 2800000, W)
+for i, (big, cap) in enumerate([
+    ("100%", "Tỉ lệ verifier chấm SAI khi gặp\ncách viết \\dfrac — đã đo.\nNghe rất nặng."),
+    ("0,55%", "Nhưng cách viết đó chỉ xuất hiện\n22/4000 lời giải mỗi vòng.\nTrên GSM8K: 0 lần."),
+    ("0,55%", "Nhân hai số lại — đó mới là phần\ntập train bị loại oan mỗi vòng.\nKhông thể gây sụp 20 điểm."),
+]):
+    x = L + i * 3579000
+    tb(s, x, 3050000, 3400000, 700000, big, size=40, bold=True, color=GOLD)
+    tb(s, x, 3850000, 3400000, 1300000, cap, size=12, color=INK, spacing=3)
+rule(s, L, 5300000, W)
+tb(s, L, 5480000, W, 800000,
+   "Đo trực tiếp: ở vòng 0 model chưa học gì, A và B sinh ra ĐÚNG CÙNG bộ lời giải — khác nhau duy nhất\n"
+   "là verifier nào chấm. Bản vá đổi kết quả của 0 đề (seed 0) và 1 đề (seed 1) trên 150 đề.",
+   size=12, color=MUTED, spacing=4)
+
+# ------------------------------------------------------- 11 pivot
+s = new()
+header(s, 10, "ĐỀ TÀI THU HẸP LẠI", "Từ ‘phát hiện cơ chế gây hại’ sang ‘cảnh báo cách đo’")
+tb(s, L, 1947672, 5100000, 400000, "TUYÊN BỐ CŨ — đã bị bác bỏ", size=12, bold=True, color=RED)
+tb(s, L, 2400000, 5100000, 1500000,
+   "“Verifier lệch vì văn phong gây sụp\nnăng lực trong self-training lặp vòng.”",
+   size=15, bold=True, color=MUTED, spacing=4)
+tb(s, L, 3900000, 5100000, 1400000,
+   "Bị bác bỏ bởi chính thí nghiệm đối chứng\ndựng ra để kiểm tra nó. Không phải suy\nluận gián tiếp — đo trực tiếp, 2 lần lặp.",
+   size=12, color=MUTED, spacing=3)
+vrule(s, 6100000, 1947672, 3400000)
+tb(s, 6400000, 1947672, 5000000, 400000, "TUYÊN BỐ MỚI — được số liệu chống lưng",
+   size=12, bold=True, color=RED)
+tb(s, 6400000, 2400000, 5000000, 1500000,
+   "“Gộp nhiều bộ đề vào một lần train, cộng\nvới chấm điểm trên chính đề đã học, đủ\nđể tạo ra một hiện tượng ‘sụp’ giả.”",
+   size=15, bold=True, color=INK, spacing=4)
+tb(s, 6400000, 3900000, 5000000, 1400000,
+   "Kèm quy tắc đọc số: các con số “verifier sai\nX%” trong bài báo khác là mức-nặng-có-điều-kiện.\nTác động thật = mức nặng × tần suất.",
+   size=12, color=INK, spacing=3)
+rule(s, L, 5500000, W)
+tb(s, L, 5680000, W, 700000,
+   "Phạm vi hẹp hơn dự tính ban đầu, nhưng trung thực và tra lại được — và cái bẫy phương pháp này\n"
+   "đang khá phổ biến, nên vẫn là đóng góp dùng lại được.",
+   size=12.5, color=INK, spacing=4)
+
+# ------------------------------------------------------- 12 open question
+s = new()
+header(s, 11, "CÂU HỎI CÒN MỞ", "Một khả năng chưa loại trừ được — đang chạy để kiểm tra")
+tb(s, L, 1947672, W, 1000000,
+   "Trong cả 7 lần chạy, pass@1 luôn rớt ~3 điểm ở vòng 1 rồi đứng yên. Nhưng các bài báo\n"
+   "lớn (STaR, RFT, ReST-EM) đều báo cáo self-training làm model KHÁ LÊN. Vì sao của em ngược?",
+   size=13.5, color=INK, spacing=4)
+rule(s, L, 3000000, W)
+tb(s, L, 3200000, W, 400000,
+   "Có một cách giải thích tầm thường chưa loại trừ được:", size=12.5, bold=True, color=MUTED)
+tb(s, L, 3650000, W, 700000,
+   "Model đã được tinh chỉnh kỹ sẵn. Một lần SFT ngắn (~40 bước) có thể chỉ đơn giản làm nó\n"
+   "xê dịch khỏi trạng thái đã tinh chỉnh — bất kể dạy nó bằng dữ liệu gì.",
+   size=13, color=INK, spacing=4)
+tb(s, L, 4500000, W, 400000,
+   "Thí nghiệm phân định (đã viết code xong, đang chờ GPU):", size=12.5, bold=True, color=MUTED)
+for i, (lbl, txt) in enumerate([
+    ("Nếu KHÁ LÊN", "vòng lặp lành mạnh → “học từ output của chính mình” đúng là cái gây hại."),
+    ("Nếu CŨNG RỚT", "cú rớt là chi phí của SFT, không phải của self-training → phải viết lại lần nữa."),
+]):
+    yy = 4950000 + i * 620000
+    tb(s, L, yy, 2200000, 420000, lbl, size=12.5, bold=True, color=GOLD)
+    tb(s, 3100000, yy, 8300000, 420000, txt, size=12.5, color=INK)
+footnote(s, "Chạy lại đúng vòng lặp nhưng dạy bằng lời giải mẫu của bộ đề, thay vì lời giải model tự sinh.")
+
+# ------------------------------------------------------- 13 limitations
+s = new()
+header(s, 12, "THẢO LUẬN", "Giới hạn — nói trước, không giấu")
+lim = [
+    ("Đề thi chỉ 150 đề",
+     "Một đề ≈ 0,67 điểm. Riêng việc đổi cách bốc đề thi đã làm điểm vòng 0 lệch 4,7 điểm — lớn hơn cả hiệu ứng đang đo."),
+    ("Chỉ mới 2 lần lặp cho A và B",
+     "C và các lần chạy cũ mới 1 lần. Chưa đủ để nói chắc về cú rớt 12,7 điểm của GSM8K."),
+    ("So sánh cũ–mới đổi 3 thứ cùng lúc",
+     "Bỏ gộp, thêm đề thi riêng, giảm số đề. Nên kết luận bác bỏ chỉ dựa trên so sánh A với B — hai lần chạy giống hệt, khác đúng một biến."),
+]
+y = 1947672
+for h, d in lim:
+    tb(s, L, y, W, 400000, h, size=14, bold=True, color=INK)
+    tb(s, L, y + 420000, W, 700000, d, size=12.5, color=MUTED, spacing=3)
+    rule(s, L, y + 1180000, W)
+    y += 1350000
+
+# ------------------------------------------------------- 14 summary
+s = new()
+header(s, 13, "TÓM TẮT", "Hai tuần, và việc tiếp theo")
+vrule(s, L, 1920000, 1150000)
+tb(s, 1033272, 1880000, 10381183, 1150000,
+   "“Thí nghiệm đối chứng bác bỏ giả thuyết trung tâm của đề tài. Nguyên nhân đã đo được:\n"
+   "lỗi verifier tuy nặng 100% nhưng chỉ xảy ra ở 0,55% lời giải. Đề tài chuyển sang cảnh\n"
+   "báo về cách đo — hẹp hơn, nhưng đứng vững.”",
+   size=15, color=INK, spacing=4)
+for i, t in enumerate([
+    "—  Đã làm: 7 lần chạy (~40 giờ GPU), phát hiện và sửa lỗ hổng thiết kế đo, dựng thí nghiệm đối chứng.",
+    "—  Kết quả: bác bỏ giả thuyết ban đầu, và đo được nguyên nhân vì sao nó không đúng.",
+    "—  Phát hiện: mức-nặng × tần-suất — quy tắc đọc lại mọi con số verifier-bias, kể cả của bài khác.",
+    "—  Đang chạy: thí nghiệm phân định “chi phí SFT” với “tác hại của self-training”.",
+]):
+    tb(s, L, 3350000 + i * 600000, W, 580000, t, size=12.5, bold=True, color=GOLD)
+tb(s, L, 5900000, W, 400000,
+   "Cảm ơn thầy đã theo dõi — rất mong nhận góp ý.", size=13, color=MUTED)
+
+prs.save(OUT)
+print("saved", OUT, "| slides:", len(prs.slides._sldIdLst))
