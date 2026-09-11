@@ -445,40 +445,74 @@ tb(s, L, 5330000, W, 700000,
    "nghiên cứu cùng hướng, nên vẫn là đóng góp có ích.",
    size=13, color=BODY, line_spacing=1.4)
 
-# =========================================================== 14 · new direction
+# =========================================================== 14 · the map
 s = new()
-header(s, 12, "ĐỀ TÀI TIẾP THEO",
-       "Lỗi máy chấm phải phổ biến tới mức nào mới gây hại?")
+header(s, 12, "BÀI HỌC RÚT RA", "Lần vừa rồi chọn nhầm chỗ để tìm hiệu ứng")
+tb(s, L, 1600000, W, 330000,
+   "Cả hai con số dưới đây đều là số đã đo của đề tài, không phải ước lượng.",
+   size=12.5, color=BODY)
+cols = [(L, 3000000, "CÁCH VIẾT ĐÁP ÁN"), (L + 3200000, 2500000, "MODEL DÙNG BAO NHIÊU"),
+        (L + 5700000, 2400000, "MÁY CHẤM GẠCH"), (L + 8100000, 2400000, "THIỆT HẠI THỰC TẾ")]
+rows = [
+    ("\\frac", "55,8%", "0%", "0%"),
+    ("\\boxed", "51,5%", "~20%", "~10%"),
+    ("số thập phân", "11,6%", "thấp", "thấp"),
+    ("0,50  (thừa số 0)", "1,2%", "59%", "0,7%"),
+    ("\\dfrac", "0,55%", "100%", "0,55%"),
+    ("\\tfrac", "0%", "100%", "0%"),
+]
+y = table(s, 2050000, cols, rows, rowh=390000, rsize=11.5,
+          emph=lambda i: i == 4)
+tb(s, L, y + 260000, W, 700000,
+   "Thiệt hại thực tế bằng tỉ lệ gạch nhân tần suất. Cách viết đã đem ra thử là \\dfrac — gạch nặng nhất,\n"
+   "nhưng cũng hiếm nhất. Đó là ô cho hiệu ứng nhỏ nhất trong cả bảng.",
+   size=12.5, color=BODY, line_spacing=1.4)
+panel(s, L - 120000, y + 930000, W + 240000, 560000, fill=RGBColor(0xF0, 0xF6, 0xFA))
+tb(s, L + 120000, y + 1045000, W - 240000, 330000,
+   "Vùng đáng quan tâm — cách viết vừa phổ biến vừa bị gạch — thì chưa ai đo, kể cả đề tài này.",
+   size=12.5, bold=True, color=BLUE)
+tb(s, L, 6560000, W, 260000,
+   "Tỉ lệ gạch lấy từ phép thử ép máy chấm trên đáp án viết lại; tần suất lấy từ 4000 lời giải model sinh mỗi vòng.",
+   size=9.5, color=MUTED)
+
+# =========================================================== 15 · new direction
+s = new()
+header(s, 13, "ĐỀ TÀI TIẾP THEO",
+       "Đo ngưỡng: lỗi phải phổ biến tới mức nào mới gây hại?")
 tb(s, L, 1600000, W, 700000,
-   "Kết quả ba tuần qua cho một quy luật: tác động của lỗi máy chấm bằng mức nặng nhân tần suất.\n"
-   "Nhưng mới đo được một điểm trên quy luật đó — điểm mà tần suất quá thấp nên không thấy gì.",
+   "Cách làm giữ nguyên toàn bộ vòng lặp, chỉ đổi chỗ máy chấm bị lệch. Mỗi lần chạy là một điểm\n"
+   "trên trục tần suất, và điểm đầu tiên thì đã có sẵn từ ba tuần qua.",
    size=13.5, color=BODY, line_spacing=1.45)
-tb(s, L, 2500000, W, 300000, "CÁCH LÀM: giữ nguyên vòng lặp, chỉ đổi chỗ máy chấm bị lệch",
-   size=11, bold=True, color=MUTED)
 for i, (tag, fmt, freq, colour, fill, note) in enumerate([
-    ("ĐÃ CHẠY", "\\dfrac", "0,55%", MUTED, SURFACE,
-     "Cách viết rất hiếm.\nKhông thấy ảnh hưởng gì."),
-    ("SẼ CHẠY", "\\boxed", "51%", BLUE, RGBColor(0xF0, 0xF6, 0xFA),
-     "Cách viết model dùng thường xuyên.\nGấp khoảng 90 lần cách trên."),
+    ("ĐIỂM 1 — ĐÃ CÓ", "\\dfrac", "0,55%", MUTED, SURFACE,
+     "Không thấy ảnh hưởng.\nĐây là kết quả ba tuần vừa rồi."),
+    ("ĐIỂM 2 — SẼ CHẠY", "\\boxed", "51%", BLUE, RGBColor(0xF0, 0xF6, 0xFA),
+     "Phổ biến gấp khoảng 90 lần.\nMột lần chạy, khoảng 5 giờ GPU."),
 ]):
     x = L + i * 5400000
-    panel(s, x, 2920000, 5190000, 1850000, fill=fill)
-    pill(s, x + 260000, 3100000, tag, fill=colour, width=1250000, height=300000)
-    tb(s, x + 260000, 3560000, 2400000, 400000, fmt, size=19, color=INK)
-    tb(s, x + 2900000, 3560000, 2100000, 400000, freq, size=26, font=DISPLAY,
+    panel(s, x, 2500000, 5190000, 1800000, fill=fill)
+    pill(s, x + 260000, 2680000, tag, fill=colour, width=1900000, height=300000)
+    tb(s, x + 260000, 3130000, 2400000, 400000, fmt, size=19, color=INK)
+    tb(s, x + 2900000, 3130000, 2100000, 400000, freq, size=26, font=DISPLAY,
        bold=True, color=colour)
-    tb(s, x + 260000, 4120000, 4700000, 550000, note, size=12, color=BODY,
+    tb(s, x + 260000, 3670000, 4700000, 550000, note, size=12, color=BODY,
        line_spacing=1.3)
-panel(s, L - 120000, 5000000, W + 240000, 1180000, fill=RGBColor(0xFD, 0xFA, 0xF0))
-tb(s, L + 120000, 5180000, W - 240000, 850000,
-   "Nếu bắt máy chấm gạch một cách viết phổ biến mà model bắt đầu tụt điểm, thì quy luật trên được\n"
-   "chứng minh bằng thực nghiệm, chứ không còn là lời giải thích cho một kết quả âm tính. Khi đó đề tài\n"
-   "có một con số dùng được: lỗi máy chấm phải phổ biến tới ngưỡng nào thì mới đáng lo.",
-   size=12.5, color=INK, line_spacing=1.4)
+tb(s, L, 4520000, W, 300000, "HAI KHẢ NĂNG, CẢ HAI ĐỀU RA KẾT QUẢ DÙNG ĐƯỢC",
+   size=11, bold=True, color=MUTED)
+for i, (colour, lbl, txt) in enumerate([
+    (GREEN, "Nếu tụt điểm", "quy luật được chứng minh bằng thực nghiệm, và đề tài\ncó một ngưỡng cụ thể để cảnh báo người dùng."),
+    (ORANGE, "Nếu vẫn không tụt", "thì lỗi máy chấm không phải thứ đáng lo trong\nself-training, cũng là một kết luận rõ ràng."),
+]):
+    x = L + i * 5400000
+    pill(s, x, 4930000, lbl, fill=colour, width=1750000, height=310000)
+    tb(s, x, 5400000, 5000000, 600000, txt, size=12, color=BODY, line_spacing=1.35)
+tb(s, L, 6300000, W, 300000,
+   "Toàn bộ code và dữ liệu cũ dùng lại được; chỉ cần thêm một tuỳ chọn cho máy chấm.",
+   size=10.5, color=MUTED)
 
-# =========================================================== 15 · open question
+# =========================================================== 16 · open question
 s = new()
-header(s, 13, "CÂU HỎI CHƯA TRẢ LỜI ĐƯỢC", "Thí nghiệm kiểm chứng đang chạy")
+header(s, 14, "CÂU HỎI CHƯA TRẢ LỜI ĐƯỢC", "Thí nghiệm kiểm chứng đang chạy")
 tb(s, L, 1620000, W, 700000,
    "Cả 7 lần chạy, điểm đều tụt khoảng 3 điểm ngay ở vòng 1 rồi đứng yên. Nhưng các công trình lớn\n"
    "về tự học đều báo cáo model KHÁ LÊN. Chưa giải thích được vì sao kết quả ở đây ngược lại.",
@@ -501,9 +535,9 @@ for i, (colour, lbl, txt) in enumerate([
 tb(s, L, 5800000, W, 300000,
    "Phần code đã hoàn tất, đang chờ tới lượt GPU.", size=10.5, color=MUTED)
 
-# =========================================================== 16 · limits
+# =========================================================== 17 · limits
 s = new()
-header(s, 14, "HẠN CHẾ", "Ba điểm cần lưu ý khi đọc kết quả")
+header(s, 15, "HẠN CHẾ", "Ba điểm cần lưu ý khi đọc kết quả")
 lim = [
     ("Đề thi chỉ có 150 đề",
      "Mỗi đề đáng 0,67 điểm. Chỉ đổi cách bốc đề thi thôi là điểm vòng 0 đã lệch 4,7 điểm, lớn hơn cả hiệu ứng đang đo."),
@@ -521,9 +555,9 @@ for i, (h, d) in enumerate(lim, 1):
     tb(s, L + 700000, y + 600000, 9500000, 450000, d, size=12, color=BODY, line_spacing=1.3)
     y += 1330000
 
-# =========================================================== 17 · summary
+# =========================================================== 18 · summary
 s = new()
-header(s, 15, "TÓM TẮT", "Kết quả ba tuần và hướng tiếp theo")
+header(s, 16, "TÓM TẮT", "Kết quả ba tuần và hướng tiếp theo")
 panel(s, L - 120000, 1900000, W + 240000, 1460000, fill=RGBColor(0xF0, 0xF6, 0xFA))
 tb(s, L + 120000, 2100000, W - 240000, 1100000,
    "Thí nghiệm đối chứng cho thấy giả thuyết ban đầu không đúng. Nguyên nhân đã xác định được:\n"

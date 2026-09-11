@@ -1,7 +1,7 @@
 # Kịch bản nói — báo cáo tuần 1 đến tuần 3 (12/9/2026)
 
-Đi kèm `BaoCaoTienDo_Tuan1-3_52300057_52300006.pptx`, 17 slide.
-Tổng khoảng **14–16 phút**. Đọc to thử ít nhất một lần trước khi vào.
+Đi kèm `BaoCaoTienDo_Tuan1-3_52300057_52300006.pptx`, 18 slide.
+Tổng khoảng **15–17 phút**. Đọc to thử ít nhất một lần trước khi vào.
 
 **Lưu ý về cách xưng hô:** slide viết ở giọng trung tính, không có "em" hay
 "thầy" — vì slide là để cả phòng đọc. Còn lời nói thì vẫn xưng "em" bình
@@ -248,36 +248,66 @@ xuống phòng một nhịp — đây là lúc người nghe phải thấy có g
 
 ---
 
-## Slide 14 — Đề tài tiếp theo  ·  ~70 giây
+## Slide 14 — Bài học rút ra  ·  ~80 giây
 
-> Từ kết quả ba tuần qua, em rút ra được một quy luật: tác động của lỗi máy
-> chấm bằng **mức nặng nhân tần suất**.
+> Từ ba tuần vừa rồi em rút ra một quy luật, và bảng này là bằng chứng cho
+> nó. Em xin nói trước: **cả hai cột số giữa đều là số đề tài đã đo**, không
+> phải em ước lượng.
 >
-> Nhưng em mới đo được đúng một điểm trên quy luật đó thôi — cái điểm mà tần
-> suất quá thấp nên không thấy gì. Em chưa chứng minh được quy luật, em mới
-> chỉ dùng nó để giải thích một kết quả âm tính.
+> Cột thứ hai là model thật sự viết kiểu đó bao nhiêu phần trăm số bài — đếm
+> trên bốn nghìn lời giải mỗi vòng. Cột thứ ba là máy chấm gạch kiểu đó bao
+> nhiêu phần trăm — cái này em đo bằng cách ép máy chấm trên đáp án viết lại.
 >
-> Nên đề tài tiếp theo của em là đi đo cái ngưỡng đó. Cách làm rất đơn giản:
-> giữ nguyên toàn bộ vòng lặp, chỉ đổi chỗ máy chấm bị lệch thôi.
+> Cột cuối là nhân hai cột lại. Đó mới là thiệt hại thật.
 >
-> Lần vừa rồi máy chấm gạch cách viết `\dfrac`, mà cách đó chỉ xuất hiện ở
-> khoảng nửa phần trăm số bài. Lần tới em sẽ bắt nó gạch cách viết `\boxed`
-> — cách này model dùng trong hơn một nửa số bài, tức là phổ biến gấp khoảng
-> **chín mươi lần**.
+> Giờ mọi người nhìn dòng in đậm. `\dfrac` — cái em đem ra thử suốt ba tuần
+> — bị gạch **100%**, nặng nhất bảng. Nhưng model chỉ viết kiểu đó ở **nửa
+> phần trăm** số bài. Nhân lại còn 0,55%.
 >
-> Nếu lúc đó model bắt đầu tụt điểm thật, thì quy luật kia được chứng minh
-> bằng thực nghiệm. Và quan trọng hơn, đề tài sẽ có một con số dùng được cho
-> người khác: lỗi máy chấm phải phổ biến tới mức nào thì mới đáng lo.
+> Nói thẳng ra là em đã chọn đúng cái ô cho hiệu ứng nhỏ nhất trong cả bảng.
+> Không phải em đo sai, mà là chọn nhầm chỗ để đo.
 >
-> Đây là điểm em thấy đáng làm nhất, vì nó là kết quả dương chứ không phải
-> một kết luận âm tính nữa.
+> Và mọi người để ý dòng thứ hai: `\boxed`. Model viết kiểu đó ở hơn một nửa
+> số bài, mà máy chấm cũng gạch khoảng hai mươi phần trăm. Nhân lại là khoảng
+> mười phần trăm — gấp gần hai mươi lần cái em đã thử.
+>
+> Vùng đó thì chưa ai đo, kể cả đề tài này.
 
-*Đây là slide bán đề tài mới. Nói dứt khoát, đừng rào đón. Nhấn chữ
-"chín mươi lần" — đó là cái làm người nghe thấy thí nghiệm này hợp lý.*
+*Đây là slide nặng nhất về số. Đi từng cột một, đừng đọc cả bảng một lượt.
+Dừng lại ở dòng in đậm.*
 
 ---
 
-## Slide 15 — Chỗ còn chưa chắc  ·  ~50 giây
+## Slide 15 — Đề tài tiếp theo  ·  ~70 giây
+
+> Nên đề tài tiếp theo của em là đi đo cái ngưỡng đó.
+>
+> Cách làm rất gọn: giữ nguyên toàn bộ vòng lặp, chỉ đổi chỗ máy chấm bị lệch
+> thôi. Mỗi lần chạy cho một điểm trên trục tần suất.
+>
+> Và điểm đầu tiên thì em đã có sẵn rồi — chính là ba tuần vừa rồi, ở tần
+> suất nửa phần trăm, không thấy ảnh hưởng gì.
+>
+> Điểm thứ hai em sẽ bắt máy chấm gạch cách viết `\boxed`, phổ biến gấp
+> khoảng **chín mươi lần**. Chỉ tốn một lần chạy, khoảng năm tiếng GPU.
+>
+> Điểm hay của thí nghiệm này là **ngã nào cũng ra kết quả dùng được**. Nếu
+> model tụt điểm thì quy luật kia được chứng minh bằng thực nghiệm, và đề tài
+> có một con số cụ thể để cảnh báo người dùng: lỗi máy chấm phải phổ biến tới
+> mức nào thì mới đáng lo.
+>
+> Còn nếu vẫn không tụt, thì kết luận là lỗi máy chấm không phải thứ đáng lo
+> trong tự học — cũng là một câu trả lời rõ ràng.
+>
+> Toàn bộ code và dữ liệu cũ em dùng lại được hết, chỉ cần thêm một tuỳ chọn
+> cho máy chấm thôi.
+
+*Đây là slide bán đề tài mới. Nhấn hai chỗ: "chín mươi lần" và "ngã nào cũng
+ra kết quả dùng được". Nói dứt khoát, đừng rào đón.*
+
+---
+
+## Slide 16 — Chỗ còn chưa chắc  ·  ~50 giây
 
 > Em xin nói một chỗ em còn chưa chắc.
 >
@@ -297,7 +327,7 @@ xuống phòng một nhịp — đây là lúc người nghe phải thấy có g
 
 ---
 
-## Slide 16 — Chỗ còn yếu  ·  ~40 giây
+## Slide 17 — Chỗ còn yếu  ·  ~40 giây
 
 > Em xin nói trước mấy chỗ còn yếu.
 >
@@ -311,7 +341,7 @@ xuống phòng một nhịp — đây là lúc người nghe phải thấy có g
 
 ---
 
-## Slide 17 — Tóm tắt  ·  ~30 giây
+## Slide 18 — Tóm tắt  ·  ~30 giây
 
 > Tóm lại ba tuần vừa rồi: em chạy bảy lần, khoảng 40 giờ GPU. Em dựng một
 > thí nghiệm để kiểm tra giả thuyết của chính mình, và nó cho thấy em sai. Lý
