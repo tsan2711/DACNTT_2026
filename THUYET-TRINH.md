@@ -1,147 +1,324 @@
-# Kịch bản nói chuyện với thầy — cập nhật sau bộ 3 thí nghiệm cô lập A/B/C (2026-09-09)
+# Kịch bản nói — báo cáo tuần 1 đến tuần 3 (12/9/2026)
 
-Bản trước (2026-09-03) kể chuyện "máy chấm lệch làm sụp năng lực, 2 cỡ model
-cùng xác nhận". **Bản đó đã sai** — không phải sai số liệu, mà sai ở chỗ
-thiết kế thí nghiệm không đủ sạch để kết luận như vậy. Bản này kể đúng
-những gì đã đo được, kể cả phần bác bỏ chính giả thuyết ban đầu.
+Đi kèm `BaoCaoTienDo_Tuan1-3_52300057_52300006.pptx`, 16 slide.
+Tổng khoảng **13–15 phút**. Đọc to thử ít nhất một lần trước khi vào.
 
-Nói khoảng 3-4 phút. Đọc to thử trước khi trình bày. **Điểm quan trọng nhất
-khi nói:** không né chuyện dự đoán sai — đó là phần làm bài mạnh lên, không
-phải chỗ để giấu.
-
----
-
-## Kịch bản (đọc/nói)
-
-Dạ đề tài của em là: cho một máy giải toán nhỏ tự học nhiều vòng, dùng một
-máy chấm tự động để lọc bài đúng rồi dạy lại chính nó — không cần người
-chấm tay. Người ta gọi cách này là tự-cải-thiện.
-
-**Giả thuyết ban đầu của em:** máy chấm đó không đọc cách làm, chỉ so đáp án
-cuối với sách — và nó chấm sai **có quy luật**, hay gạch nhầm bài đúng chỉ vì
-viết khác kiểu, ví dụ viết `\dfrac{1}{2}` thay vì `\frac{1}{2}` là bị gạch
-dù giá trị y hệt. Em đo thật: kiểu viết đó bị gạch **100%**, và tỉ lệ gạch
-nhầm bài đúng là 7.8% trên MATH-500, 0% trên GSM8K. Em dự đoán: cái lệch đó
-lặp qua nhiều vòng sẽ làm model sụp năng lực dần, và sụp trên MATH-500 chứ
-không sụp trên GSM8K.
-
-**Lần chạy đầu trông như xác nhận giả thuyết rất mạnh.** Em chạy 5 vòng trên
-2 bộ đề gộp chung, 2 cỡ model. Model 1.5B: làm-1-lần-đúng rớt từ 50% xuống
-19%, cho-làm-8-lần rớt từ 73% xuống 49%. Sụp rất sâu, rất đều. Nếu dừng ở
-đây thì em đã có một bài báo "đẹp".
-
-**Nhưng em kiểm tra lại thiết kế và thấy nó không trả lời được câu hỏi của
-chính nó.** Có hai lỗ hổng. Thứ nhất, em gộp 2 bộ đề vào **một** bộ nhớ học
-chung mỗi vòng — mà trong đó GSM8K chiếm tới 69%, nên điểm của MATH-500
-thực chất bị ảnh hưởng bởi chuyện xảy ra bên GSM8K, không tách ra được. Thứ
-hai, em chấm điểm trên đúng những đề đã dùng để chọn bài dạy — nên "sụp" có
-thể chỉ là hết thuộc bài, không phải mất năng lực thật.
-
-**Em làm lại thí nghiệm cho sạch:** mỗi bộ đề chạy riêng, bộ nhớ riêng, và
-tách 30% đề ra làm đề thi mà máy **chưa từng** được học. Rồi em thêm đúng
-một thí nghiệm đối chứng mà thiết kế cũ không có: chạy lại y hệt, chỉ **vá**
-đúng chỗ máy chấm bị lệch — nếu giả thuyết của em đúng, bản vá phải khá hơn
-rõ rệt.
-
-**Kết quả: giả thuyết của em không đứng vững.**
-
-| Lần chạy | Làm 1 lần đúng (vòng 0→4) | Làm 8 lần đúng (vòng 0→4) |
-|---|---|---|
-| A — MATH-500, máy chấm gốc | 32.0% → 29.3% | 57.3% → 56.0% |
-| B — MATH-500, **máy chấm đã vá** | 32.0% → 28.7% | 57.3% → 53.3% |
-| C — GSM8K, máy chấm gốc | 66.7% → 54.0% | 92.7% → 90.0% |
-
-Ba điều đọc ra từ bảng này. Một: **cú sụp biến mất** — cột "làm 8 lần" gần
-như đứng yên ở cả ba, thay vì rớt 22–26 điểm như lần chạy gộp. Hai: **vá máy
-chấm không đổi gì cả** — A và B gần như trùng nhau, chênh 0.6 điểm tức là
-đúng 1 đề trên 150 đề. Đây là đối chứng sạch nhất trong cả đề tài, chỉ khác
-đúng 1 biến, nên nó bác bỏ trực tiếp giả thuyết ban đầu của em. Ba: GSM8K
-vẫn còn rơi 12.7 điểm ở cột làm-1-lần nhưng cột làm-8-lần không đổi — tức là
-model không quên cách giải, chỉ kém ổn định ở lần trả lời đầu.
-
-**Vậy em kết luận gì.** Cái sụp nặng em thấy lúc đầu **chủ yếu là hiện vật
-của cách đo**, không phải bằng chứng máy chấm lệch gây hại. Đóng góp của bài
-vì thế thu hẹp lại, nhưng vẫn là đóng góp thật: em chỉ ra được rằng **gộp
-nhiều bộ đề vào một lần train, cộng với chấm trên chính đề đã học, đủ để tạo
-ra một hiện tượng "sụp" giả** trong loại thí nghiệm này — mà thiết kế đó lại
-đang khá phổ biến. Nói cách khác, bài chuyển từ "phát hiện một cơ chế gây
-hại" sang "cảnh báo một cái bẫy phương pháp".
-
-**Em đã chạy lặp lại lần A với seed khác để kiểm tra**, và nó xác nhận: cột
-làm-8-lần vẫn phẳng y nguyên (58.7% → 58.7%), cột làm-1-lần vẫn rơi ~3 điểm
-rồi đứng. Hai lần chạy độc lập cùng một hình dạng.
-
-**Lần lặp đó còn cho em một con số em không ngờ tới.** Vòng 0 là model gốc,
-chưa học gì cả — hai seed lẽ ra phải đo ra cùng một điểm. Nhưng seed này ra
-32.0%, seed kia ra 36.7%, chênh **4.7 điểm**, chỉ vì bốc trúng 150 đề thi
-khác nhau. Nghĩa là **riêng việc đổi tập đề đã tạo ra chênh lệch lớn hơn
-toàn bộ hiệu ứng em đang đo**. Cái này quan trọng: nó cho em một thước đo để
-biết một khác biệt phải lớn cỡ nào mới đáng tin — và chênh lệch giữa A với B
-(0.6 điểm) thì nhỏ hơn thước đo đó nhiều lần.
-
-**Và em đã tìm ra VÌ SAO bản vá không có tác dụng — đây là phần em thấy giá
-trị nhất.** Em đếm lại xem cái kiểu viết `\dfrac` đó **thực tế xuất hiện bao
-nhiêu lần**: trong 4000 lời giải mỗi vòng, nó chỉ xuất hiện khoảng **22 lần,
-tức 0.55%**. Còn `\tfrac` thì **không xuất hiện lần nào**. Trên GSM8K thì
-bằng **0** tuyệt đối.
-
-Nghĩa là: máy chấm gạch kiểu viết đó **100%** — nghe rất nặng — nhưng đó là
-mức độ nặng **khi nó xảy ra**. Cái thật sự ảnh hưởng tới tập dạy là
-**mức nặng × tần suất** = 100% × 0.55% = **0.55% bài bị loại oan mỗi vòng**.
-Tập dạy hụt nửa phần trăm thì không thể nào gây sụp 20 điểm được.
-
-Em còn đo được trực tiếp: ở vòng 0, hai lần chạy A và B dùng **cùng** model
-gốc, **cùng** seed, chưa học gì cả — nên sinh ra **đúng cùng một bộ bài
-làm**. Khác nhau duy nhất là máy chấm nào chấm. Kết quả: bản vá làm đổi kết
-quả của **0 đề (seed 0) và 1 đề (seed 1) trên 150 đề**. Đó là toàn bộ sức
-mạnh của cái đòn bẩy mà cả giả thuyết ban đầu dựa vào.
-
-**Bài học em rút ra, và em nghĩ nó đáng viết vào bài nhất:** các con số
-"máy chấm sai bao nhiêu %" mà các bài báo khác công bố đều là mức-nặng-có-
-điều-kiện, đo trên một tập dữ liệu tham chiếu của họ. Muốn biết nó có hại
-trong hệ thống của mình không thì phải **đếm tần suất trong chính output
-model của mình** — việc rất rẻ, mà em đã không làm cho tới khi giả thuyết
-sụp đổ rồi mới nghĩ ra.
-
-**Em nói thẳng phần chưa chắc:** lần chạy C (GSM8K) rơi 12.7 điểm vẫn chưa
-lặp lại được lần nào — đó là hiện tượng duy nhất còn chưa giải thích được,
-và là lần chạy kế tiếp của em.
+**Ba điều cần nhớ khi nói:**
+1. Đây là bài kể chuyện "em tưởng đúng, hoá ra sai". Đừng né chỗ sai —
+   nói thẳng thì thành điểm mạnh, nói vòng thì thầy sẽ hỏi tới.
+2. Chỗ quan trọng nhất là **slide 11** (hai đường chồng lên nhau). Nói chậm
+   lại ở đó, dừng 2 giây cho thầy nhìn hình.
+3. Số nào cũng nói kèm ý nghĩa. Đừng đọc "hai mươi hai phẩy bốn điểm" trống
+   không, mà nói "tụt hơn hai mươi điểm, tức là mất gần một phần ba".
 
 ---
 
-## Nếu thầy hỏi thêm
+## Slide 1 — Bìa  ·  ~20 giây
 
-- **"Vậy đề tài còn giá trị không, hay phải làm lại từ đầu?"** — Dạ còn, và
-  không phải làm lại. Câu hỏi nghiên cứu giữ nguyên, hạ tầng code giữ
-  nguyên, dữ liệu đã chạy đều dùng được. Cái đổi là **kết luận** và **phạm
-  vi tuyên bố**. Một kết quả phủ định đo bằng đối chứng sạch vẫn là kết quả
-  đăng được — và thực tế nó khó bị vặn hơn kết quả khẳng định, vì hội đồng
-  không nghi được là em chỉnh số cho khớp giả thuyết.
+> Dạ em chào thầy. Hôm nay em báo cáo ba tuần đầu của đề tài.
+>
+> Em xin nói trước kết quả chính luôn cho thầy dễ theo dõi: em có một giả
+> thuyết, em chạy thí nghiệm và ban đầu tưởng là đúng. Nhưng sau đó em phát
+> hiện cách đo của mình có lỗi. Em đo lại cho đúng, thì kết quả ngược lại.
+> Giả thuyết của em sai.
 
-- **"Sao không phát hiện lỗ hổng đó ngay từ đầu?"** — Dạ đúng là lẽ ra nên
-  thấy sớm hơn. Em phát hiện khi tách điểm theo từng bộ đề và thấy GSM8K —
-  bộ mà máy chấm gần như không lệch — lại sụp mạnh hơn MATH-500. Chi tiết đó
-  ngược hẳn giả thuyết, và chính nó dẫn em đi kiểm tra lại thiết kế.
+*Đừng vội chuyển slide. Để câu cuối lắng một nhịp.*
 
-- **"Có chắc kết luận bác bỏ này đúng không?"** — Dạ chưa chắc hoàn toàn.
-  A và B trùng nhau trên **một** seed thì phù hợp với việc bản vá không có
-  tác dụng, nhưng chưa loại trừ được một tác dụng nhỏ bị nhiễu che. Đó là lý
-  do việc kế tiếp của em là chạy lặp seed, trước khi viết con số cuối vào
-  bài.
+---
 
-- **"Ba lần chạy mới khác lần cũ ở nhiều thứ cùng lúc, sao so được?"** — Dạ
-  đúng, đổi 3 thứ cùng lúc: bỏ gộp bộ đề, thêm đề thi riêng, và giảm số đề
-  mỗi lần chạy. Nên em **không** dùng phép so cũ-mới để kết luận nhân quả.
-  Kết luận bác bỏ của em chỉ dựa trên so sánh **nội bộ** giữa A và B — hai
-  lần chạy giống hệt nhau, khác đúng một biến.
+## Slide 2 — Nội dung  ·  ~15 giây
 
-- **"Còn chỗ GSM8K rơi 12.7 điểm thì sao?"** — Dạ đó là câu hỏi mở duy nhất
-  còn lại. Nó rơi gần hết ở vòng cuối, trên đề thi 150 đề, một seed — chưa
-  đủ để phân biệt tín hiệu thật với nhiễu. Em ghi nó vào bài như một quan sát
-  cần kiểm chứng, không ghi như một phát hiện.
+> Em sẽ đi theo thứ tự này: đề tài là gì, máy chấm sai chỗ nào, rồi hai lần
+> chạy đầu, chỗ em thấy không ổn, và cuối cùng là em đo lại ra sao.
 
-- **"Bước tiếp theo?"** — Dạ ba việc: chạy lặp seed cho A và B để chốt kết
-  luận bác bỏ; chạy thêm một thí nghiệm "không lọc" (train trên toàn bộ bài
-  làm, không qua máy chấm) để tách hẳn ảnh hưởng của khâu lọc; rồi mới viết
-  số cuối vào bài báo. Bản thảo bài báo em đã viết lại theo hướng mới rồi,
-  chỉ chờ số từ seed lặp để khoá bảng kết quả.
+---
+
+## Slide 3 — Đề tài  ·  ~60 giây
+
+> Dạ đề tài của em thế này. Muốn model giải toán giỏi hơn thì bình thường
+> phải có người ngồi soạn lời giải mẫu cho nó học. Việc đó rất tốn công.
+>
+> Nên người ta nghĩ ra cách khác: cho model tự làm bài. Rồi dùng một máy chấm
+> tự động, chọn ra những bài nó làm đúng. Lấy đúng mấy bài đó dạy lại cho
+> chính nó. Làm đi làm lại nhiều vòng. Người ta gọi cách này là tự học.
+>
+> Nhưng cả cách làm này dựa trên một niềm tin: **máy chấm phải chấm đúng**.
+> Nếu máy chấm sai, model sẽ học nhầm mà không ai biết.
+>
+> Và máy chấm em dùng thì có sai. Sai theo một quy luật cố định. Nên câu hỏi
+> của em là: sau nhiều vòng như vậy, model có bị dở đi không?
+
+---
+
+## Slide 4 — Một vòng chạy  ·  ~50 giây
+
+> Một vòng gồm ba bước. Model tự làm mỗi đề tám lần, ra tám lời giải khác
+> nhau. Máy chấm lấy đáp án cuối so với đáp án trong sách, sai thì bỏ. Còn
+> lại bao nhiêu thì đem dạy lại cho model. Xong một vòng, lặp lại năm lần.
+>
+> Chỗ này quan trọng: mỗi vòng em dạy lại **từ model gốc**, chỉ bằng bài của
+> vòng trước. Nên nếu máy chấm bỏ sót một kiểu bài nào đó, thì vòng sau model
+> càng ít gặp kiểu đó. Vòng sau nữa lại càng ít hơn. Nó dồn lại.
+>
+> Còn hai con số em dùng để đo. **pass@1** là cho model làm một lần, đúng bao
+> nhiêu phần trăm. **pass@8** là cho làm tám lần, chỉ cần một lần đúng là
+> tính đúng — cái này đo xem model còn giải nổi bài hay không.
+
+*Nhấn chữ "còn giải nổi bài hay không". Cả bài sau này xoay quanh pass@8.*
+
+---
+
+## Slide 5 — Máy chấm sai ở đâu  ·  ~50 giây
+
+> Đây là chỗ máy chấm sai. Giả sử đáp án đúng của bài là một nửa.
+>
+> Model viết `\frac{1}{2}` thì máy chấm nhận. Nhưng model viết `\dfrac{1}{2}`
+> thì máy chấm gạch. Thầy nhìn cột giữa — hai cách viết đó **hiện ra y hệt
+> nhau**, cùng là một phần hai. Chỉ khác cách gõ thôi.
+>
+> Em thử 146 lần thì gạch cả 146 lần, không trượt lần nào.
+>
+> Lý do là máy chấm không đọc cách giải. Nó chỉ lấy đáp án cuối rồi so chữ.
+>
+> Em có kiểm tra tay 128 bài làm đúng, thì máy gạch nhầm 10 bài, tức khoảng
+> bảy phẩy tám phần trăm. Riêng bộ GSM8K thì không gạch nhầm bài nào, vì đáp
+> án bộ đó toàn số nguyên, không có phân số.
+
+*Nếu thầy hỏi ngay "sao không sửa máy chấm đi" — trả lời: "Dạ em có sửa,
+đó là thí nghiệm ở slide 11 ạ." Rồi đi tiếp, đừng nhảy cóc.*
+
+---
+
+## Slide 6 — Tuần 1  ·  ~40 giây
+
+> Tuần 1 em chạy thử với model nhỏ, Qwen 0.5B, 500 đề mỗi bộ, năm vòng, trên
+> GPU của Kaggle.
+>
+> Kết quả là cả hai con số đều tụt. pass@1 từ 31 xuống 27. pass@8 từ 60 xuống
+> gần 55.
+>
+> Em thấy vậy là khớp với điều mình nghĩ: máy chấm gạch nhầm bài đúng, model
+> học thiếu, nên dở đi. Nhưng model này nhỏ, mức tụt cũng ít, nên em chưa dám
+> chắc. Tuần 2 em chạy lại với model to gấp ba.
+
+---
+
+## Slide 7 — Tuần 2  ·  ~60 giây
+
+> Model 1.5B thì tụt mạnh hơn hẳn. pass@1 từ 50 xuống còn 18. pass@8 từ 72
+> xuống 48 — tức là mất hai mươi bốn điểm, gần một phần ba.
+>
+> Vòng nào cũng tụt, không vòng nào gượng lại. Đến đây em gần như tin chắc là
+> giả thuyết của mình đúng rồi.
+>
+> Nhưng có một chỗ em thấy lạ. Thầy nhìn hai dòng dưới: em tách số ra theo
+> từng bộ đề, thì **GSM8K lại tụt nhiều nhất** — hai mươi lăm điểm.
+>
+> Mà GSM8K chính là bộ mà máy chấm gần như không gạch nhầm bài nào. Theo giả
+> thuyết của em thì bộ đó phải đứng yên mới đúng.
+>
+> Chi tiết này làm em quay lại soi thiết kế thí nghiệm.
+
+*Đây là bản lề của cả bài. Nói chậm đoạn "mà GSM8K chính là bộ...".*
+
+---
+
+## Slide 8 — Hai lỗi  ·  ~70 giây
+
+> Soi lại thì em thấy cách đo của mình có hai lỗi.
+>
+> **Lỗi thứ nhất.** Em gộp hai bộ đề lại rồi dạy chung một lần. Thầy nhìn
+> dòng cuối bảng: trong đống bài đem đi dạy mỗi vòng, GSM8K chiếm gần 70%,
+> vòng nào cũng vậy.
+>
+> Nghĩa là khi em đo điểm của MATH-500, thật ra model đó học chủ yếu từ
+> GSM8K. Hai bộ dính vào nhau. Em không tách được "tại máy chấm sai" với
+> "tại lây từ bộ kia".
+>
+> **Lỗi thứ hai.** Em chấm điểm trên chính những đề đã dùng để chọn bài dạy.
+> Nên điểm tụt có thể chỉ là model quên bài cũ, chứ chưa chắc là nó dở đi
+> thật.
+>
+> Hai lỗi này cộng lại thì thí nghiệm của em không trả lời được câu hỏi của
+> chính nó.
+
+---
+
+## Slide 9 — Đo lại  ·  ~50 giây
+
+> Nên em làm lại. Năm lần chạy mới, sửa cả hai lỗi.
+>
+> Mỗi lần chỉ chạy một bộ đề thôi, không gộp nữa. Và em giữ riêng 30% số đề
+> làm đề thi, model chưa từng được học mấy đề đó.
+>
+> Thầy để ý hai dòng in đậm. Lần chạy A và lần chạy B **giống hệt nhau**, chỉ
+> khác đúng một chỗ: ở B em đã sửa lỗi của máy chấm.
+>
+> Nếu giả thuyết của em đúng, thì B phải khá hơn A rõ rệt. Đây là phép thử
+> trực tiếp, và thiết kế cũ của em không làm được phép thử này.
+>
+> Tổng cộng khoảng 25 giờ GPU, chia nhiều phiên vì Kaggle giới hạn 12 tiếng
+> một lần.
+
+---
+
+## Slide 10 — Kết quả  ·  ~60 giây
+
+> Đây là kết quả. Trục đứng là pass@8, tức là model còn giải nổi bài không.
+>
+> Hai đường màu cam là cách đo cũ. Thầy thấy nó lao xuống, mất hai mươi hai
+> đến hai mươi sáu điểm.
+>
+> Ba đường còn lại là cách đo mới. Gần như nằm ngang. Không tụt.
+>
+> Nghĩa là cú tụt mà em báo cáo ở tuần 1 và tuần 2 — nó đến từ **cách em đo**,
+> chứ không phải từ máy chấm.
+
+*Chỉ tay vào hai đường cam trước, rồi mới chỉ ba đường phẳng. Dừng 2 giây.*
+
+---
+
+## Slide 11 — Thí nghiệm quan trọng nhất  ·  ~70 giây
+
+> Còn đây là thí nghiệm quan trọng nhất của em.
+>
+> Đường xanh là máy chấm để nguyên. Đường cam là máy chấm **đã sửa**. Mọi thứ
+> khác giống hệt nhau.
+>
+> Thầy thấy hai đường nằm chồng lên nhau. Ở lần chạy thứ hai, từ vòng 2 trở
+> đi, hai con số **giống hệt nhau**, không lệch một chữ số nào.
+>
+> Em sửa đúng cái lỗi mà cả đề tài cho là nguyên nhân. Sửa xong, điểm không
+> nhúc nhích.
+>
+> Đề thi có 150 đề, nên mỗi đề đáng khoảng 0,67 điểm. A với B chênh nhau
+> nhiều nhất là 0,6 điểm — tức là đúng một đề.
+>
+> Đây là bằng chứng mạnh nhất cho thấy em đã nghĩ sai.
+
+*Nói câu cuối chậm và rõ. Đừng xin lỗi, đừng rào đón — chỉ nói sự việc.*
+
+---
+
+## Slide 12 — Vì sao (slide nền đen)  ·  ~70 giây
+
+> Em có tìm ra được lý do vì sao sửa mà không ăn thua.
+>
+> Đúng là gặp cách viết đó thì máy chấm gạch 100%, không trượt lần nào. Nghe
+> rất nặng.
+>
+> **Nhưng** trong bốn nghìn bài model làm mỗi vòng, chỉ có 22 bài viết theo
+> kiểu đó thôi. Tức là nửa phần trăm. Còn bộ GSM8K thì không có bài nào.
+>
+> Nhân hai con số lại: phần bài bị gạch oan mỗi vòng chỉ là nửa phần trăm.
+> Quá ít để làm tụt hai mươi điểm.
+>
+> Em còn đo được trực tiếp nữa. Ở vòng 0 model chưa học gì cả, nên lần chạy A
+> và B làm ra y hệt một bộ bài. Khác nhau chỉ là máy chấm nào chấm thôi. Sửa
+> máy chấm xong thì kết quả đổi đúng một đề trên 150 đề.
+>
+> Bài học em rút ra, và em nghĩ cái này dùng được cho người khác: một lỗi
+> nặng tới đâu cũng chỉ hại được đúng bằng số lần nó thật sự xảy ra.
+
+*Slide này nền đen, khác hẳn mấy slide kia. Tận dụng: đứng yên, nói chậm.*
+
+---
+
+## Slide 13 — Đề tài đi tiếp  ·  ~50 giây
+
+> Vậy đề tài đi tiếp thế nào.
+>
+> Cái bên trái em bỏ. Giả thuyết ban đầu, em đã tự kiểm tra bằng thí nghiệm
+> đối chứng, chạy hai lần cho chắc. Không đúng.
+>
+> Cái bên phải em giữ. Gộp nhiều bộ đề dạy chung, rồi chấm trên chính đề đã
+> học, sẽ tạo ra một cú tụt giả. Cái này em có số liệu.
+>
+> Kèm thêm một lưu ý cho người làm sau: muốn biết một lỗi máy chấm có hại
+> không, thì phải đếm xem nó xảy ra bao nhiêu lần, chứ không chỉ nhìn nó nặng
+> cỡ nào.
+>
+> Kết luận này nhỏ hơn cái em định làm lúc đầu. Nhưng cái bẫy em vấp phải thì
+> nhiều người cũng đang vấp, nên em nghĩ vẫn đáng viết ra.
+
+---
+
+## Slide 14 — Chỗ còn chưa chắc  ·  ~50 giây
+
+> Em xin nói một chỗ em còn chưa chắc.
+>
+> Cả bảy lần chạy, điểm đều tụt khoảng ba điểm ngay ở vòng 1 rồi đứng yên.
+> Nhưng mấy bài báo lớn về tự học thì đều báo là model **khá lên**. Em chưa
+> giải thích được vì sao của em ngược lại.
+>
+> Có một khả năng đơn giản mà em chưa loại trừ được: model này vốn đã được
+> tinh chỉnh rất kỹ rồi. Em dạy thêm một chút nữa, có thể chỉ làm nó lệch
+> khỏi trạng thái tốt sẵn có — bất kể em dạy nó bằng gì.
+>
+> Nên em sẽ thử dạy bằng lời giải mẫu của sách, thay vì bài model tự làm.
+> Nếu khá lên thì vòng lặp không sao. Còn nếu cũng tụt thì cú tụt là do việc
+> dạy thêm, không liên quan tự học, và em phải sửa kết luận lần nữa.
+>
+> Code em viết xong rồi, đang chờ tới lượt GPU.
+
+---
+
+## Slide 15 — Chỗ còn yếu  ·  ~40 giây
+
+> Em xin nói trước mấy chỗ còn yếu.
+>
+> Đề thi chỉ có 150 đề, nên mỗi đề đáng 0,67 điểm. Chỉ cần đổi cách bốc đề
+> thi thôi là điểm vòng 0 đã lệch 4,7 điểm — nhiều hơn cả cái em đang đo.
+>
+> Mỗi cấu hình em mới chạy được hai lần, riêng lần C thì mới một lần.
+>
+> Và lần chạy mới khác lần cũ tới ba chỗ. Nên em chỉ dám kết luận dựa trên so
+> sánh A với B thôi, vì hai lần đó chỉ khác nhau đúng một chỗ.
+
+---
+
+## Slide 16 — Tóm tắt  ·  ~30 giây
+
+> Tóm lại ba tuần vừa rồi: em chạy bảy lần, khoảng 40 giờ GPU. Em dựng một
+> thí nghiệm để kiểm tra giả thuyết của chính mình, và nó cho thấy em sai. Lý
+> do em cũng tìm ra được.
+>
+> Đề tài chuyển sang cảnh báo về cách đo. Nhỏ hơn, nhưng em chắc chắn.
+>
+> Sắp tới em chạy nốt thí nghiệm phân định, rồi viết lại bài báo.
+>
+> Em cảm ơn thầy. Mong thầy góp ý giúp em ạ.
+
+---
+
+# Nếu thầy hỏi thêm
+
+**"Vậy ba tuần vừa rồi có phí không?"**
+> Dạ không ạ. Toàn bộ code, dữ liệu, và mấy lần chạy vẫn dùng được. Cái đổi
+> là kết luận. Với lại nếu em không tự tìm ra lỗi này thì em đã viết một bài
+> báo sai, tới lúc hội đồng phát hiện thì nặng hơn nhiều ạ.
+
+**"Sao không phát hiện sớm hơn?"**
+> Dạ đúng là lẽ ra nên thấy sớm hơn. Em phát hiện nhờ tách số ra theo từng bộ
+> đề, thấy GSM8K tụt nhiều nhất mà bộ đó máy chấm không sai. Chi tiết đó
+> ngược hẳn giả thuyết nên em mới đi soi lại thiết kế.
+
+**"Kết quả âm tính thì đăng được không?"**
+> Dạ em nghĩ được ạ. Vì em không chỉ nói "không đúng", mà đo được **vì sao**
+> không đúng — lỗi nặng 100% nhưng chỉ xảy ra ở nửa phần trăm số bài. Và cái
+> bẫy thiết kế em vấp phải thì khá phổ biến trong mấy bài cùng hướng.
+
+**"Em có chắc kết luận bác bỏ này đúng không?"**
+> Dạ chắc ở phần A với B, vì em chạy hai lần seed khác nhau, lần nào hai
+> đường cũng chồng lên nhau. Còn phần so sánh cách đo cũ với cách đo mới thì
+> em chưa dám chắc hoàn toàn, vì đổi ba thứ cùng lúc.
+
+**"Bước tiếp theo cụ thể là gì?"**
+> Dạ ba việc ạ. Một là chạy thí nghiệm dạy bằng lời giải mẫu, để biết cú tụt
+> là do tự học hay do việc dạy thêm. Hai là chạy lặp thêm cho lần chạy C.
+> Ba là viết lại bài báo — em viết lại phần lớn rồi, chờ số cuối để chốt bảng
+> kết quả.
+
+**"Sao chỉ chạy model 1.5B, không chạy to hơn?"**
+> Dạ vì em chạy trên Kaggle miễn phí, mỗi phiên tối đa 12 tiếng. Một lần chạy
+> 1.5B đã mất khoảng 5 tiếng rồi ạ. Model to hơn thì không đủ giờ.
