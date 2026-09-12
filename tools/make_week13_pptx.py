@@ -267,9 +267,10 @@ tb(s, L, 4650000, W, 700000,
    "Máy chấm không đọc cách giải. Nó chỉ lấy đáp án cuối rồi so chữ với đáp án trong sách.\n"
    "Hai cách viết trên cho ra cùng một phân số, nhưng nó chỉ nhận một cách.",
    size=13.5, color=BODY, line_spacing=1.45)
-panel(s, L - 120000, 5550000, W + 240000, 620000)
-tb(s, L + 120000, 5740000, W - 240000, 300000,
-   "Kiểm tra tay 128 bài làm đúng trên MATH-500: máy gạch nhầm 10 bài, tức 7,8%. Trên GSM8K không gạch nhầm bài nào.",
+panel(s, L - 120000, 5480000, W + 240000, 800000)
+tb(s, L + 120000, 5650000, W - 240000, 520000,
+   "7,8% là tỉ lệ máy chấm gạch OAN bài model làm ĐÚNG (10/128 bài, kiểm tra tay) — không phải tỉ lệ model làm sai.\n"
+   "Trên GSM8K con số này là 0%: máy chấm ở đó không gạch oan bài nào, nên điểm đo được là năng lực thật của model.",
    size=12.5, bold=True, color=INK)
 
 # =========================================================== 6 · week 1
@@ -311,11 +312,12 @@ rows = [
 ]
 y = table(s, 1950000, cols, rows, emph=lambda i: i == 1)
 tb(s, L, y + 300000, W, 500000,
-   "Model 1.5B tụt rất sâu, vòng nào cũng tụt, không vòng nào gượng lại. Đến đây giả thuyết ban đầu\n"
-   "gần như đã được xác nhận.",
+   "Vòng 0 là model gốc chưa học gì. 69,6% trên GSM8K là năng lực thật của nó — 30,4% còn lại nó làm\n"
+   "sai thật, máy chấm gạch đúng. Sau 5 vòng chỉ còn 26,6%, và vì máy chấm ở GSM8K không gạch oan,\n"
+   "cú tụt này là tụt thật, không phải sai số đo.",
    size=13, color=BODY, line_spacing=1.45)
-panel(s, L - 120000, y + 1000000, W + 240000, 830000, fill=RGBColor(0xFD, 0xF3, 0xF3))
-tb(s, L + 120000, y + 1160000, W - 240000, 460000,
+panel(s, L - 120000, y + 1320000, W + 240000, 830000, fill=RGBColor(0xFD, 0xF3, 0xF3))
+tb(s, L + 120000, y + 1480000, W - 240000, 460000,
    "Nhưng có một điểm bất thường: GSM8K lại tụt nhiều nhất.\n"
    "Mà GSM8K chính là bộ máy chấm gần như không gạch nhầm bài nào.",
    size=12.5, bold=True, color=CRIMSON, line_spacing=1.4)

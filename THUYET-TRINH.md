@@ -84,9 +84,13 @@ thường, và mở đầu chào cả thầy lẫn các bạn.
 >
 > Lý do là máy chấm không đọc cách giải. Nó chỉ lấy đáp án cuối rồi so chữ.
 >
-> Em có kiểm tra tay 128 bài làm đúng, thì máy gạch nhầm 10 bài, tức khoảng
-> bảy phẩy tám phần trăm. Riêng bộ GSM8K thì không gạch nhầm bài nào, vì đáp
-> án bộ đó toàn số nguyên, không có phân số.
+> Em có kiểm tra tay 128 bài **model làm đúng**, thì máy gạch oan 10 bài, tức
+> khoảng bảy phẩy tám phần trăm. Riêng bộ GSM8K thì không gạch oan bài nào,
+> vì đáp án bộ đó toàn số nguyên, không có phân số.
+>
+> Em xin nhấn một chỗ dễ nhầm: bảy phẩy tám phần trăm này là **tỉ lệ máy chấm
+> sai**, không phải tỉ lệ model làm sai. Máy chấm sạch không làm điểm model
+> cao lên — nó chỉ làm cho điểm đo được trở nên đáng tin thôi.
 
 *Nếu có người hỏi ngay "sao không sửa máy chấm đi" — trả lời: "Dạ có sửa,
 đó là thí nghiệm ở slide 11 ạ." Rồi đi tiếp, đừng nhảy cóc.*
@@ -114,6 +118,14 @@ thường, và mở đầu chào cả thầy lẫn các bạn.
 >
 > Vòng nào cũng tụt, không vòng nào gượng lại. Đến đây em gần như tin chắc là
 > giả thuyết của mình đúng rồi.
+>
+> Ở đây em xin giải thích con số vòng 0. Vòng 0 là model gốc, chưa học gì cả.
+> 69,6% trên GSM8K là năng lực thật của nó — ba mươi phần trăm còn lại nó làm
+> sai thật, và máy chấm gạch là gạch đúng. Máy chấm sạch không có nghĩa điểm
+> phải là một trăm phần trăm.
+>
+> Và vì máy chấm ở GSM8K không gạch oan, nên cú tụt từ 69,6 xuống 26,6 là
+> **tụt thật**, không phải sai số đo.
 >
 > Nhưng có một chỗ em thấy lạ. Mọi người nhìn hai dòng dưới: em tách số ra theo
 > từng bộ đề, thì **GSM8K lại tụt nhiều nhất** — hai mươi lăm điểm.
@@ -377,6 +389,20 @@ ra kết quả dùng được". Nói dứt khoát, đừng rào đón.*
 > Dạ chắc ở phần A với B, vì em chạy hai lần seed khác nhau, lần nào hai
 > đường cũng chồng lên nhau. Còn phần so sánh cách đo cũ với cách đo mới thì
 > em chưa dám chắc hoàn toàn, vì đổi ba thứ cùng lúc.
+
+**"Máy chấm không sai trên GSM8K, sao vòng 0 không phải 100%?"**
+> Dạ hai cái đó khác nhau ạ. Máy chấm không sai nghĩa là nó không gạch oan bài
+> model làm đúng. Còn 69,6% là **model giải được bao nhiêu** — ba mươi phần
+> trăm còn lại model làm sai thật, máy chấm gạch là đúng. Máy chấm sạch không
+> đẩy điểm lên, nó chỉ làm cho con số 69,6% đó đáng tin thôi ạ.
+
+**"Vậy GSM8K tụt mạnh vậy là do đâu?"**
+> Dạ vì máy chấm ở GSM8K sạch nên cú tụt đó là tụt thật, model dở đi thật ạ.
+> Và nó cũng không giải thích được bằng chuyện chấm trên đề đã học — vì nếu
+> model thuộc bài thì điểm phải tăng chứ không rơi xuống dưới cả điểm ban đầu.
+> Khi em chạy GSM8K riêng một mình thì nó chỉ tụt 12,7 điểm và pass@8 đứng
+> yên. Nghĩa là khoảng 27 điểm còn lại đến từ việc **gộp hai bộ đề dạy chung**.
+> Cái sai của em là quy nó cho máy chấm, chứ hiện tượng thì có thật.
 
 **"Đề tài mới có khác đề tài cũ nhiều quá không?"**
 > Dạ không ạ, vẫn cùng một câu hỏi gốc: lỗi máy chấm ảnh hưởng thế nào tới
