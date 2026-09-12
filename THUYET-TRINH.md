@@ -280,10 +280,22 @@ xuống phòng một nhịp — đây là lúc người nghe phải thấy có g
 > Không phải em đo sai, mà là chọn nhầm chỗ để đo.
 >
 > Và mọi người để ý dòng thứ hai: `\boxed`. Model viết kiểu đó ở hơn một nửa
-> số bài, mà máy chấm cũng gạch khoảng hai mươi phần trăm. Nhân lại là khoảng
-> mười phần trăm — gấp gần hai mươi lần cái em đã thử.
+> số bài. Con số gạch em ghi ở đây là **8,5%**, sau khi em tách ra một phần
+> nhiễu: bảng gốc ghi 20%, nhưng già nửa số đó (24 trên 41 đề) là đề gốc
+> vốn máy đã không đọc được dù **không** đóng hộp — lỗi khác, không liên
+> quan `\boxed`, đã biết từ trước. Phần thật do `\boxed` gây ra là 17 trên
+> 200, tức 8,5%. Nhân với tần suất còn khoảng 4,4% — vẫn gấp tám lần cái em
+> đã thử, chỉ là không phải hai mươi lần như em tưởng lúc đầu tự tay đếm.
 >
-> Vùng đó thì chưa ai đo, kể cả đề tài này.
+> Và tối qua em đi tìm luôn nguyên nhân. Máy chấm chỉ đọc đúng công thức
+> phức tạp — căn, số phức, danh sách — khi nó nằm trong hộp `\boxed{}` hoặc
+> giữa dấu `$`. Đề gốc trong bộ dữ liệu lại lưu trần, không hộp, nên máy chấm
+> chỉ đọc được đúng một con số đầu rồi bỏ qua phần còn lại. Model làm đúng,
+> đóng hộp đúng như đề bài yêu cầu — mà vẫn bị gạch, vì đề gốc bị đọc thiếu.
+>
+> Em đã vá xong và tự kiểm tra lại: 17 trên 17 trường hợp bị gạch oan đó,
+> sau khi vá thì máy chấm nhận đúng hết, không đề nào bị gạch nhầm chiều
+> ngược lại. Vá xong rồi, có test rồi — giờ chỉ còn thiếu lượt chạy GPU.
 
 *Đây là slide nặng nhất về số. Đi từng cột một, đừng đọc cả bảng một lượt.
 Dừng lại ở dòng in đậm.*
@@ -300,8 +312,13 @@ Dừng lại ở dòng in đậm.*
 > Và điểm đầu tiên thì em đã có sẵn rồi — chính là ba tuần vừa rồi, ở tần
 > suất nửa phần trăm, không thấy ảnh hưởng gì.
 >
-> Điểm thứ hai em sẽ bắt máy chấm gạch cách viết `\boxed`, phổ biến gấp
-> khoảng **chín mươi lần**. Chỉ tốn một lần chạy, khoảng năm tiếng GPU.
+> Điểm thứ hai là `\boxed`, phổ biến gấp khoảng **chín mươi lần**. Điểm này
+> em không chỉ đi đo tần suất — tối qua em lần luôn ra nguyên nhân: máy chấm
+> chỉ đọc đúng công thức phức tạp khi nó nằm trong hộp, còn đề gốc lưu trần
+> nên bị đọc thiếu. Model đóng hộp đúng như đề bài yêu cầu mà vẫn bị gạch
+> oan. Em đã vá xong, tự kiểm tra lại cả 17 trường hợp đều hết bị gạch oan,
+> và viết test giữ nguyên chỗ vá đó. Giờ chỉ còn thiếu đúng một lượt chạy
+> Kaggle, khoảng năm tiếng GPU.
 >
 > Điểm hay của thí nghiệm này là **ngã nào cũng ra kết quả dùng được**. Nếu
 > model tụt điểm thì quy luật kia được chứng minh bằng thực nghiệm, và đề tài
@@ -311,11 +328,11 @@ Dừng lại ở dòng in đậm.*
 > Còn nếu vẫn không tụt, thì kết luận là lỗi máy chấm không phải thứ đáng lo
 > trong tự học — cũng là một câu trả lời rõ ràng.
 >
-> Toàn bộ code và dữ liệu cũ em dùng lại được hết, chỉ cần thêm một tuỳ chọn
-> cho máy chấm thôi.
+> Toàn bộ code và dữ liệu cũ em dùng lại được hết — chỗ vá là một tuỳ chọn
+> mới cho máy chấm, độc lập với tuỳ chọn vá `\dfrac` cũ, để so sánh vẫn sạch.
 
-*Đây là slide bán đề tài mới. Nhấn hai chỗ: "chín mươi lần" và "ngã nào cũng
-ra kết quả dùng được". Nói dứt khoát, đừng rào đón.*
+*Đây là slide bán đề tài mới. Nhấn hai chỗ: "đã vá xong" và "ngã nào cũng ra
+kết quả dùng được". Nói dứt khoát, đừng rào đón.*
 
 ---
 
@@ -614,17 +631,38 @@ không?"**
 
 ## Slide 14 — Bài học rút ra
 
-**"Con số 20% gạch của \boxed lấy ở đâu ra?"**
+**"Con số 8,5% gạch của \boxed lấy ở đâu ra, sao slide trước ghi 20%?"**
 > Dạ từ phép thử ép máy chấm ạ: em lấy đáp án chuẩn, viết lại theo kiểu
-> boxed, rồi bắt máy chấm chấm lại chính đáp án đó. Khoảng 20% bị gạch.
+> boxed, rồi bắt máy chấm chấm lại chính đáp án đó. Ban đầu em đếm ra 41/200
+> bị gạch (20,5%), nhưng khi soát lại từng đề em thấy 24/41 đề đó là đề gốc
+> mà máy vốn đã không đọc được **dù không đóng hộp** — lỗi hoàn toàn khác,
+> đã ghi trong `VIEC-SAU.md` từ trước (`p-q`, `\text{Evelyn}`, khoảng
+> `(3,4]`...). Đóng hộp không gây ra 24 ca đó. Phần thật do `\boxed` gây ra
+> là 17/200 = 8,5% — những đề như `3\sqrt{13}` hay `6+9i`, đọc đúng khi để
+> trần nhưng đọc sai khi đóng hộp.
 
-**"Nếu \boxed gây thiệt hại tới 10% thì sao thực tế không thấy model tụt?"**
-> Dạ câu này đúng và em phải nói rõ ạ. Con số 20% kia là từ phép thử **ép**,
-> không phải tỉ lệ tự nhiên khi model viết bài. Tỉ lệ gạch oan thật đo trên
-> bài model làm là 7,8% tính chung. Nên cột "thiệt hại thực tế" ở dòng
-> \boxed là **ước lượng trên**, không phải số đã đo. Và chính vì vậy thí
-> nghiệm tiếp theo của em phải **chủ động ép** máy chấm gạch, chứ không thể
-> ngồi chờ tỉ lệ tự nhiên.
+**"Vì sao đóng hộp lại làm máy chấm đọc sai một thứ nó đọc đúng khi để trần?"**
+> Dạ em lần ra nguyên nhân tối qua ạ. Máy chấm chỉ bật chế độ đọc đầy đủ
+> (căn, số phức, danh sách, đa thức...) khi thấy công thức nằm trong `\boxed{}`
+> hoặc giữa dấu `$`. Đáp án chuẩn trong bộ dữ liệu lại được lưu trần, không
+> hộp, nên với các đề như trên máy chấm chỉ đọc được một con số đầu tiên rồi
+> bỏ qua phần còn lại — ví dụ `3\sqrt{13}` bị đọc thành `3`. Khi model viết
+> đúng và đóng hộp đúng như đề bài yêu cầu, hai bên so sánh lệch nhau dù giá
+> trị giống hệt.
+
+**"Vá bằng cách nào, đã kiểm tra kỹ chưa?"**
+> Dạ cách vá là: nếu bài model viết có `\boxed{...}` mà đáp án chuẩn chưa có,
+> thì bọc đáp án chuẩn vào `\boxed{}` trước khi so sánh — cho cả hai bên
+> cùng một kiểu đọc. Em test trên toàn bộ 8 cách viết đã khảo sát ở Việc 1,
+> không chỉ riêng `\boxed`: 17/17 ca gạch oan hết bị gạch oan, và không đề
+> nào trong 7 cách viết còn lại bị ảnh hưởng. Code đã có, test đã viết
+> (`tests/test_verify_adapter.py`), chỉ còn thiếu lượt chạy GPU.
+
+**"Vậy thiệt hại thực tế của \boxed là bao nhiêu, không phải 10% nữa?"**
+> Dạ đúng, sau khi tách nhiễu thì thiệt hại thực tế còn khoảng 4,4%
+> (8,5% nhân với tần suất 51,5%), không phải 10% như em tính nhầm lúc đầu.
+> Vẫn gấp khoảng tám lần cái em đã thử với `\dfrac` (0,55%), nên hướng đi
+> vẫn đứng vững, chỉ là con số chính xác hơn.
 
 **"Sao \frac bị gạch 0% mà \dfrac bị gạch 100%? Cùng là phân số mà."**
 > Dạ vì máy chấm dùng một bộ luật phân tích cú pháp, và bộ luật đó biết lệnh

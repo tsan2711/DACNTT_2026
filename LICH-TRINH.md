@@ -95,10 +95,14 @@ Lệnh chạy đầy đủ cho từng bước nằm ở `experiments/viec3/KAGGL
 3. [x] **B — MATH-500 cô lập, verifier vá.** Xong 2026-09-06/08. So A vs B
    (control 1-biến sạch): hai đường cong gần như trùng nhau — vá verifier
    không tạo khác biệt đo được. **Bộ 3 A/B/C đã đủ.**
-4. **Seed thứ 2/3** — lặp lại đúng cấu hình được chọn làm headline sau khi
-   thấy A/B/C (nhiều khả năng A hoặc B trên MATH-500), chỉ đổi `--seed`.
+4. **Seed thứ 2 cho Run C** — ưu tiên cao nhất còn lại. Chưa chạy.
 5. **Ablation không lọc** — cùng dataset/model với headline, thêm
-   `--no-filter`.
+   `--no-filter`. Chưa chạy.
+6. **Run D (Giai đoạn 7, mới 2026-09-12)** — cùng config headline, thêm
+   `--patch-verifier-boxed`: vá bug thứ hai (gold đọc thiếu khi bài dự đoán
+   đóng `\boxed{}` mà gold không), chẩn đoán + code + test xong, chỉ còn
+   thiếu lượt chạy. Xem `papers/KET-QUA-CO-LAP-AC.md` mục 8 và
+   `experiments/viec3/KAGGLE.md`.
 
 **Không bắt buộc, chỉ chạy nếu còn GPU-giờ dư:** model thứ ba, chạy dài hơn
 5 vòng, họ model khác (Giai đoạn 5 trong `KE-HOACH-MO-RONG.md`).

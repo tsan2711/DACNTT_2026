@@ -457,7 +457,7 @@ cols = [(L, 3000000, "CÁCH VIẾT ĐÁP ÁN"), (L + 3200000, 2500000, "MODEL D�
         (L + 5700000, 2400000, "MÁY CHẤM GẠCH"), (L + 8100000, 2400000, "THIỆT HẠI THỰC TẾ")]
 rows = [
     ("\\frac", "55,8%", "0%", "0%"),
-    ("\\boxed", "51,5%", "~20%", "~10%"),
+    ("\\boxed", "51,5%", "8,5%", "4,4%"),
     ("số thập phân", "11,6%", "thấp", "thấp"),
     ("0,50  (thừa số 0)", "1,2%", "59%", "0,7%"),
     ("\\dfrac", "0,55%", "100%", "0,55%"),
@@ -471,10 +471,11 @@ tb(s, L, y + 260000, W, 700000,
    size=12.5, color=BODY, line_spacing=1.4)
 panel(s, L - 120000, y + 930000, W + 240000, 560000, fill=RGBColor(0xF0, 0xF6, 0xFA))
 tb(s, L + 120000, y + 1045000, W - 240000, 330000,
-   "Vùng đáng quan tâm — cách viết vừa phổ biến vừa bị gạch — thì chưa ai đo, kể cả đề tài này.",
+   "Vùng đáng quan tâm — cách viết vừa phổ biến vừa bị gạch — đã tìm ra nguyên nhân và vá xong.",
    size=12.5, bold=True, color=BLUE)
 tb(s, L, 6560000, W, 260000,
-   "Tỉ lệ gạch lấy từ phép thử ép máy chấm trên đáp án viết lại; tần suất lấy từ 4000 lời giải model sinh mỗi vòng.",
+   "Cột \\boxed đã sửa: 8,5%/4,4% là phần lỗi thật do boxed gây ra (17/200), tách khỏi 24/200 đề gốc "
+   "vốn đã không đọc được kể cả không đóng hộp (lỗi khác, đã biết từ trước).",
    size=9.5, color=MUTED)
 
 # =========================================================== 15 · new direction
@@ -483,13 +484,14 @@ header(s, 13, "ĐỀ TÀI TIẾP THEO",
        "Đo ngưỡng: lỗi phải phổ biến tới mức nào mới gây hại?")
 tb(s, L, 1600000, W, 700000,
    "Cách làm giữ nguyên toàn bộ vòng lặp, chỉ đổi chỗ máy chấm bị lệch. Mỗi lần chạy là một điểm\n"
-   "trên trục tần suất, và điểm đầu tiên thì đã có sẵn từ ba tuần qua.",
+   "trên trục tần suất. Điểm đầu tiên đã có sẵn; điểm thứ hai đã tìm ra nguyên nhân và vá xong,\n"
+   "chỉ còn thiếu lượt chạy GPU.",
    size=13.5, color=BODY, line_spacing=1.45)
 for i, (tag, fmt, freq, colour, fill, note) in enumerate([
     ("ĐIỂM 1 — ĐÃ CÓ", "\\dfrac", "0,55%", MUTED, SURFACE,
      "Không thấy ảnh hưởng.\nĐây là kết quả ba tuần vừa rồi."),
-    ("ĐIỂM 2 — SẼ CHẠY", "\\boxed", "51%", BLUE, RGBColor(0xF0, 0xF6, 0xFA),
-     "Phổ biến gấp khoảng 90 lần.\nMột lần chạy, khoảng 5 giờ GPU."),
+    ("ĐIỂM 2 — ĐÃ VÁ, CHỜ GPU", "\\boxed", "51%", BLUE, RGBColor(0xF0, 0xF6, 0xFA),
+     "Nguyên nhân: máy chấm đọc đề gốc thiếu\nkhi không đóng hộp. Đã vá + có test, chỉ\ncòn chạy — khoảng 5 giờ GPU."),
 ]):
     x = L + i * 5400000
     panel(s, x, 2500000, 5190000, 1800000, fill=fill)
@@ -509,7 +511,8 @@ for i, (colour, lbl, txt) in enumerate([
     pill(s, x, 4930000, lbl, fill=colour, width=1750000, height=310000)
     tb(s, x, 5400000, 5000000, 600000, txt, size=12, color=BODY, line_spacing=1.35)
 tb(s, L, 6300000, W, 300000,
-   "Toàn bộ code và dữ liệu cũ dùng lại được; chỉ cần thêm một tuỳ chọn cho máy chấm.",
+   "Cờ --patch-verifier-boxed đã code + có test (tests/test_verify_adapter.py); toàn bộ vòng lặp và "
+   "dữ liệu cũ dùng lại nguyên, chỉ còn thiếu lượt chạy GPU.",
    size=10.5, color=MUTED)
 
 # =========================================================== 16 · open question

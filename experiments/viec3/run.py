@@ -17,6 +17,12 @@ Qwen/Qwen2.5-1.5B-Instruct --dataset both --n 500 --rounds 5 --k 8
   R3 seed thứ 2: --seed 2 --holdout-frac 0.3
   R4 seed thứ 3: --seed 3 --holdout-frac 0.3
   R5 ablation không lọc: --seed 1 --holdout-frac 0.3 --no-filter
+
+Giai đoạn 7 (papers/KET-QUA-CO-LAP-AC.md — Run D, next queued Kaggle run):
+  same dataset/model/seed as the chosen headline run (A or C), add
+  --patch-verifier-boxed. Isolates the \\boxed gold-truncation bug (measured
+  2026-09-12: 8.5% of MATH-500 gold, ~20x more prevalent in real generations
+  than \\dfrac) the same way R1 isolated \\dfrac/\\tfrac.
 Download results/viec3/<out>/generations.jsonl and train_logs/*.json off
 Kaggle after every run — they don't survive session cleanup otherwise, and
 Giai đoạn 5's analysis needs both.
@@ -94,12 +100,14 @@ def main(argv: list[str] | None = None) -> int:
         args.select_preset,
         timeout_seconds=args.verify_timeout,
         normalize_frac_commands=args.patch_verifier,
+        normalize_gold_boxed=args.patch_verifier_boxed,
     )
     exam_adapters = {
         name: MathVerifyAdapter(
             name,
             timeout_seconds=args.verify_timeout,
             normalize_frac_commands=args.patch_verifier,
+            normalize_gold_boxed=args.patch_verifier_boxed,
         )
         for name in exam_presets
     }
@@ -112,6 +120,13 @@ def main(argv: list[str] | None = None) -> int:
         print(
             "verifier patched: \\dfrac/\\tfrac -> \\frac before parsing "
             "(Giai đoạn 1 control — see papers/KE-HOACH-MO-RONG.md)",
+            file=sys.stderr,
+        )
+    if args.patch_verifier_boxed:
+        print(
+            "verifier patched: gold wrapped in \\boxed{} before parsing "
+            "whenever the prediction contains \\boxed{...} (Giai đoạn 7 "
+            "control — see papers/KET-QUA-CO-LAP-AC.md)",
             file=sys.stderr,
         )
     if args.no_filter:
@@ -424,6 +439,7 @@ def _manifest(
         # holdout_frac=0, no_filter=False) reproduce the original 2 runs.
         "seed": args.seed,
         "patch_verifier": args.patch_verifier,
+        "patch_verifier_boxed": args.patch_verifier_boxed,
         "holdout_frac": args.holdout_frac,
         "n_select_items": len(train_ids) if train_ids is not None else len(items),
         "n_exam_items": len(test_ids) if test_ids is not None else len(items),
@@ -504,6 +520,15 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         help="Giai đoạn 1 control: normalize \\dfrac/\\tfrac -> \\frac before "
         "verify, isolating verifier bias as the one changed variable "
         "(same dataset/model/rounds as the original run)",
+    )
+    parser.add_argument(
+        "--patch-verifier-boxed",
+        action="store_true",
+        help="Giai đoạn 7 control: wrap gold in \\boxed{} before verifying "
+        "whenever the prediction contains \\boxed{...} and gold doesn't "
+        "already, isolating the boxed gold-truncation bug (measured "
+        "2026-09-12: 8.5% of MATH-500 gold) as the one changed variable, "
+        "independent of --patch-verifier",
     )
     parser.add_argument(
         "--holdout-frac",

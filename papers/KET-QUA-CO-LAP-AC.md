@@ -357,3 +357,55 @@ Log cũ chỉ là mốc tham chiếu lỏng, không dùng làm bằng chứng nh
 - [ ] Kiểm tra compile LaTeX qua Overleaf (chưa compile thử bản mới), đếm
       lại độ dài Abstract (LNCS yêu cầu 150–250 từ — bản mới đang dài hơn
       bản cũ, nhiều khả năng vượt, cần cắt).
+
+## 8. Giai đoạn 7 (mới, 2026-09-12) — bug `\boxed` đã chẩn đoán và vá xong
+
+Bảng "tần suất × tỉ lệ gạch" trình bày tối 11/9 (`THUYET-TRINH.md` slide 14)
+ghi `\boxed` bị gạch ~20% trên phép thử ép của Việc 1
+(`results/viec1/table.csv`: `math500,boxed,...,41,200,0.2050`). Số đó **bị
+nhiễm**: soát lại từng đề cho thấy 24/41 là `reason_guess=parse_empty` —
+đúng 24 đề "sách viết máy không đọc được" đã ghi ở `VIEC-SAU.md` mục 1
+(`p-q`, `\text{Evelyn}`, `(3,4]`, …), thất bại **cả khi không đóng hộp**,
+không liên quan `\boxed`. Phần thật do `\boxed` gây ra chỉ là 17/41
+(`reason_guess=compare_false`), tức **17/200 = 8,5%** trên MATH-500 — ví dụ
+`3\sqrt{13}`, `6+9i`, `1,-2`, `1 \pm \sqrt{19}`, `10,\!080`. Thiệt hại thực
+tế đã sửa: `8,5% × 51,5% ≈ 4,4%`, không phải ~10% như ước lượng ban đầu.
+
+**Nguyên nhân (chẩn đoán, không phải suy đoán — đã verify bằng
+`math_verify.parse()` trực tiếp):** `math-verify` chỉ bật chế độ đọc LaTeX
+đầy đủ (căn, số phức, tuple/list, đa thức, ma trận) khi công thức nằm trong
+một dấu phân định nhận diện được (`\boxed{...}` hoặc `$...$`). Văn bản trần
+không có dấu phân định bị rơi về một luật dự phòng "lấy con số trần đầu
+tiên", bỏ hết phần còn lại — `parse("3\\sqrt{13}")` (không config, không
+bọc) trả về `[3, '3']`, bỏ mất `\sqrt{13}`. Đáp án chuẩn trong
+`data/gold/` được lưu **trần** (không `\boxed`, không `$`), nên với các đề
+dạng phức hợp, gold luôn bị đọc thiếu — trong khi bài model thật (đúng theo
+prompt `MATH_USER`) luôn đóng `\boxed{}`, nên đọc đúng đầy đủ. Hai bên lệch
+kiểu đọc dù cùng giá trị ⇒ `compare_false`.
+
+**Vá:** `MathVerifyAdapter(..., normalize_gold_boxed=True)` — nếu bài dự
+đoán chứa `\boxed{...}` mà gold chưa tự là `\boxed{...}` nguyên khối, bọc
+gold vào `\boxed{}` trước khi parse, cho cả hai bên cùng đường đọc. Chỉ kích
+hoạt khi *prediction* có boxed — không đụng tới các biến thể còn lại (Việc 1
+có 8 kiểu viết/dataset; đã chạy hồi quy đủ cả 8 × 2 preset × 2 dataset, chỉ
+đúng dòng `math500 boxed` đổi, không dòng nào khác đổi). CLI:
+`experiments/viec3/run.py --patch-verifier-boxed` (độc lập với
+`--patch-verifier` cũ, để so sánh vẫn theo đúng một biến một lần, giống hệt
+cách B cô lập bug `\dfrac`). Test: `tests/test_verify_adapter.py` —
+`test_normalize_gold_boxed_*` (3 case mới, dùng math-verify thật, không
+mock). 27/27 test qua.
+
+Dư lại 4/200 rejects dưới preset `reward` sau khi vá (`11\sqrt2`, `\frac43`,
+`\frac65`, `\frac{270}7\text{ degrees}`) — đều là lỗi thiếu ngoặc `\frac`
+**đã biết từ trước** (`VIEC-SAU.md` mục "làm sau #3": "`\frac43` →
+`\frac{4}{3}}`"), không phải bug `\boxed` mới, không cần vá thêm cho Giai
+đoạn 7.
+
+**Run D (kế tiếp sau C-seed1 + ablation trong hàng đợi GPU):** cùng config
+với run headline đã chọn (nhiều khả năng A hoặc C), thêm
+`--patch-verifier-boxed`. So Run D với headline là control 1-biến sạch y hệt
+B-vs-A, nhưng cô lập đúng bug lớn hơn ~8 lần thay vì bug nhỏ nhất bảng. Ngã
+nào cũng dùng được: tụt điểm ⇒ chứng minh được quy luật tần suất × mức độ
+nghiêm trọng bằng thực nghiệm thứ hai; không tụt ⇒ củng cố thêm kết luận
+methodological hiện tại (hai bug độc lập, hai lần null, càng chắc). Xem
+lệnh chạy đầy đủ ở `experiments/viec3/KAGGLE.md`.

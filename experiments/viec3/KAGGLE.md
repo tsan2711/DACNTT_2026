@@ -200,6 +200,10 @@ chạy y hệt như trước):
 - `--seed N`: cố định `random`/`torch` — dùng cùng seed cho A/B/C (so sánh
   công bằng), đổi seed khi lặp lại ở Giai đoạn 2.
 - `--no-filter`: bỏ hẳn bước lọc verifier — dùng cho ablation Giai đoạn 3.
+- `--patch-verifier-boxed`: vá bug đọc thiếu gold khi bài dự đoán đóng
+  `\boxed{}` mà gold không — bug thứ hai, chẩn đoán + vá xong 2026-09-12
+  (`papers/KET-QUA-CO-LAP-AC.md` mục 8). Độc lập với `--patch-verifier`
+  (bug `\dfrac`), dùng cho Run D Giai đoạn 7.
 
 ```bash
 # A — MATH-500 cô lập, verifier gốc (headline mới + mốc so sánh cho B)
@@ -221,18 +225,29 @@ python -m experiments.viec3.run --mode hf --model Qwen/Qwen2.5-1.5B-Instruct \
   --seed 1 --holdout-frac 0.3 \
   --out /kaggle/working/results/viec3/c-gsm8k-isolated
 
-# Giai đoạn 2 — seed thứ 2/3, lặp lại đúng cấu hình được chọn làm headline
-# (nhiều khả năng là A hoặc B), chỉ đổi --seed
+# C-seed1 — VIỆC CHẠY KẾ TIẾP, ƯU TIÊN CAO NHẤT (papers/KET-QUA-CO-LAP-AC.md
+# mục 7): -12.7 điểm pass@1 của C seed 0 là hiệu ứng dương duy nhất còn sống
+# của bài, mới đo 1 seed, cần seed thứ 2 để biết thật hay nhiễu.
 python -m experiments.viec3.run --mode hf --model Qwen/Qwen2.5-1.5B-Instruct \
-  --dataset math500 --n 500 --rounds 5 --k 8 --max-tokens 512 \
+  --dataset gsm8k --n 500 --rounds 5 --k 8 --max-tokens 512 \
   --seed 2 --holdout-frac 0.3 \
-  --out /kaggle/working/results/viec3/seed2-math500
+  --out /kaggle/working/results/viec3/c-gsm8k-isolated-seed1
 
 # Giai đoạn 3 — ablation không lọc, cùng dataset/model với headline
 python -m experiments.viec3.run --mode hf --model Qwen/Qwen2.5-1.5B-Instruct \
   --dataset math500 --n 500 --rounds 5 --k 8 --max-tokens 512 \
   --seed 1 --holdout-frac 0.3 --no-filter \
   --out /kaggle/working/results/viec3/no-filter-math500
+
+# Giai đoạn 7 (Run D) — bug \boxed thay cho bug \dfrac, cùng config với
+# headline (đổi --dataset/--seed cho khớp run headline thật đã chọn; ví dụ
+# dưới dùng cấu hình của A). Control 1-biến sạch, đúng phương pháp B-vs-A
+# nhưng cô lập bug lớn hơn ~8 lần (8.5% x 51.5% ~= 4.4%, so với 0.55% của
+# \dfrac). Code + test đã xong, chỉ còn thiếu lượt chạy này.
+python -m experiments.viec3.run --mode hf --model Qwen/Qwen2.5-1.5B-Instruct \
+  --dataset math500 --n 500 --rounds 5 --k 8 --max-tokens 512 \
+  --seed 1 --holdout-frac 0.3 --patch-verifier-boxed \
+  --out /kaggle/working/results/viec3/d-math500-boxed-patched
 ```
 
 **Sau MỖI lần chạy (dù full hay bị Kaggle ngắt giữa chừng), tải về máy/Drive

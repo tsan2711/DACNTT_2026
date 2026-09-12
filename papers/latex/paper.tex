@@ -916,6 +916,30 @@ selection-driven contraction from ordinary self-training on model output;
 and extend the isolated design to a second model size to test whether the
 size-dependent severity seen under pooling survives isolation.
 
+A second, independent format-class bug gives a natural next operating point
+for the same control design. \texttt{math-verify}'s rich LaTeX extraction
+(square roots, complex numbers, tuples, polynomials) only activates inside a
+recognised delimiter (\verb|\boxed{...}| or \verb|$...$|); undelimited text
+falls back to a bare-number heuristic that silently drops the rest of the
+expression. Our gold answers are stored undelimited, so whenever a model
+correctly boxes a compound answer --- exactly what our GVT prompt asks for
+--- gold is parsed as a truncated stub while the prediction is parsed in
+full, and the two compare unequal. Re-examining the format probe
+(Section~\ref{sec:verifier}) attributes only $17/41$ of the MATH-500
+\texttt{boxed} rejections to this mechanism specifically ($8.5\%$; the
+remaining $24/41$ are the pre-existing unparseable gold formats noted
+above, which fail identically whether or not the answer is boxed), giving
+an estimated damage of $8.5\% \times 51.5\% \approx 4.4\%$ under the
+prevalence measured in Section~\ref{sec:prevalence} --- roughly eight times
+\verb|\dfrac|'s $0.55\%$ and, unlike \verb|\dfrac|, untested by this or any
+study we are aware of. We implemented and unit-tested the
+matching patch (wrap gold in \verb|\boxed{}| whenever the prediction already
+contains one and gold does not, verified against every writing-style
+variant from the format probe of Section~\ref{sec:verifier} with no
+regression elsewhere); running it as a
+Run-D control against the chosen headline configuration, exactly as Run~B
+isolated the \verb|\dfrac| patch against Run~A, is queued next.
+
 \begin{credits}
 \subsubsection{\ackname}
 This work was carried out as an undergraduate research project. No external
