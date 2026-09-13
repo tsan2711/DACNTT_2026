@@ -1,4 +1,4 @@
-# Kịch bản nói — báo cáo tuần 1 đến tuần 3 (12/9/2026)
+# Kịch bản nói — báo cáo tuần 1 đến tuần 3 (13/9/2026)
 
 Đi kèm `BaoCaoTienDo_Tuan1-3_52300057_52300006.pptx`, 20 slide.
 Tổng khoảng **17–19 phút**. Đọc to thử ít nhất một lần trước khi vào.

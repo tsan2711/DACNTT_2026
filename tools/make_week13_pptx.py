@@ -190,7 +190,7 @@ tb(s, L, 3850000, 9200000, 1000000,
    size=15, color=BODY, line_spacing=1.4)
 rule(s, L, 5250000, 2400000, color=CRIMSON, pt=2.0)
 tb(s, L, 5480000, 6000000, 300000, "Nguyễn Tấn Sang", size=13, bold=True, color=INK)
-tb(s, L, 5820000, 6000000, 300000, "12 tháng 9, 2026", size=12, color=MUTED)
+tb(s, L, 5820000, 6000000, 300000, "13 tháng 9, 2026", size=12, color=MUTED)
 
 # =========================================================== 2 · agenda
 s = new()
