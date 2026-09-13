@@ -36,6 +36,7 @@ def run_rounds(
     k: int,
     train: bool = True,
     extra_exam: bool = False,
+    extra_exam_k: int | None = None,
     locked_exam: str = "reward",
     on_round: Callable[[list[RoundRecord]], None] | None = None,
     train_item_ids: frozenset[str] | None = None,
@@ -68,6 +69,16 @@ def run_rounds(
     scoring are untouched, so the pass@* curve stays comparable. Note the
     training set is smaller than the GVT pool (one solution per problem rather
     than up to k), which is a difference the comparison has to carry.
+
+    ``extra_exam_k`` (Giai đoạn 8): sample size for the ``extra_exam`` round
+    only, when different from the training rounds' ``k``. Lets a run measure
+    e.g. pass@32 at the final round (to see an amplify-vs-expand crossover
+    the way large-k RL papers do) without generating that many samples every
+    round — training and mid-run exams still use ``k``, only the last exam
+    call spends more inference. No effect unless ``extra_exam`` is also set.
+    A/B/C against the previous round then compares pass@k at two different
+    k's (e.g. pass@8 vs pass@32) — still valid per-item (added/lost use
+    ``any(row)`, order-independent), just not an apples-to-apples k.
     """
     records: list[RoundRecord] = []
     prev_flags: list[list[bool]] | None = None
@@ -109,7 +120,7 @@ def run_rounds(
                 items,
                 generator,
                 exam_adapters,
-                k,
+                extra_exam_k or k,
                 rounds,
                 prev_flags,
                 locked_exam,

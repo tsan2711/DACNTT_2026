@@ -124,6 +124,49 @@ def test_dry_rounds_select_then_measure() -> None:
     assert all(isinstance(ex, TrainExample) for ex in trainer.examples)
 
 
+def test_extra_exam_k_overrides_sample_size_for_the_final_exam_only() -> None:
+    # Giai đoạn 8: the final --extra-exam round should be able to sample more
+    # (e.g. k=8) than every training round (k=4), to check for an
+    # amplify-vs-expand crossover without paying that cost every round.
+    items = [_item("a", "10 apples?", "10")]
+    generator = ScriptedGenerate({"10 apples?": [r"\boxed{10}", "11"]})
+    adapter = _adapter({r"\boxed{10}": True, "11": False})
+    records = run_rounds(
+        items,
+        generator=generator,
+        trainer=NoOpTrain(),
+        select_adapter=adapter,
+        exam_adapters={"reward": adapter},
+        rounds=1,
+        k=4,
+        extra_exam=True,
+        extra_exam_k=8,
+    )
+    assert len(records) == 2
+    training_round, extra_round = records
+    assert sorted(training_round.pass_at.keys()) == [1, 4]
+    assert sorted(extra_round.pass_at.keys()) == [1, 8]
+    assert len(extra_round.flags["reward"][0]) == 8
+
+
+def test_extra_exam_without_extra_exam_k_keeps_the_training_k() -> None:
+    # Old behaviour (no Giai đoạn 8 flag passed) must be unchanged.
+    items = [_item("a", "10 apples?", "10")]
+    generator = ScriptedGenerate({"10 apples?": [r"\boxed{10}", "11"]})
+    adapter = _adapter({r"\boxed{10}": True, "11": False})
+    records = run_rounds(
+        items,
+        generator=generator,
+        trainer=NoOpTrain(),
+        select_adapter=adapter,
+        exam_adapters={"reward": adapter},
+        rounds=1,
+        k=4,
+        extra_exam=True,
+    )
+    assert sorted(records[-1].pass_at.keys()) == [1, 4]
+
+
 def test_select_all_keeps_rejected_solutions_too() -> None:
     """Giai đoạn 4 ablation: verifier gate skipped, every generated solution
     becomes a training example — even ones the same adapter would reject."""

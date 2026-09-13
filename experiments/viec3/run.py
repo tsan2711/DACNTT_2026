@@ -174,6 +174,7 @@ def main(argv: list[str] | None = None) -> int:
         k=args.k,
         train=not args.no_train,
         extra_exam=args.extra_exam,
+        extra_exam_k=args.extra_exam_k,
         locked_exam=args.select_preset,
         on_round=_save_partial,
         train_item_ids=train_ids,
@@ -503,6 +504,16 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         "--extra-exam",
         action="store_true",
         help="one more generate after the last train",
+    )
+    parser.add_argument(
+        "--extra-exam-k",
+        type=int,
+        default=None,
+        help=(
+            "sample size for --extra-exam only (e.g. 32), when different from "
+            "--k. Training/mid-run exams keep using --k; only the final exam "
+            "spends more inference. See Giai đoạn 8 note in gvt/loop.py."
+        ),
     )
     parser.add_argument("--out", type=Path, default=_REPO_ROOT / "results" / "viec3")
     parser.add_argument("--cache", type=Path, default=_REPO_ROOT / "data" / "gold")
