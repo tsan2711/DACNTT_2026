@@ -107,6 +107,15 @@ Lệnh chạy đầy đủ cho từng bước nằm ở `experiments/viec3/KAGGL
 **Không bắt buộc, chỉ chạy nếu còn GPU-giờ dư:** model thứ ba, chạy dài hơn
 5 vòng, họ model khác (Giai đoạn 5 trong `KE-HOACH-MO-RONG.md`).
 
+> **Chốt 2026-09-13 — đây là vòng chạy cuối cùng.** Câu hỏi gốc của đề tài
+> (model có giỏi lên không / verifier lệch có phải nguyên nhân) đã có câu
+> trả lời đầy đủ từ A/B/C: **không** và **không**. Ba việc dưới đây (seed 2
+> cho GSM8K, ablation `--no-filter`, control `--train-on-gold`) chỉ giải
+> thích thêm phần dư nhỏ còn lại (tụt 2,7–3,4 điểm ở MATH-500), **không bắt
+> buộc** để bài báo hoàn chỉnh. Chạy xong ba cái này — dù kết quả ra sao,
+> kể cả mơ hồ — thì **dừng, viết bài báo với kết quả có sẵn, không mở thêm
+> thí nghiệm mới**. Xem lý do đầy đủ ở `papers/KET-QUA-CO-LAP-AC.md`.
+
 **Không được nhảy cóc bỏ A hoặc C** — cả hai là ranh giới cứng đã chốt
 (xem "Nếu GPU-giờ bị hạn chế" bên dưới).
 

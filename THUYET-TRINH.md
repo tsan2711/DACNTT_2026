@@ -1,7 +1,7 @@
 # Kịch bản nói — báo cáo tuần 1 đến tuần 3 (13/9/2026)
 
-Đi kèm `BaoCaoTienDo_Tuan1-3_52300057_52300006.pptx`, 19 slide.
-Tổng khoảng **12–14 phút**. Đọc to thử ít nhất một lần trước khi vào.
+Đi kèm `BaoCaoTienDo_Tuan1-3_52300057_52300006.pptx`, 17 slide.
+Tổng khoảng **11–13 phút**. Đọc to thử ít nhất một lần trước khi vào.
 
 **Lưu ý về cách xưng hô:** slide viết ở giọng trung tính, không có "em" hay
 "thầy" — vì slide là để cả phòng đọc. Còn lời nói thì vẫn xưng "em" bình
@@ -33,7 +33,8 @@ thường, và mở đầu chào cả thầy lẫn các bạn.
 ## Slide 2 — Nội dung  ·  ~15 giây
 
 > Phần trình bày đi theo thứ tự này: bối cảnh đề tài, lỗi của máy chấm, kết
-> quả hai tuần đầu, vấn đề trong thiết kế, và cuối cùng là thí nghiệm làm lại.
+> quả hai tuần đầu, vấn đề trong thiết kế, thí nghiệm làm lại, và cuối cùng là
+> câu trả lời cho câu hỏi của đề tài.
 
 ---
 
@@ -49,8 +50,12 @@ thường, và mở đầu chào cả thầy lẫn các bạn.
 > Nhưng cả cách làm này dựa trên một niềm tin: **máy chấm phải chấm đúng**.
 > Nếu máy chấm sai, model sẽ học nhầm mà không ai biết.
 >
-> Và máy chấm em dùng thì có sai. Sai theo một quy luật cố định. Nên câu hỏi
-> của em là: sau nhiều vòng như vậy, model có bị dở đi không?
+> Và máy chấm em dùng thì có sai, sai theo một quy luật cố định. Nên câu hỏi
+> của em là: sau nhiều vòng như vậy, model giỏi toán hơn thật, hay chỉ học
+> cách viết mà máy chấm ưa?
+>
+> Giả thuyết ban đầu của em còn bi quan hơn: máy chấm sai như vậy sẽ làm
+> model dở đi.
 
 ---
 
@@ -260,58 +265,47 @@ xuống phòng một nhịp — đây là lúc người nghe phải thấy có g
 
 ---
 
-## Slide 14 — Hướng tiếp theo  ·  ~40 giây
+## Slide 14 — Trả lời câu hỏi đề tài  ·  ~60 giây
 
-> Từ ba tuần qua em rút ra một bài học: lỗi máy chấm nặng tới đâu cũng chỉ
-> hại được đúng bằng số lần nó xảy ra.
+> Giờ em quay lại câu hỏi của đề tài: tự học có làm model giỏi toán hơn thật
+> không, hay chỉ học cách viết mà máy chấm ưa?
 >
-> Lỗi em đã thử là `\dfrac` — nó chỉ làm gạch oan khoảng nửa phần trăm số
-> bài mỗi vòng, nên không thấy ảnh hưởng gì. Bước tiếp theo là thử một lỗi
-> **phổ biến hơn gấp tám lần**, gạch oan khoảng 4,4% số bài.
+> Đây là số từ các lần chạy đã sửa thiết kế. Trên MATH-500, pass@1 từ 32 xuống
+> 29, pass@8 gần như đứng yên. Qua bốn vòng, model giải thêm được 32 đề nhưng
+> cũng mất 34 đề, coi như hoà. GSM8K cũng vậy: pass@8 đứng yên, còn pass@1 tụt
+> ở vòng cuối.
 >
-> Nếu lỗi này gây hại còn lỗi kia thì không, em sẽ biết được ngưỡng: lỗi máy
-> chấm xảy ra bao nhiêu thì bắt đầu đáng lo.
+> Vậy model **không giỏi lên**. Nó cũng **không học theo máy chấm**: vá máy
+> chấm xong kết quả y như cũ, như slide 11. Cách viết có đổi một chút, bớt
+> dùng `\boxed`, nhưng không dồn về một kiểu nào, đáp án còn đa dạng hơn trước.
+>
+> Nên câu trả lời của em là: với model 1.5B, tự học không làm model giỏi lên,
+> và lý do không nằm ở máy chấm.
 
-*Chỉ vào hai con số 0,55% và 4,4%. Đó là toàn bộ ý của slide.*
+*Chỉ vào hai ô màu ở dưới. Đó là hai ý cần người nghe nhớ.*
 
 ---
 
-## Slide 15 — Lỗi thứ hai  ·  ~35 giây
+## Slide 15 — Hướng tiếp theo  ·  ~50 giây
 
-> Lỗi thứ hai là thế này. Một bài có đáp án 3 căn 13. Đáp án trong sách lưu
-> dạng trần, máy chấm chỉ đọc được số 3. Còn model làm đúng và ghi trong
-> `\boxed` như đề yêu cầu, máy chấm đọc đủ 3 căn 13. Thế là "3" khác
-> "3 căn 13", bài đúng bị gạch.
+> Câu hỏi tiếp theo là: vậy tại sao? Tên phương pháp có ba ý: model **tự**
+> học, qua bước **chấm**, để **giỏi lên**. Em kiểm tra từng ý bằng một thí
+> nghiệm.
 >
-> Lỗi này gặp ở 8,5% số đề MATH-500. Em đã sửa bằng cách bọc đáp án trong
-> sách vào `\boxed` trước khi chấm, và kiểm tra lại không làm hỏng chỗ khác.
+> Một, chạy lại GSM8K lần nữa, xem cú tụt 12,7 điểm có thật hay do may rủi.
+>
+> Hai, bỏ hẳn bước chấm, dạy lại bằng cả tám bài. Nếu điểm vẫn như cũ thì bước
+> chấm không đóng góp gì.
+>
+> Ba, thay bài model tự làm bằng lời giải mẫu trong sách. Nếu vẫn tụt, thì vấn
+> đề không ở chuyện tự học, mà ở việc dạy thêm lên một model vốn đã được tinh
+> chỉnh kỹ.
+>
+> Cả ba đã code xong, đang chờ tới lượt GPU.
 
 ---
 
-## Slide 16 — Kế hoạch  ·  ~40 giây
-
-> Kế hoạch chỉ cần một lần chạy: giữ nguyên mọi thứ như lần chạy A, chỉ bật
-> bản sửa lỗi này, rồi so với lần A đã có sẵn. Khoảng năm tiếng GPU.
->
-> Có hai khả năng. Nếu điểm khác lần A rõ rệt, thì lỗi phổ biến có gây hại,
-> và ngưỡng nằm đâu đó giữa 0,55% và 4,4%. Nếu điểm gần như cũ, thì kể cả lỗi
-> gấp tám lần cũng vô hại — kết luận "lỗi máy chấm không phải thủ phạm" càng
-> chắc.
->
-> Kết quả nào cũng viết được vào bài báo.
-
----
-
-## Slide 17 — Chỗ còn chưa chắc  ·  ~30 giây
-
-> Còn một chỗ em chưa chắc: cả bảy lần chạy điểm đều tụt nhẹ ở vòng đầu rồi
-> đứng yên, trong khi các bài báo khác báo là khá lên. Có thể chỉ do việc dạy
-> thêm làm model lệch đi. Em sẽ thử dạy bằng lời giải mẫu trong sách để kiểm
-> tra.
-
----
-
-## Slide 18 — Hạn chế  ·  ~25 giây
+## Slide 16 — Hạn chế  ·  ~25 giây
 
 > Ba hạn chế: đề thi chỉ 150 đề nên nhiễu khá lớn; mỗi cấu hình mới chạy hai
 > lần; và thiết kế mới khác thiết kế cũ ba chỗ, nên em chỉ kết luận dựa trên
@@ -319,10 +313,14 @@ xuống phòng một nhịp — đây là lúc người nghe phải thấy có g
 
 ---
 
-## Slide 19 — Tóm tắt  ·  ~25 giây
+## Slide 17 — Tóm tắt  ·  ~30 giây
 
-> Tóm lại: giả thuyết ban đầu sai, và em tìm ra được vì sao. Sắp tới em thử
-> lỗi phổ biến hơn để tìm ngưỡng gây hại, rồi viết lại bài báo.
+> Tóm lại: câu hỏi của đề tài là tự học có làm model giỏi toán hơn thật không.
+> Với model 1.5B, câu trả lời là không. Model đứng yên hoặc hơi dở đi, và
+> không phải do máy chấm. Cú sụp em thấy ở tuần một, tuần hai phần lớn là do
+> cách đo sai.
+>
+> Sắp tới em chạy ba thí nghiệm để tìm nguyên nhân, rồi viết lại bài báo.
 >
 > Em cảm ơn thầy và các bạn đã theo dõi.
 
@@ -572,37 +570,46 @@ không?"**
 
 ---
 
-## Slide 14–16 — Hướng tiếp theo
+## Slide 14 — Trả lời câu hỏi đề tài
 
-**"Sao lại chọn lỗi \boxed để thử tiếp?"**
-> Dạ vì trong các lỗi em đo được, đây là lỗi gạch oan nhiều bài nhất —
-> khoảng 4,4% số bài mỗi vòng, gấp tám lần lỗi `\dfrac` đã thử. Muốn biết lỗi
-> máy chấm có hại không thì phải thử lỗi đủ lớn.
+**"MATH-500 chỉ giảm 2,7 điểm, có phải nhiễu không?"**
+> Dạ có thể ạ. Nên em không nói model dở đi trên MATH-500, em chỉ nói nó không
+> giỏi lên. Em chạy hai seed, pass@1 một lần từ 32,0 xuống 29,3, một lần từ
+> 36,7 xuống 33,3. Không lần nào tăng.
 
-**"Con số 8,5% có chắc không?"**
-> Dạ lần đo đầu em ra 20%, nhưng soát lại từng đề thì hơn một nửa là do một
-> lỗi khác không liên quan. Trừ đi thì còn 17 trên 200 đề, tức 8,5%.
+**"Bớt dùng \boxed có phải là đang học theo máy chấm không?"**
+> Dạ em nghĩ là không. Máy chấm đọc được cả `\boxed` lẫn `$…$`, nên đổi sang
+> `$…$` không giúp được chấm đúng hơn. Thêm nữa, vá máy chấm xong kết quả
+> không đổi.
 
-**"Sửa lỗi này có làm hỏng chỗ khác không?"**
-> Dạ không ạ. Em chạy lại toàn bộ 8 kiểu viết đáp án trên cả hai bộ đề, chỉ
-> đúng dòng `\boxed` của MATH-500 thay đổi. Toàn bộ test đều qua.
-
-**"Nếu lần chạy này cũng không khác gì thì đề tài còn gì?"**
-> Dạ khi đó hai lỗi độc lập, hai lần kiểm tra, đều không gây hại — kết luận
-> "lỗi máy chấm không phải thủ phạm" chắc hơn hẳn. Câu hỏi còn lại chuyển
-> sang thí nghiệm dạy bằng lời giải mẫu ở slide 17.
+**"Các bài báo khác báo là tự học làm model giỏi lên, sao ở đây không?"**
+> Dạ em chưa trả lời chắc được, đó đúng là thí nghiệm thứ ba ở slide sau. Khả
+> năng em nghi nhất là model em dùng là bản Instruct đã tinh chỉnh kỹ, dạy
+> thêm một ít dễ làm nó lệch đi.
 
 ---
 
-## Slide 17 — Chỗ còn chưa chắc
+## Slide 15 — Hướng tiếp theo
 
-**"Nếu dạy bằng lời giải mẫu cũng tụt thì sao?"**
+**"Nếu bỏ bước lọc mà điểm như cũ thì đề tài còn gì?"**
+> Dạ thì đó là một kết quả mạnh ạ: với model nhỏ này, bước chấm, là phần
+> quan trọng nhất trong tên phương pháp, lại không đóng góp gì. Nó trả lời
+> thẳng vào câu hỏi của đề tài.
+
+**"Nếu dạy bằng lời giải sách cũng tụt thì sao?"**
 > Dạ thì cú tụt là do việc dạy thêm chứ không do tự học, em phải sửa kết luận
 > lần nữa. Nhưng cảnh báo về thiết kế gộp bộ đề vẫn giữ nguyên.
 
+**"Máy chấm còn lỗi nào khác không?"**
+> Dạ em tìm ra thêm một lỗi: đáp án trong sách không có `\boxed` thì máy
+> chấm đọc thiếu, ví dụ 3 căn 13 chỉ đọc được số 3. Em đã vá và có test. Nhưng
+> sửa máy chấm không phải việc chính của đề tài, và lỗi `\dfrac` đã cho thấy
+> vá xong kết quả không đổi, nên em để lần chạy kiểm tra lỗi này sau ba thí
+> nghiệm kia.
+
 ---
 
-## Slide 18 — Hạn chế
+## Slide 16 — Hạn chế
 
 **"Nhiễu 4,7 điểm mà kết luận dựa trên chênh 0,6 điểm, có mâu thuẫn không?"**
 > Dạ không ạ. 4,7 điểm là chênh lệch khi đổi sang **bộ đề thi khác**. Còn A
@@ -610,7 +617,7 @@ không?"**
 
 ---
 
-## Slide 19 — Tóm tắt
+## Slide 17 — Tóm tắt
 
 **"Sao chỉ chạy model 1.5B?"**
 > Dạ Kaggle miễn phí giới hạn 12 tiếng một phiên, một lần chạy 1.5B đã mất

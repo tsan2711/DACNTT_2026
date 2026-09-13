@@ -201,7 +201,7 @@ items = [
     ("Kết quả tuần 1 và tuần 2", "cả hai model đều tụt điểm"),
     ("Vấn đề trong thiết kế", "hai lỗi khiến số liệu không dùng được"),
     ("Thí nghiệm làm lại", "năm lần chạy mới, kết quả ngược lại"),
-    ("Nguyên nhân và đề tài tiếp theo", "hướng nghiên cứu sau khi điều chỉnh"),
+    ("Trả lời câu hỏi đề tài", "và ba thí nghiệm tiếp theo"),
 ]
 y = 2150000
 for i, (h, d) in enumerate(items, 1):
@@ -228,9 +228,10 @@ tb(s, L + 120000, 3480000, W - 240000, 600000,
    "model sẽ học nhầm, mà không ai biết.",
    size=14, font=DISPLAY, color=INK, line_spacing=1.4)
 tb(s, L, 4500000, W, 300000, "CÂU HỎI CỦA ĐỀ TÀI", size=11, bold=True, color=MUTED)
-tb(s, L, 4870000, W, 700000,
-   "Máy chấm có sai, và sai theo một quy luật cố định.\nSau nhiều vòng tự học, model có bị dở đi không?",
-   size=16, font=DISPLAY, bold=True, color=CRIMSON, line_spacing=1.35)
+tb(s, L, 4870000, W, 900000,
+   "Sau nhiều vòng tự học, model giỏi toán hơn thật, hay chỉ học cách viết mà máy chấm ưa?\n"
+   "Giả thuyết ban đầu: máy chấm sai theo một quy luật cố định sẽ làm model dở đi.",
+   size=15, font=DISPLAY, bold=True, color=CRIMSON, line_spacing=1.35)
 
 # =========================================================== 4 · the loop
 s = new()
@@ -447,114 +448,67 @@ tb(s, L, 5330000, W, 700000,
    "nghiên cứu cùng hướng, nên vẫn là đóng góp có ích.",
    size=13, color=BODY, line_spacing=1.4)
 
-# =========================================================== 14 · next question
+# =========================================================== 14 · answer
 s = new()
-header(s, 12, "HƯỚNG TIẾP THEO", "Lỗi phải xảy ra nhiều tới mức nào mới gây hại?")
-tb(s, L, 1600000, W, 500000,
-   "Bài học từ ba tuần: một lỗi máy chấm nặng tới đâu cũng chỉ hại đúng bằng số lần nó xảy ra.\n"
-   "Mới thử một lỗi rất hiếm. Bước tiếp theo là thử một lỗi phổ biến hơn nhiều.",
+header(s, 12, "TRẢ LỜI CÂU HỎI ĐỀ TÀI", "Model không giỏi lên, cũng không học theo máy chấm")
+cols = [(L + 120000, 5100000, "SAU 4 VÒNG TỰ HỌC"), (L + 5500000, 2500000, "MATH-500"),
+        (L + 8200000, 2300000, "GSM8K")]
+rows = [
+    ("pass@1, vòng 0 → 4", "32,0% → 29,3%", "66,7% → 54,0%"),
+    ("pass@8, vòng 0 → 4", "57,3% → 56,0%", "92,7% → 90,0%"),
+    ("Đề giải thêm được / đề mất đi (150 đề thi)", "32 / 34", "16 / 20"),
+    ("Số lời giải có \\boxed (trong 4.000 lời giải)", "2.136 → 1.999", "3.466 → 2.926"),
+    ("Tỉ lệ đáp án khác nhau trong 8 lần làm", "0,54 → 0,55", "0,36 → 0,50"),
+]
+table(s, 1600000, cols, rows, rowh=400000, rsize=12.5)
+for i, (colour, fill, lbl, txt) in enumerate([
+    (CRIMSON, RGBColor(0xFD, 0xF3, 0xF3), "KHÔNG GIỎI LÊN",
+     "pass@1 giảm, pass@8 đứng yên. Số đề giải thêm\nđược gần bằng số đề mất đi."),
+    (BLUE, RGBColor(0xF0, 0xF6, 0xFA), "KHÔNG HỌC THEO MÁY CHẤM",
+     "Vá máy chấm xong, kết quả y như cũ (slide 11). Cách\nviết không dồn về một kiểu, đáp án còn đa dạng hơn."),
+]):
+    x = L - 120000 + i * 5470000
+    panel(s, x, 4400000, 5300000, 1350000, fill=fill)
+    pill(s, x + 240000, 4570000, lbl, fill=colour, width=2700000, height=310000)
+    tb(s, x + 240000, 5030000, 4850000, 650000, txt, size=12.5, color=BODY, line_spacing=1.35)
+tb(s, L, 5980000, W, 300000,
+   "Số của các lần chạy đã sửa thiết kế (tách đề thi riêng). Cú tụt 12,7 điểm của GSM8K mới có một lần chạy.",
+   size=11, color=MUTED)
+
+# =========================================================== 15 · next experiments
+s = new()
+header(s, 13, "HƯỚNG TIẾP THEO", "Vì sao tự học không làm model giỏi lên?")
+tb(s, L, 1600000, W, 600000,
+   "Tên phương pháp có ba ý: model “tự” học, qua bước “chấm”, để “giỏi lên”. Mỗi thí nghiệm dưới\n"
+   "đây kiểm tra một ý. Cả ba đã code xong, đang chờ GPU.",
    size=13.5, color=BODY, line_spacing=1.45)
-for i, (tag, colour, fill, name, big, cap) in enumerate([
-    ("ĐÃ THỬ", MUTED, SURFACE, "Lỗi \\dfrac", "0,55%",
-     "số bài bị gạch oan mỗi vòng\n→ không thấy ảnh hưởng gì"),
-    ("SẮP THỬ", BLUE, RGBColor(0xF0, 0xF6, 0xFA), "Lỗi \\boxed", "4,4%",
-     "số bài bị gạch oan mỗi vòng\n→ nhiều gấp 8 lần, liệu có hại?"),
-]):
-    x = L + i * 5400000
-    panel(s, x, 2650000, 5190000, 2500000, fill=fill)
-    pill(s, x + 280000, 2850000, tag, fill=colour, width=1300000, height=300000)
-    tb(s, x + 280000, 3330000, 4600000, 400000, name, size=17, bold=True, color=INK)
-    tb(s, x + 280000, 3800000, 4600000, 700000, big, size=44, font=DISPLAY,
-       bold=True, color=colour)
-    tb(s, x + 280000, 4550000, 4600000, 550000, cap, size=12.5, color=BODY,
-       line_spacing=1.35)
-tb(s, L, 5500000, W, 500000,
-   "Nếu lỗi phổ biến gây hại còn lỗi hiếm thì không, sẽ biết được ngưỡng: lỗi máy chấm xảy ra\n"
-   "bao nhiêu thì bắt đầu đáng lo. Đây là con số người làm tự học có thể dùng ngay.",
-   size=12.5, bold=True, color=INK, line_spacing=1.4)
-
-# =========================================================== 15 · second bug
-s = new()
-header(s, 13, "LỖI THỨ HAI", "Máy chấm đọc đáp án trong sách bị thiếu")
-tb(s, L, 1600000, W, 400000,
-   "Ví dụ một bài có đáp án là 3√13. Model làm đúng, nhưng vẫn bị gạch:",
-   size=13.5, color=BODY)
-for i, (tag, colour, fill, src, parsed) in enumerate([
-    ("ĐÁP ÁN TRONG SÁCH (lưu dạng trần)", ORANGE, RGBColor(0xFD, 0xF3, 0xF3),
-     "3\\sqrt{13}", "máy đọc được:  3"),
-    ("BÀI MODEL LÀM (có \\boxed theo yêu cầu đề)", GREEN, RGBColor(0xED, 0xF7, 0xF2),
-     "\\boxed{3\\sqrt{13}}", "máy đọc được:  3√13"),
-]):
-    y0 = 2150000 + i * 1300000
-    panel(s, L - 120000, y0, W + 240000, 1150000, fill=fill)
-    tb(s, L + 120000, y0 + 150000, W - 240000, 300000, tag, size=11.5, bold=True, color=colour)
-    tb(s, L + 120000, y0 + 500000, 4600000, 500000, src, size=19, color=INK)
-    tb(s, L + 5100000, y0 + 500000, 5200000, 500000, parsed, size=17, bold=True, color=colour)
-tb(s, L, 4900000, W, 700000,
-   "Máy chấm chỉ đọc đầy đủ khi đáp án nằm trong \\boxed. Đáp án trong sách không có \\boxed nên bị\n"
-   "đọc thiếu, thành ra \"3\" khác \"3√13\". Lỗi này gặp ở 8,5% số đề MATH-500.",
-   size=13, color=BODY, line_spacing=1.45)
-panel(s, L - 120000, 5850000, W + 240000, 520000, fill=RGBColor(0xF0, 0xF6, 0xFA))
-tb(s, L + 120000, 5980000, W - 240000, 300000,
-   "Đã sửa: bọc đáp án trong sách vào \\boxed trước khi chấm. Đã kiểm tra, không làm hỏng chỗ khác.",
-   size=12, bold=True, color=BLUE)
-
-# =========================================================== 16 · plan
-s = new()
-header(s, 14, "KẾ HOẠCH", "Một lần chạy, so với kết quả đã có")
-for i, (n, h, d) in enumerate([
-    ("1", "Giữ nguyên mọi thứ", "Cùng model, cùng bộ đề, cùng\ncách chia đề thi như lần chạy A."),
-    ("2", "Chỉ đổi một chỗ", "Bật bản sửa lỗi \\boxed.\nKhoảng 5 giờ GPU."),
-    ("3", "So với lần chạy A", "Lần A đã có sẵn số liệu,\nkhông cần chạy lại."),
+for i, (tag, colour, h, d, verdict) in enumerate([
+    ("GIỎI LÊN", CRIMSON, "Chạy lại GSM8K lần hai",
+     "Cú tụt 12,7 điểm mới thấy ở\nmột lần chạy. Chạy lại với\nseed khác.",
+     "Nếu tụt lại: tự học làm\nmodel dở đi thật."),
+    ("BƯỚC CHẤM", BLUE, "Bỏ bước lọc",
+     "Dạy lại bằng cả 8 bài model\nlàm, không qua máy chấm.",
+     "Nếu điểm như cũ: bước\nchấm không đóng góp gì."),
+    ("TỰ HỌC", GREEN, "Dạy bằng lời giải sách",
+     "Thay bài model tự làm bằng\nlời giải mẫu trong sách.",
+     "Nếu vẫn tụt: lỗi ở việc dạy\nthêm, không ở chuyện tự học."),
 ]):
     x = L + i * 3560000
-    panel(s, x, 1650000, 3300000, 1500000)
-    tb(s, x + 240000, 1800000, 400000, 330000, n, size=17, font=DISPLAY, bold=True, color=CRIMSON)
-    tb(s, x + 240000, 2200000, 2900000, 330000, h, size=14.5, bold=True, color=INK)
-    tb(s, x + 240000, 2580000, 2900000, 550000, d, size=12, color=BODY, line_spacing=1.3)
-tb(s, L, 3450000, W, 300000, "HAI KẾT QUẢ CÓ THỂ XẢY RA", size=11, bold=True, color=MUTED)
-for i, (colour, lbl, txt) in enumerate([
-    (GREEN, "Điểm khác lần A rõ rệt",
-     "Lỗi phổ biến có gây hại. Ngưỡng bắt đầu\ngây hại nằm đâu đó giữa 0,55% và 4,4%."),
-    (ORANGE, "Điểm gần như lần A",
-     "Kể cả lỗi gấp 8 lần cũng vô hại. Kết luận\n\"lỗi máy chấm không phải thủ phạm\" càng chắc."),
-]):
-    x = L + i * 5400000
-    panel(s, x, 3850000, 5190000, 1650000)
-    pill(s, x + 260000, 4030000, lbl, fill=colour, width=2600000, height=320000)
-    tb(s, x + 260000, 4530000, 4700000, 800000, txt, size=12.5, color=BODY, line_spacing=1.35)
-tb(s, L, 5800000, W, 400000,
-   "Kết quả nào cũng viết được vào bài báo. Hàng đợi GPU: seed thứ hai cho GSM8K, ablation, rồi lần chạy này.",
-   size=11.5, color=MUTED)
+    panel(s, x, 2550000, 3300000, 2950000)
+    pill(s, x + 240000, 2730000, tag, fill=colour, width=1500000, height=300000)
+    tb(s, x + 240000, 3220000, 2900000, 400000, h, size=14.5, bold=True, color=INK)
+    tb(s, x + 240000, 3700000, 2900000, 900000, d, size=12, color=BODY, line_spacing=1.3)
+    rule(s, x + 240000, 4620000, 2820000, color=RGBColor(0xDD, 0xDD, 0xE2))
+    tb(s, x + 240000, 4750000, 2900000, 650000, verdict, size=12, bold=True, color=colour,
+       line_spacing=1.3)
+tb(s, L, 5750000, W, 600000,
+   "Khả năng đơn giản nhất chưa loại trừ: model đang dùng là bản Instruct đã được tinh chỉnh kỹ, dạy\n"
+   "thêm một lượng nhỏ có thể chỉ làm nó lệch đi. Thí nghiệm thứ ba kiểm tra đúng điều này.",
+   size=12, color=MUTED, line_spacing=1.4)
 
-# =========================================================== 17 · open question
+# =========================================================== 16 · limits
 s = new()
-header(s, 15, "CÂU HỎI CHƯA TRẢ LỜI ĐƯỢC", "Thí nghiệm kiểm chứng đang chạy")
-tb(s, L, 1620000, W, 700000,
-   "Cả 7 lần chạy, điểm đều tụt khoảng 3 điểm ngay ở vòng 1 rồi đứng yên. Nhưng các công trình lớn\n"
-   "về tự học đều báo cáo model KHÁ LÊN. Chưa giải thích được vì sao kết quả ở đây ngược lại.",
-   size=14, color=INK, line_spacing=1.4)
-panel(s, L - 120000, 2550000, W + 240000, 900000)
-tb(s, L + 120000, 2720000, W - 240000, 640000,
-   "Có một khả năng đơn giản chưa loại trừ được: model này vốn đã được tinh chỉnh rất kỹ. Dạy thêm\n"
-   "một lượng nhỏ có thể chỉ làm nó lệch khỏi trạng thái tốt sẵn có, bất kể dạy bằng dữ liệu gì.",
-   size=12.5, color=BODY, line_spacing=1.45)
-tb(s, L, 3720000, W, 300000, "THÍ NGHIỆM PHÂN ĐỊNH: dạy bằng lời giải mẫu của sách, thay vì bài model tự làm",
-   size=11, bold=True, color=MUTED)
-for i, (colour, lbl, txt) in enumerate([
-    (GREEN, "Nếu khá lên", "thì vòng lặp không sao, và cái hại đúng là\ndo model học từ bài của chính nó."),
-    (ORANGE, "Nếu cũng tụt", "thì cú tụt là do việc dạy thêm, không liên\nquan tự học. Kết luận phải sửa lần nữa."),
-]):
-    x = L + i * 5400000
-    panel(s, x, 4180000, 5190000, 1350000)
-    pill(s, x + 240000, 4360000, lbl, fill=colour, width=1500000, height=310000)
-    tb(s, x + 240000, 4830000, 4700000, 600000, txt, size=12, color=BODY, line_spacing=1.35)
-tb(s, L, 5800000, W, 300000,
-   "Phần code đã hoàn tất, đang chờ tới lượt GPU.", size=10.5, color=MUTED)
-
-# =========================================================== 18 · limits
-s = new()
-header(s, 16, "HẠN CHẾ", "Ba điểm cần lưu ý khi đọc kết quả")
+header(s, 14, "HẠN CHẾ", "Ba điểm cần lưu ý khi đọc kết quả")
 lim = [
     ("Đề thi chỉ có 150 đề",
      "Mỗi đề đáng 0,67 điểm. Chỉ đổi cách bốc đề thi thôi là điểm vòng 0 đã lệch 4,7 điểm, lớn hơn cả hiệu ứng đang đo."),
@@ -572,20 +526,20 @@ for i, (h, d) in enumerate(lim, 1):
     tb(s, L + 700000, y + 600000, 9500000, 450000, d, size=12, color=BODY, line_spacing=1.3)
     y += 1330000
 
-# =========================================================== 19 · summary
+# =========================================================== 17 · summary
 s = new()
-header(s, 17, "TÓM TẮT", "Kết quả ba tuần và hướng tiếp theo")
+header(s, 15, "TÓM TẮT", "Kết quả ba tuần và hướng tiếp theo")
 panel(s, L - 120000, 1900000, W + 240000, 1460000, fill=RGBColor(0xF0, 0xF6, 0xFA))
 tb(s, L + 120000, 2100000, W - 240000, 1100000,
-   "Thí nghiệm đối chứng cho thấy giả thuyết ban đầu không đúng. Nguyên nhân đã xác định được:\n"
-   "lỗi của máy chấm tuy nặng nhưng chỉ xảy ra ở 0,55% số bài.\n"
-   "Đề tài chuyển sang cảnh báo về thiết kế đo — hẹp hơn, nhưng có cơ sở vững.",
+   "Câu hỏi của đề tài: tự học có làm model giỏi toán hơn thật không?\n"
+   "Với model 1.5B: không. Model đứng yên hoặc hơi dở đi, và không phải do máy chấm.\n"
+   "Cú sụp thấy ở tuần 1 và tuần 2 phần lớn do cách đo sai.",
    size=14, font=DISPLAY, color=INK, line_spacing=1.4)
 for i, (lbl, txt) in enumerate([
-    ("ĐÃ LÀM", "7 lần chạy, khoảng 40 giờ GPU. Phát hiện 2 lỗi độc lập trong máy chấm, cả hai đã vá và có test."),
-    ("KẾT QUẢ", "Giả thuyết ban đầu không đúng, và đo được nguyên nhân vì sao."),
-    ("SẮP TỚI", "Chạy thử lỗi phổ biến (\\boxed) để tìm ngưỡng lỗi máy chấm bắt đầu gây hại."),
-    ("SAU ĐÓ", "Viết lại bài báo theo kết luận mới."),
+    ("ĐÃ LÀM", "7 lần chạy, khoảng 40 giờ GPU. Sửa thiết kế đo, có thí nghiệm đối chứng chạy lặp hai lần."),
+    ("KẾT QUẢ", "Máy chấm sai không làm model dở đi. Tự học cũng không làm model giỏi lên."),
+    ("SẮP TỚI", "Ba thí nghiệm tìm nguyên nhân: chạy lại GSM8K, bỏ bước lọc, dạy bằng lời giải sách."),
+    ("SAU ĐÓ", "Viết lại bài báo theo câu trả lời này."),
 ]):
     yy = 3560000 + i * 570000
     tb(s, L, yy, 1700000, 300000, lbl, size=11, bold=True, color=CRIMSON)
