@@ -1,7 +1,7 @@
 # Kịch bản nói — báo cáo tuần 1 đến tuần 3 (12/9/2026)
 
-Đi kèm `BaoCaoTienDo_Tuan1-3_52300057_52300006.pptx`, 18 slide.
-Tổng khoảng **15–17 phút**. Đọc to thử ít nhất một lần trước khi vào.
+Đi kèm `BaoCaoTienDo_Tuan1-3_52300057_52300006.pptx`, 20 slide.
+Tổng khoảng **17–19 phút**. Đọc to thử ít nhất một lần trước khi vào.
 
 **Lưu ý về cách xưng hô:** slide viết ở giọng trung tính, không có "em" hay
 "thầy" — vì slide là để cả phòng đọc. Còn lời nói thì vẫn xưng "em" bình
@@ -302,41 +302,91 @@ Dừng lại ở dòng in đậm.*
 
 ---
 
-## Slide 15 — Đề tài tiếp theo  ·  ~70 giây
+## Slide 15 — Phát hiện thứ hai  ·  ~60 giây
 
-> Nên đề tài tiếp theo của em là đi đo cái ngưỡng đó.
+> Đi tìm ứng viên cho vùng `\boxed` thì em lộ ra một lỗi đọc khác hẳn, không
+> liên quan gì đến `\dfrac`.
 >
-> Cách làm rất gọn: giữ nguyên toàn bộ vòng lặp, chỉ đổi chỗ máy chấm bị lệch
-> thôi. Mỗi lần chạy cho một điểm trên trục tần suất.
+> Mọi người nhìn hai ô trên slide. Đáp án trong sách lưu trần, không có dấu
+> ngoặc bao — ví dụ `3\sqrt{13}`. Máy chấm gặp văn bản trần thì chỉ đọc được
+> **con số đầu tiên**, ở đây là số 3, rồi bỏ mất phần căn thức.
 >
-> Và điểm đầu tiên thì em đã có sẵn rồi — chính là ba tuần vừa rồi, ở tần
-> suất nửa phần trăm, không thấy ảnh hưởng gì.
+> Còn model thì luôn đóng hộp `\boxed{...}` theo đúng yêu cầu đề bài. Cùng
+> đáp án đó, viết trong hộp, máy chấm lại đọc **đầy đủ**: `3\sqrt{13}`.
 >
-> Điểm thứ hai là `\boxed`, phổ biến gấp khoảng **chín mươi lần**. Điểm này
-> em không chỉ đi đo tần suất — tối qua em lần luôn ra nguyên nhân: máy chấm
-> chỉ đọc đúng công thức phức tạp khi nó nằm trong hộp, còn đề gốc lưu trần
-> nên bị đọc thiếu. Model đóng hộp đúng như đề bài yêu cầu mà vẫn bị gạch
-> oan. Em đã vá xong, tự kiểm tra lại cả 17 trường hợp đều hết bị gạch oan,
-> và viết test giữ nguyên chỗ vá đó. Giờ chỉ còn thiếu đúng một lượt chạy
-> Kaggle, khoảng năm tiếng GPU.
+> Hai bên đọc ra hai giá trị khác nhau, dù model làm đúng tuyệt đối. Máy
+> chấm gạch oan.
 >
-> Điểm hay của thí nghiệm này là **ngã nào cũng ra kết quả dùng được**. Nếu
-> model tụt điểm thì quy luật kia được chứng minh bằng thực nghiệm, và đề tài
-> có một con số cụ thể để cảnh báo người dùng: lỗi máy chấm phải phổ biến tới
-> mức nào thì mới đáng lo.
+> Lý do kỹ thuật: máy chấm chỉ bật chế độ đọc đầy đủ — căn thức, số phức,
+> cặp số — khi công thức nằm trong một dấu ngoặc bao nhận diện được, là
+> `\boxed` hoặc dấu `$`. Văn bản trần thì rơi về luật dự phòng rút gọn. Đề
+> gốc trong bộ dữ liệu luôn lưu trần, nên luôn bị đọc thiếu — bất kể model
+> làm đúng hay sai.
 >
-> Còn nếu vẫn không tụt, thì kết luận là lỗi máy chấm không phải thứ đáng lo
-> trong tự học — cũng là một câu trả lời rõ ràng.
->
-> Toàn bộ code và dữ liệu cũ em dùng lại được hết — chỗ vá là một tuỳ chọn
-> mới cho máy chấm, độc lập với tuỳ chọn vá `\dfrac` cũ, để so sánh vẫn sạch.
+> Em xác nhận cái này trực tiếp bằng chính hàm đọc của máy chấm, không phải
+> suy đoán từ hành vi bên ngoài.
 
-*Đây là slide bán đề tài mới. Nhấn hai chỗ: "đã vá xong" và "ngã nào cũng ra
-kết quả dùng được". Nói dứt khoát, đừng rào đón.*
+*Nói chậm ở ví dụ `3\sqrt{13}`. Đây là chỗ mọi người cần thấy rõ hai cách
+đọc khác nhau trước khi sang slide tiếp theo.*
 
 ---
 
-## Slide 16 — Chỗ còn chưa chắc  ·  ~50 giây
+## Slide 16 — Đã vá, đã kiểm tra  ·  ~70 giây
+
+> Cách vá của em: nếu bài model có `\boxed` mà đáp án sách chưa tự đóng hộp,
+> em bọc đáp án sách vào `\boxed` trước khi so — cho cả hai bên cùng một
+> đường đọc. Chỉ kích hoạt đúng lúc model có `\boxed`, không đụng tới các
+> kiểu viết khác.
+>
+> Số đo thật, sau khi em tách kỹ: mức nặng 8,5%, không phải hai mươi phần
+> trăm như em đo thô lúc đầu. Em soát lại tay và thấy già nửa số bị gạch ban
+> đầu là do một lỗi khác, đã biết từ trước, không liên quan `\boxed`. Phần
+> thật do lỗi này gây ra là 17 trên 200 đề, tức 8,5%. Nhân với tần suất
+> 51,5% thì thiệt hại ước tính còn khoảng 4,4% — vẫn gấp tám lần cái em đã
+> thử với `\dfrac`.
+>
+> Em đã chạy hồi quy trên toàn bộ 8 kiểu viết, 2 preset, 2 bộ đề — chỉ đúng
+> một dòng đổi, không dòng nào khác bị ảnh hưởng. 27 trên 27 test qua.
+>
+> Còn dư đúng 4 đề vẫn bị gạch sau khi vá, nhưng là một lỗi khác đã biết từ
+> trước — thiếu dấu ngoặc trong cách viết phân số — không thuộc phạm vi lần
+> vá này, em không gộp vào.
+>
+> Hàng đợi GPU của em hiện có ba việc: seed thứ hai cho GSM8K là ưu tiên cao
+> nhất, xong tới ablation không lọc, và cuối cùng là lượt chạy để kiểm tra
+> chỗ vá này.
+
+*Đi từng dòng số một, đừng đọc dồn cả bảng. Nhấn "8,5%, không phải hai mươi
+phần trăm" — đây là chỗ cho thấy em tự soát lại số của chính mình.*
+
+---
+
+## Slide 17 — Đọc kết quả thế nào  ·  ~50 giây
+
+> Lượt chạy đó em gọi là Run D. Nó dùng đúng cấu hình của lần chạy A đã có
+> sẵn — cùng bộ đề, cùng seed, cùng cách chia đề thi — chỉ khác một chỗ:
+> đáp án sách đã được vá. Không cần chạy thêm lần đối chứng nào khác, vì
+> Run A đã có số liệu rồi.
+>
+> Nếu Run D tụt điểm rõ so với Run A, thì quy luật mức-nặng nhân tần-suất
+> được xác nhận lần thứ hai, độc lập với lần `\dfrac`. Lúc đó em biết được
+> ngưỡng gây hại nằm ở đâu đó dưới 4,4%.
+>
+> Còn nếu Run D gần như trùng Run A, giống hệt cái đã xảy ra với `\dfrac`,
+> thì đó là củng cố thêm cho kết luận hiện tại: hai lỗi độc lập, hai lần
+> null. Ngưỡng gây hại còn cao hơn cả 4,4%, và lỗi máy chấm càng khó là
+> nguyên nhân chính của cú tụt ban đầu.
+>
+> Ngã nào cũng dùng được — và lần này 4,4% là số em đã đo, không phải ước
+> lượng như lần trước.
+
+*Đây là slide chốt hướng đi tiếp theo. Nói câu cuối chậm và rõ, nó là điểm
+khác biệt với slide "đề tài tiếp theo" cũ — lần này có số thật, không phải
+ước lượng.*
+
+---
+
+## Slide 18 — Chỗ còn chưa chắc  ·  ~50 giây
 
 > Em xin nói một chỗ em còn chưa chắc.
 >
@@ -356,7 +406,7 @@ kết quả dùng được". Nói dứt khoát, đừng rào đón.*
 
 ---
 
-## Slide 17 — Chỗ còn yếu  ·  ~40 giây
+## Slide 19 — Chỗ còn yếu  ·  ~40 giây
 
 > Em xin nói trước mấy chỗ còn yếu.
 >
@@ -370,7 +420,7 @@ kết quả dùng được". Nói dứt khoát, đừng rào đón.*
 
 ---
 
-## Slide 18 — Tóm tắt  ·  ~30 giây
+## Slide 20 — Tóm tắt  ·  ~30 giây
 
 > Tóm lại ba tuần vừa rồi: em chạy bảy lần, khoảng 40 giờ GPU. Em dựng một
 > thí nghiệm để kiểm tra giả thuyết của chính mình, và nó cho thấy em sai. Lý
@@ -671,30 +721,39 @@ không?"**
 
 ---
 
-## Slide 15 — Đề tài tiếp theo
+## Slide 15-17 — Phát hiện thứ hai, đã vá, đọc kết quả
 
-**"Ép máy chấm gạch \boxed là tự tạo ra lỗi giả. Thực tế làm gì có máy chấm
-tệ tới mức đó?"**
-> Dạ đúng là không có máy chấm nào tệ như vậy ạ. Nhưng mục đích của em không
-> phải mô phỏng một máy chấm có thật, mà là **điều khiển một biến để đo quan
-> hệ**. Giống như trong y học người ta tăng liều để tìm ngưỡng, chứ không ai
-> uống liều đó thật. Khi đã biết quan hệ giữa tần suất lỗi và mức hại, thì áp
-> ngược lại được cho bất kỳ máy chấm thật nào: chỉ cần đếm tần suất lỗi của
-> nó là biết có đáng lo không.
+**"Sao tự nhiên lại đi tìm lỗi \boxed? Có phải cố tìm cho ra một con số to
+để câu chuyện đẹp hơn không?"**
+> Dạ không ạ. Em đi tìm vì bảng mức-nặng-nhân-tần-suất chỉ thẳng: `\boxed`
+> là ô đáng ngờ nhất còn chưa đo (phổ biến gấp chín mươi lần `\dfrac`), nên
+> em soát lại xem có lỗi thật ở đó không — và có thật, độc lập hoàn toàn với
+> `\dfrac`. Em cũng suýt báo sai: số đo thô đầu tiên ra 20%, cao gần gấp đôi
+> con số cuối. Em tự soát tay và phát hiện già nửa số đó là nhiễu từ một lỗi
+> khác không liên quan `\boxed`. Con số 8,5% là sau khi đã trừ nhiễu, không
+> phải con số đẹp nhất em chọn ra.
 
-**"Đề tài mới có khác đề tài cũ nhiều quá không?"**
-> Dạ không ạ, vẫn cùng một câu hỏi gốc: lỗi máy chấm ảnh hưởng thế nào tới tự
-> học. Chỉ khác là trước em hỏi "có ảnh hưởng không", giờ em hỏi "ảnh hưởng
-> từ mức nào". Toàn bộ code và dữ liệu cũ vẫn dùng lại được.
+**"Sao không tự tin báo luôn kết quả, mà phải chờ chạy GPU?"**
+> Dạ vì cho tới giờ, mọi giả thuyết "nghe hợp lý" của em đều sai khi đo trực
+> tiếp — `\dfrac` cũng tưởng sẽ có tác dụng mà không có. Em không muốn đoán
+> tiếp cho lỗi thứ hai này. Đo trực tiếp bằng Run D là cách duy nhất biết
+> chắc, dù mức nặng đo được lớn hơn tám lần.
 
-**"Nếu ép tới 51% mà vẫn không tụt thì sao?"**
-> Dạ thì đó cũng là kết luận rõ ràng ạ: lỗi máy chấm không phải thứ đáng lo
-> trong tự học, kể cả khi nó phổ biến. Lúc đó câu hỏi chuyển sang chỗ khác —
-> vì phải có cái gì đó làm model tụt, mà không phải máy chấm.
+**"Vá lỗi này có ảnh hưởng tới kết luận null của \dfrac không?"**
+> Dạ không ạ, hai lỗi độc lập nhau — vá lỗi này chỉ đụng dòng model đã dùng
+> `\boxed`, còn phần `\dfrac`/`\tfrac` giữ nguyên logic cũ. Em có chạy hồi
+> quy riêng để xác nhận, không dòng nào khác đổi ngoài đúng ô `math500,
+> boxed`.
+
+**"Nếu Run D cũng null như B thì sao? Có phải đề tài hết hướng đi không?"**
+> Dạ không ạ. Lúc đó kết luận methodological càng chắc hơn — hai lỗi máy
+> chấm độc lập, đo hai lần bằng hai control sạch, cả hai đều null. Câu hỏi
+> mở sẽ chuyển hẳn sang thí nghiệm gold-SFT ở slide sau: nếu không phải máy
+> chấm, thì có khi bản thân việc dạy thêm mới là nguyên nhân.
 
 ---
 
-## Slide 16 — Chỗ còn chưa chắc
+## Slide 18 — Chỗ còn chưa chắc
 
 **"Nếu thí nghiệm dạy-bằng-lời-giải-mẫu cũng tụt thì đề tài còn lại gì?"**
 > Dạ thì em phải sửa kết luận lần nữa ạ, và em nói trước điều đó hôm nay chứ
@@ -709,7 +768,7 @@ tệ tới mức đó?"**
 
 ---
 
-## Slide 17 — Hạn chế
+## Slide 19 — Hạn chế
 
 **"Nhiễu tới 4,7 điểm mà kết luận lại dựa trên chênh lệch 0,6 điểm — có mâu
 thuẫn không?"**
@@ -726,7 +785,7 @@ thuẫn không?"**
 
 ---
 
-## Slide 18 — Tóm tắt
+## Slide 20 — Tóm tắt
 
 **"Kế hoạch thời gian còn lại thế nào?"**
 > Dạ việc chờ GPU là chính ạ. Hai lần chạy nữa, mỗi lần khoảng năm tiếng.

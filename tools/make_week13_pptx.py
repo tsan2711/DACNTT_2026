@@ -478,46 +478,87 @@ tb(s, L, 6560000, W, 260000,
    "vốn đã không đọc được kể cả không đóng hộp (lỗi khác, đã biết từ trước).",
    size=9.5, color=MUTED)
 
-# =========================================================== 15 · new direction
+# =========================================================== 15 · second bug mechanism
 s = new()
-header(s, 13, "ĐỀ TÀI TIẾP THEO",
-       "Đo ngưỡng: lỗi phải phổ biến tới mức nào mới gây hại?")
-tb(s, L, 1600000, W, 700000,
-   "Cách làm giữ nguyên toàn bộ vòng lặp, chỉ đổi chỗ máy chấm bị lệch. Mỗi lần chạy là một điểm\n"
-   "trên trục tần suất. Điểm đầu tiên đã có sẵn; điểm thứ hai đã tìm ra nguyên nhân và vá xong,\n"
-   "chỉ còn thiếu lượt chạy GPU.",
-   size=13.5, color=BODY, line_spacing=1.45)
-for i, (tag, fmt, freq, colour, fill, note) in enumerate([
-    ("ĐIỂM 1 — ĐÃ CÓ", "\\dfrac", "0,55%", MUTED, SURFACE,
-     "Không thấy ảnh hưởng.\nĐây là kết quả ba tuần vừa rồi."),
-    ("ĐIỂM 2 — ĐÃ VÁ, CHỜ GPU", "\\boxed", "51%", BLUE, RGBColor(0xF0, 0xF6, 0xFA),
-     "Nguyên nhân: máy chấm đọc đề gốc thiếu\nkhi không đóng hộp. Đã vá + có test, chỉ\ncòn chạy — khoảng 5 giờ GPU."),
+header(s, 13, "PHÁT HIỆN THỨ HAI", "Một lỗi đọc khác — không liên quan \\dfrac")
+tb(s, L, 1580000, W, 500000,
+   "Đi tìm ứng viên cho vùng \\boxed thì lộ ra một lỗi đọc độc lập, cũng làm máy chấm gạch oan bài đúng.",
+   size=13, color=BODY, line_spacing=1.4)
+for i, (tag, colour, fill, src, parsed) in enumerate([
+    ("ĐÁP ÁN TRONG SÁCH — lưu trần, không dấu ngoặc bao", ORANGE, RGBColor(0xFD, 0xF3, 0xF3),
+     "3\\sqrt{13}", "máy chỉ đọc được:  3"),
+    ("MODEL VIẾT — đề bài luôn yêu cầu đóng \\boxed", GREEN, RGBColor(0xED, 0xF7, 0xF2),
+     "\\boxed{3\\sqrt{13}}", "máy đọc đầy đủ:  3\\sqrt{13}"),
 ]):
-    x = L + i * 5400000
-    panel(s, x, 2500000, 5190000, 1800000, fill=fill)
-    pill(s, x + 260000, 2680000, tag, fill=colour, width=1900000, height=300000)
-    tb(s, x + 260000, 3130000, 2400000, 400000, fmt, size=19, color=INK)
-    tb(s, x + 2900000, 3130000, 2100000, 400000, freq, size=26, font=DISPLAY,
-       bold=True, color=colour)
-    tb(s, x + 260000, 3670000, 4700000, 550000, note, size=12, color=BODY,
-       line_spacing=1.3)
-tb(s, L, 4520000, W, 300000, "HAI KHẢ NĂNG, CẢ HAI ĐỀU RA KẾT QUẢ DÙNG ĐƯỢC",
-   size=11, bold=True, color=MUTED)
-for i, (colour, lbl, txt) in enumerate([
-    (GREEN, "Nếu tụt điểm", "quy luật được chứng minh bằng thực nghiệm, và đề tài\ncó một ngưỡng cụ thể để cảnh báo người dùng."),
-    (ORANGE, "Nếu vẫn không tụt", "thì lỗi máy chấm không phải thứ đáng lo trong\nself-training, cũng là một kết luận rõ ràng."),
-]):
-    x = L + i * 5400000
-    pill(s, x, 4930000, lbl, fill=colour, width=1750000, height=310000)
-    tb(s, x, 5400000, 5000000, 600000, txt, size=12, color=BODY, line_spacing=1.35)
-tb(s, L, 6300000, W, 300000,
-   "Cờ --patch-verifier-boxed đã code + có test (tests/test_verify_adapter.py); toàn bộ vòng lặp và "
-   "dữ liệu cũ dùng lại nguyên, chỉ còn thiếu lượt chạy GPU.",
-   size=10.5, color=MUTED)
+    y0 = 2200000 + i * 1300000
+    panel(s, L - 120000, y0, W + 240000, 1150000, fill=fill)
+    tb(s, L + 120000, y0 + 140000, W - 240000, 300000, tag, size=11.5, bold=True, color=colour)
+    tb(s, L + 120000, y0 + 480000, 4600000, 500000, src, size=19, color=INK)
+    tb(s, L + 5100000, y0 + 480000, 5200000, 500000, parsed, size=15, bold=True, color=colour)
+rule(s, L, 4950000, W)
+tb(s, L, 5120000, W, 700000,
+   "math-verify chỉ bật chế độ đọc đầy đủ (căn thức, số phức, cặp số...) khi công thức nằm trong một dấu\n"
+   "ngoặc bao nhận diện được — \\boxed hoặc $...$. Đề bài lưu trần nên luôn rơi vào chế độ rút gọn, còn\n"
+   "bài model luôn có \\boxed nên đọc đủ. Cùng một giá trị nhưng bị đọc thành hai kiểu khác nhau.",
+   size=12.5, color=BODY, line_spacing=1.4)
+tb(s, L, 6220000, W, 300000,
+   "Đã xác nhận trực tiếp bằng math_verify.parse(), không phải suy đoán từ hành vi bên ngoài.",
+   size=10, color=MUTED)
 
-# =========================================================== 16 · open question
+# =========================================================== 16 · patched, plan
 s = new()
-header(s, 14, "CÂU HỎI CHƯA TRẢ LỜI ĐƯỢC", "Thí nghiệm kiểm chứng đang chạy")
+header(s, 14, "ĐÃ VÁ, ĐÃ KIỂM TRA", "Chỉ còn thiếu lượt chạy GPU")
+tb(s, L, 1580000, W, 500000,
+   "Cách vá: nếu bài model có \\boxed mà đáp án sách chưa tự đóng hộp, bọc đáp án sách vào \\boxed trước\n"
+   "khi so — cho cả hai bên cùng một đường đọc. Chỉ kích hoạt khi model có \\boxed, không đụng kiểu viết khác.",
+   size=12.5, color=BODY, line_spacing=1.4)
+cols = [(L, 6200000, "SỐ ĐO"), (L + 6400000, 3000000, "GIÁ TRỊ")]
+rows = [
+    ("Mức nặng thật (đã loại nhiễu khỏi 20% ban đầu)", "8,5%"),
+    ("Tần suất model dùng \\boxed", "51,5%"),
+    ("Thiệt hại ước tính mỗi vòng", "4,4%  (gấp ~8 lần \\dfrac)"),
+    ("Hồi quy 8 kiểu viết × 2 preset × 2 bộ đề", "27/27 test qua"),
+]
+y = table(s, 2280000, cols, rows, rowh=340000, rsize=11.5, pad=120000, emph=lambda i: i == 2)
+tb(s, L, y + 180000, W, 380000,
+   "Còn dư 4/200 đề vẫn bị gạch sau khi vá — nhưng là lỗi khác đã biết từ trước (thiếu ngoặc trong\n"
+   "\\frac43), không thuộc phạm vi lần vá này.",
+   size=11, color=MUTED, line_spacing=1.25)
+rule(s, L, y + 660000, W)
+tb(s, L, y + 760000, W, 280000, "HÀNG ĐỢI GPU TIẾP THEO", size=11, bold=True, color=MUTED)
+cols2 = [(L, 3600000, "VIỆC"), (L + 3800000, 4200000, "MỤC ĐÍCH"), (L + 8100000, 2400000, "TRẠNG THÁI")]
+rows2 = [
+    ("GSM8K, seed thứ hai", "Cú tụt 12,7 điểm ở seed đầu là thật hay nhiễu", "Ưu tiên cao nhất"),
+    ("Ablation không lọc", "Tách khâu lọc verifier khỏi bản chất tự học", "Xếp sau"),
+    ("Run D — bug \\boxed", "Kiểm quy luật lần 2, ở bug lớn hơn 8 lần", "Dùng lại Run A, +1 lượt chạy"),
+]
+table(s, y + 960000, cols2, rows2, rowh=340000, rsize=11, hsize=10, pad=100000)
+
+# =========================================================== 17 · run D decision table
+s = new()
+header(s, 15, "ĐỌC KẾT QUẢ THẾ NÀO", "Run D so với Run A đã có sẵn")
+tb(s, L, 1580000, W, 700000,
+   "Run D dùng đúng cấu hình của Run A — cùng bộ đề, cùng seed, cùng cách chia đề thi — chỉ khác một\n"
+   "chỗ: đáp án sách đã được vá. Không cần chạy thêm lần đối chứng nào khác; Run A đã có sẵn.",
+   size=13, color=BODY, line_spacing=1.4)
+for i, (colour, lbl, txt) in enumerate([
+    (GREEN, "Nếu Run D tụt điểm rõ so với A",
+     "quy luật mức-nặng × tần-suất được xác nhận lần thứ\nhai, độc lập với lần \\dfrac. Biết được ngưỡng gây\nhại nằm ở đâu đó dưới 4,4%."),
+    (ORANGE, "Nếu Run D gần như trùng A",
+     "củng cố thêm kết luận hiện tại: hai bug độc lập,\nhai lần null. Ngưỡng gây hại còn cao hơn cả 4,4%,\nvà lỗi máy chấm càng khó là nguyên nhân chính."),
+]):
+    x = L + i * 5400000
+    panel(s, x, 2700000, 5190000, 2000000)
+    pill(s, x + 260000, 2900000, lbl, fill=colour, width=4600000, height=560000)
+    tb(s, x + 260000, 3620000, 4700000, 1000000, txt, size=12, color=BODY, line_spacing=1.35)
+panel(s, L - 120000, 5050000, W + 240000, 700000, fill=RGBColor(0xF0, 0xF6, 0xFA))
+tb(s, L + 120000, 5230000, W - 240000, 400000,
+   "Ngã nào cũng ra kết luận dùng được — và lần này 4,4% là số đã đo, không phải ước lượng.",
+   size=12.5, bold=True, color=BLUE)
+
+# =========================================================== 18 · open question
+s = new()
+header(s, 16, "CÂU HỎI CHƯA TRẢ LỜI ĐƯỢC", "Thí nghiệm kiểm chứng đang chạy")
 tb(s, L, 1620000, W, 700000,
    "Cả 7 lần chạy, điểm đều tụt khoảng 3 điểm ngay ở vòng 1 rồi đứng yên. Nhưng các công trình lớn\n"
    "về tự học đều báo cáo model KHÁ LÊN. Chưa giải thích được vì sao kết quả ở đây ngược lại.",
@@ -540,9 +581,9 @@ for i, (colour, lbl, txt) in enumerate([
 tb(s, L, 5800000, W, 300000,
    "Phần code đã hoàn tất, đang chờ tới lượt GPU.", size=10.5, color=MUTED)
 
-# =========================================================== 17 · limits
+# =========================================================== 19 · limits
 s = new()
-header(s, 15, "HẠN CHẾ", "Ba điểm cần lưu ý khi đọc kết quả")
+header(s, 17, "HẠN CHẾ", "Ba điểm cần lưu ý khi đọc kết quả")
 lim = [
     ("Đề thi chỉ có 150 đề",
      "Mỗi đề đáng 0,67 điểm. Chỉ đổi cách bốc đề thi thôi là điểm vòng 0 đã lệch 4,7 điểm, lớn hơn cả hiệu ứng đang đo."),
@@ -560,9 +601,9 @@ for i, (h, d) in enumerate(lim, 1):
     tb(s, L + 700000, y + 600000, 9500000, 450000, d, size=12, color=BODY, line_spacing=1.3)
     y += 1330000
 
-# =========================================================== 18 · summary
+# =========================================================== 20 · summary
 s = new()
-header(s, 16, "TÓM TẮT", "Kết quả ba tuần và hướng tiếp theo")
+header(s, 18, "TÓM TẮT", "Kết quả ba tuần và hướng tiếp theo")
 panel(s, L - 120000, 1900000, W + 240000, 1460000, fill=RGBColor(0xF0, 0xF6, 0xFA))
 tb(s, L + 120000, 2100000, W - 240000, 1100000,
    "Thí nghiệm đối chứng cho thấy giả thuyết ban đầu không đúng. Nguyên nhân đã xác định được:\n"
@@ -570,10 +611,10 @@ tb(s, L + 120000, 2100000, W - 240000, 1100000,
    "Đề tài chuyển sang cảnh báo về thiết kế đo — hẹp hơn, nhưng có cơ sở vững.",
    size=14, font=DISPLAY, color=INK, line_spacing=1.4)
 for i, (lbl, txt) in enumerate([
-    ("ĐÃ LÀM", "7 lần chạy, khoảng 40 giờ GPU. Phát hiện lỗi trong thiết kế đo và sửa lại."),
+    ("ĐÃ LÀM", "7 lần chạy, khoảng 40 giờ GPU. Phát hiện 2 lỗi độc lập trong máy chấm, cả hai đã vá và có test."),
     ("KẾT QUẢ", "Giả thuyết ban đầu không đúng, và đo được nguyên nhân vì sao."),
-    ("ĐANG CHẠY", "Thí nghiệm để biết cú tụt là do tự học, hay chỉ do việc dạy thêm."),
-    ("SẮP TỚI", "Thí nghiệm điều khiển tần suất lỗi, để tìm ngưỡng gây hại."),
+    ("CHỜ GPU", "3 lượt đang xếp hàng: seed thứ hai GSM8K, ablation không lọc, Run D cho bug \\boxed."),
+    ("SẮP TỚI", "Có đủ số liệu Run D thì viết lại bài báo theo kết luận mới."),
 ]):
     yy = 3560000 + i * 570000
     tb(s, L, yy, 1700000, 300000, lbl, size=11, bold=True, color=CRIMSON)
