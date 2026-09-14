@@ -17,8 +17,21 @@ Cùng thiết kế với Mac: mỗi vòng generate k lần/đề → máy chấm
 ## Ô 1 — cài
 
 ```python
-%pip install -q "math-verify[antlr4_13_2]==0.9.0" torch transformers accelerate peft trl datasets "torchao>=0.16.0"
+%pip install -q "math-verify[antlr4_13_2]==0.9.0" torch \
+  "transformers==5.0.0" "trl==1.10.0" "peft==0.19.1" \
+  accelerate datasets "torchao>=0.16.0"
 ```
+
+**Ghim `transformers`/`trl`/`peft` đúng 3 bản đã xác nhận chạy được (2026-08-26,
+xem log dưới) — không để pip tự kéo bản mới nhất.** Xác nhận thật 2026-09-14:
+để trống (không ghim) pip kéo `transformers==5.17.0` (bản mới nhất trên PyPI
+lúc đó), bản này có cơ chế load weight mới (`core_model_loading.py`, tqdm
+từng tensor — xem `huggingface/transformers#44303`) và **bị treo cứng khi
+load `Qwen2.5-1.5B-Instruct` trên T4**, đứng yên ở tensor đầu tiên
+(`model.embed_tokens.weight`) suốt gần 30 phút không nhích, không lỗi, không
+timeout tự nhiên nào cả — dễ đốt hết cả phiên 12h mà không ra được gì (đã gặp
+thật, xem `notebook3132693bf1.log`). Không ghim `torch` (dùng đúng bản Kaggle
+cài sẵn khớp driver T4, cài đè torch qua pip dễ lệch CUDA runtime).
 
 `torchao>=0.16.0` bắt buộc — Kaggle cài sẵn bản cũ hơn (0.10.0), không tương
 thích với `peft`. Sau lệnh này **restart session** rồi chạy lại ô cài (bản
