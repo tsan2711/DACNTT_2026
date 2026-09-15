@@ -36,6 +36,16 @@ Mac chỉ thử code, số liệu thật lấy trên Kaggle). Nên script tách 
 
 from __future__ import annotations
 
+import os
+
+# hf mode is single-GPU by design (see KAGGLE.md); on a multi-GPU notebook
+# (e.g. Kaggle's "GPU T4 x2"), leaving both GPUs visible makes HF Trainer
+# wrap the model in nn.DataParallel, which crashes when inputs/model aren't
+# explicitly placed across both devices. Must be set before torch is
+# imported anywhere in this process. Same guard as run.py:42 — this module
+# is a separate entry point, doesn't inherit run.py's import-time env set.
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", "0")
+
 import argparse
 import json
 import sys
