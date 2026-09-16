@@ -175,7 +175,16 @@ class HfLoraSftTrain:
         # dtype (bf16 for Qwen2.5), which runs on T4 via a slow fp32
         # emulation path. fp16 is the fast path on this GPU (see generate.py).
         dtype = torch.float16 if torch.cuda.is_available() else "auto"
-        model = AutoModelForCausalLM.from_pretrained(self.model_id, torch_dtype=dtype)
+        # low_cpu_mem_usage=True (transformers default since 4.30) lazily
+        # materializes each tensor one at a time (tqdm "Loading weights:
+        # X%|... Materializing param=...") — seen hanging indefinitely
+        # partway through on Kaggle (intermittent, not reproducible every
+        # run). RAM isn't the constraint here (confirmed 26GB+ free on the
+        # T4 notebook), so force the plain, fully-materialize-then-copy
+        # path instead, which doesn't use that lazy loader.
+        model = AutoModelForCausalLM.from_pretrained(
+            self.model_id, torch_dtype=dtype, low_cpu_mem_usage=False
+        )
         if torch.cuda.is_available():
             model = model.to("cuda")
         peft_config = LoraConfig(
