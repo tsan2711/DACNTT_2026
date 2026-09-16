@@ -218,18 +218,6 @@ class HfLoraSftTrain:
         if round is not None:
             self._save_train_log(trainer.state.log_history, round)
 
-        # Each call reloads a fresh base model (fresh-adapter-per-round
-        # design, see module docstring / KAGGLE.md). Without explicit
-        # cleanup, the next from_pretrained() in the same process can stall
-        # for a long time re-materializing weights — seen hanging the
-        # second of two back-to-back diagnose_lr.py training calls.
-        del trainer, model
-        import gc
-
-        gc.collect()
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-
     def _save_train_log(self, log_history: list[dict], round: int) -> None:
         self.log_dir.mkdir(parents=True, exist_ok=True)
         path = self.log_dir / f"round_{round}.json"

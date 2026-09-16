@@ -152,6 +152,17 @@ def main() -> int:
         "--examples-jsonl", type=Path, default=None,
         help="Bước 2 (chạy trên Kaggle): đọc tập đã chọn từ đây thay vì tự chọn lại (cần khi máy không có torch).",
     )
+    ap.add_argument(
+        "--only", choices=("a", "b"), default=None,
+        help=(
+            "Chỉ train 1 learning rate (a=hiện tại, b=ứng viên) rồi dừng, thay vì cả 2 "
+            "trong cùng 1 process. Dùng khi 2 lần train liên tiếp trong cùng process bị "
+            "treo trên Kaggle (gặp thật, không tái lập ổn định — nghi môi trường GPU "
+            "chập chờn, không phải bug cố định). Chạy 2 lần --only a rồi --only b ở 2 "
+            "notebook/kernel riêng (mỗi lần chỉ 1 model load + 1 train trong process); "
+            "lần chạy sau tự đọc log của lần trước (cùng --out) và ghi comparison.json."
+        ),
+    )
     args = ap.parse_args()
 
     if args.examples_jsonl is not None:
@@ -172,29 +183,63 @@ def main() -> int:
         print("then run this script again ON KAGGLE with --examples-jsonl pointing at it.", file=sys.stderr)
         return 0
 
-    results = {}
-    for label, lr in (("lr_a_current", args.lr_a), ("lr_b_candidate", args.lr_b)):
+    labels = {"a": ("lr_a_current", args.lr_a), "b": ("lr_b_candidate", args.lr_b)}
+
+    def run_one(key: str) -> tuple[str, dict]:
+        label, lr = labels[key]
         print(f"\n=== training with learning_rate={lr} ({label}) ===", file=sys.stderr)
         history = _train_one(examples, learning_rate=lr, out_dir=args.out / label)
         losses = [h["loss"] for h in history if "loss" in h]
-        results[label] = {"learning_rate": lr, "losses": losses}
+        result = {"learning_rate": lr, "losses": losses}
         if losses:
             print(f"  loss: first={losses[0]:.4f} last={losses[-1]:.4f} (n={len(losses)} logged steps)", file=sys.stderr)
         else:
             print("  no loss logged (too few steps for logging_steps=10?) — lower --n-examples's batch or check log path", file=sys.stderr)
+        return label, result
 
-    out_json = args.out / "comparison.json"
-    args.out.mkdir(parents=True, exist_ok=True)
-    out_json.write_text(json.dumps(results, indent=2), encoding="utf-8")
+    def load_existing(key: str) -> tuple[str, dict] | None:
+        label, lr = labels[key]
+        log_path = args.out / label / "logs" / "round_0.json"
+        if not log_path.exists():
+            return None
+        history = json.loads(log_path.read_text(encoding="utf-8"))
+        losses = [h["loss"] for h in history if "loss" in h]
+        return label, {"learning_rate": lr, "losses": losses}
 
-    print("\n=== so sánh ===", file=sys.stderr)
-    for label, r in results.items():
-        losses = r["losses"]
-        tail = f"{losses[0]:.4f} -> {losses[-1]:.4f}" if losses else "(rỗng)"
-        print(f"{label:16s} lr={r['learning_rate']:<10g} loss {tail}", file=sys.stderr)
-    print(f"\nĐọc kết quả: nếu lr_b_candidate tụt SÂU HƠN RÕ RỆT so với lr_a_current,", file=sys.stderr)
-    print("tốc độ học hiện tại (1e-5) đúng là quá thấp — cần chạy lại A/B/C với lr đã sửa", file=sys.stderr)
-    print("trước khi chạy 3 thí nghiệm đang hàng chờ. Chi tiết: " + str(out_json), file=sys.stderr)
+    def write_comparison(results: dict) -> Path:
+        out_json = args.out / "comparison.json"
+        args.out.mkdir(parents=True, exist_ok=True)
+        out_json.write_text(json.dumps(results, indent=2), encoding="utf-8")
+        print("\n=== so sánh ===", file=sys.stderr)
+        for label, r in results.items():
+            losses = r["losses"]
+            tail = f"{losses[0]:.4f} -> {losses[-1]:.4f}" if losses else "(rỗng)"
+            print(f"{label:16s} lr={r['learning_rate']:<10g} loss {tail}", file=sys.stderr)
+        print("\nĐọc kết quả: nếu lr_b_candidate tụt SÂU HƠN RÕ RỆT so với lr_a_current,", file=sys.stderr)
+        print("tốc độ học hiện tại (1e-5) đúng là quá thấp — cần chạy lại A/B/C với lr đã sửa", file=sys.stderr)
+        print("trước khi chạy 3 thí nghiệm đang hàng chờ. Chi tiết: " + str(out_json), file=sys.stderr)
+        return out_json
+
+    if args.only is not None:
+        label, result = run_one(args.only)
+        other_key = "b" if args.only == "a" else "a"
+        other = load_existing(other_key)
+        if other is None:
+            other_label, _ = labels[other_key]
+            print(
+                f"\nĐã xong '{label}'. Chưa có kết quả '{other_label}' — chạy lại script "
+                f"(notebook/kernel mới) với --only {other_key} và cùng --out {args.out}, "
+                "comparison.json sẽ tự ghi khi đó.",
+                file=sys.stderr,
+            )
+            return 0
+        other_label, other_result = other
+        write_comparison({label: result, other_label: other_result})
+        return 0
+
+    label_a, result_a = run_one("a")
+    label_b, result_b = run_one("b")
+    write_comparison({label_a: result_a, label_b: result_b})
     return 0
 
 
