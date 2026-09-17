@@ -248,6 +248,9 @@ def _backend(mode: str, args: argparse.Namespace, out_dir: Path, items: list):
             temp=args.temp,
             gen_batch_size=args.gen_batch_size,
         )
+        hf_train_kwargs = {}
+        if args.learning_rate is not None:
+            hf_train_kwargs["learning_rate"] = args.learning_rate
         trainer = HfLoraSftTrain(
             args.model,
             out_dir / "adapters",
@@ -256,6 +259,7 @@ def _backend(mode: str, args: argparse.Namespace, out_dir: Path, items: list):
             lora_r=args.lora_r,
             lora_alpha=args.lora_alpha,
             max_seq_length=args.max_seq_length,
+            **hf_train_kwargs,
         )
         note = (
             f"mode=hf: {args.model} LoRA SFT via transformers+peft+TRL. "
@@ -452,6 +456,7 @@ def _manifest(
         "lora_r": args.lora_r if mode == "hf" else 0,
         "lora_alpha": args.lora_alpha if mode == "hf" else 0,
         "hf_epochs": args.hf_epochs if mode == "hf" else 0,
+        "learning_rate": (args.learning_rate or 5e-4) if mode == "hf" else 0,
         "math_verify_version": _pkg_version("math-verify"),
         "antlr4_version": _pkg_version("antlr4-python3-runtime"),
         "mlx_lm_version": _pkg_version("mlx-lm"),
@@ -490,6 +495,15 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--lora-layers", type=int, default=8, help="mlx mode only")
     parser.add_argument("--lora-r", type=int, default=16, help="hf mode only")
     parser.add_argument("--lora-alpha", type=int, default=32, help="hf mode only")
+    parser.add_argument(
+        "--learning-rate", type=float, default=None,
+        help=(
+            "hf mode only. Default (None) uses HfLoraSftTrain's own default "
+            "(5e-4 — confirmed via experiments/viec3/diagnose_lr.py 2026-09-17 "
+            "that the old 1e-5 barely moved the loss). All A/B/C runs before "
+            "that date used 1e-5 with no way to override it from this CLI."
+        ),
+    )
     parser.add_argument("--hf-epochs", type=float, default=1.0, help="hf mode only")
     parser.add_argument("--hf-batch-size", type=int, default=2, help="hf mode only")
     parser.add_argument(
@@ -538,7 +552,7 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         help="Giai đoạn 7 control: wrap gold in \\boxed{} before verifying "
         "whenever the prediction contains \\boxed{...} and gold doesn't "
         "already, isolating the boxed gold-truncation bug (measured "
-        "2026-09-12: 8.5% of MATH-500 gold) as the one changed variable, "
+        "2026-09-12: 8.5%% of MATH-500 gold) as the one changed variable, "
         "independent of --patch-verifier",
     )
     parser.add_argument(

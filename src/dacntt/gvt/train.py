@@ -135,7 +135,14 @@ class HfLoraSftTrain:
         lora_alpha: int = 32,
         target_modules: Sequence[str] = ("q_proj", "v_proj"),
         max_seq_length: int = 512,
-        learning_rate: float = 1e-5,
+        # 1e-5 (old default) barely moves LoRA r=16 on this model/task —
+        # confirmed via experiments/viec3/diagnose_lr.py 2026-09-17: loss
+        # stayed flat/noisy (0.84->0.72) at 1e-5 over 1 epoch/120 examples,
+        # vs a clean drop (0.63->0.24) at 5e-4 (arXiv 2602.04998's
+        # recommendation for LoRA r=16 on math, same order of magnitude).
+        # All prior A/B/C runs used the 1e-5 default — their "no
+        # improvement" result may be this, not a genuine finding.
+        learning_rate: float = 5e-4,
         log_dir: Path | None = None,
     ) -> None:
         self.model_id = model_id
