@@ -189,8 +189,13 @@ class HfLoraSftTrain:
         # run). RAM isn't the constraint here (confirmed 26GB+ free on the
         # T4 notebook), so force the plain, fully-materialize-then-copy
         # path instead, which doesn't use that lazy loader.
-        model = AutoModelForCausalLM.from_pretrained(
-            self.model_id, torch_dtype=dtype, low_cpu_mem_usage=False
+        from dacntt.gvt._load_timeout import load_with_timeout
+
+        model = load_with_timeout(
+            lambda: AutoModelForCausalLM.from_pretrained(
+                self.model_id, torch_dtype=dtype, low_cpu_mem_usage=False
+            ),
+            what=f"AutoModelForCausalLM.from_pretrained({self.model_id}) [train]",
         )
         if torch.cuda.is_available():
             model = model.to("cuda")

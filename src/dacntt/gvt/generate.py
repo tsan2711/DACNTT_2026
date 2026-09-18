@@ -218,8 +218,13 @@ class HfGenerate:
             # checkpoint's dtype, which for Qwen2.5 is bf16 and runs on T4 via
             # a slow fp32 emulation path. fp16 is the fast path on this GPU.
             dtype = torch.float16 if torch.cuda.is_available() else "auto"
-            model = AutoModelForCausalLM.from_pretrained(
-                self.model_id, torch_dtype=dtype, device_map="auto"
+            from dacntt.gvt._load_timeout import load_with_timeout
+
+            model = load_with_timeout(
+                lambda: AutoModelForCausalLM.from_pretrained(
+                    self.model_id, torch_dtype=dtype, device_map="auto"
+                ),
+                what=f"AutoModelForCausalLM.from_pretrained({self.model_id}) [generate]",
             )
             if self.adapter_path:
                 from peft import PeftModel
