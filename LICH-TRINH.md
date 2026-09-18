@@ -129,14 +129,29 @@ Lệnh chạy đầy đủ cho từng bước nằm ở `experiments/viec3/KAGGL
 - [~] **C2. Gộp số liệu mới vào `papers/latex/paper.tex`** — **đã viết lại
       toàn bộ bài 2026-09-09** theo kết luận A/B/C (đổi title, Abstract,
       Introduction, thêm §3.3 hai thiết kế P/I, Results §4.1–4.5, Discussion
-      rút lại claim shrinking-pool, Limitations 6 mục, Conclusion). Còn
-      thiếu: số seed lặp + ablation → khi có thì khoá bảng `tab:isolated`
-      và bỏ hedging "single seed". Bản nháp cũ `papers/DRAFT.md` đã đánh dấu
-      lỗi thời, không dùng nữa.
-- [ ] **C3. Compile thử qua Overleaf** — **chưa làm, máy không có LaTeX**.
-      Đã tự kiểm tra bằng script: ngoặc cân, 6 table / 2 figure / 6 tabular
-      khớp begin-end, không có `\ref`/`\cite` treo, Abstract 246 từ (trong
-      giới hạn LNCS 150–250). Nhưng chưa chạy `pdflatex` thật lần nào.
+      rút lại claim shrinking-pool, Limitations 6 mục, Conclusion). **Cập
+      nhật 2026-09-18: bảng `tab:isolated` đã có đủ seed 0 + seed 1 cho Run
+      A/B, không còn hedging "single seed"** — xác nhận qua compile thật
+      (xem C3). Còn thiếu: ablation `--no-filter` (đang chờ chạy, xem mục
+      "vòng chạy cuối cùng" phía trên) và — mới phát hiện 2026-09-17/18 —
+      **chưa có chỗ nào trong bài nhắc tới nghi vấn learning rate** (`diagnose_lr.py`
+      xác nhận `lr=1e-5` cũ gần như không học; đã đổi default sang `5e-4`,
+      đang chờ chạy lại Run A để biết kết luận A/B/C có bị ảnh hưởng không —
+      xem `experiments/viec3/diagnose_lr.py`). Nếu Run A-lr-mới đổi kết quả,
+      Limitations/Conclusion cần viết lại phần tương ứng; nếu không đổi,
+      thêm 1 câu vào Limitations ghi nhận đã kiểm tra và loại trừ. Bản nháp
+      cũ `papers/DRAFT.md` đã đánh dấu lỗi thời, không dùng nữa.
+- [x] **C3. Compile thử** — **xong 2026-09-18, dùng `tectonic` (cài qua
+      brew, không cần MacTeX ~4GB) thay vì Overleaf.** Compile sạch, ra
+      `paper.pdf` (18 trang, không lỗi fatal). 4 cảnh báo overfull/underfull
+      hbox/vbox — đã xem trực tiếp trang PDF tương ứng, không phải lỗi thấy
+      được, bỏ qua an toàn. **2 việc cần làm trước khi nộp thật:**
+      (1) trang đầu vẫn ghi `First Author`/`Second Author`/`example.edu`
+      (dòng 1 file có comment "pending author verification") — cần tên
+      thật + email thật, không tự đoán; (2) 18 trang hơi dài so với chuẩn
+      LNCS phổ biến (12–15 trang) — chưa rõ giới hạn trang thật của nơi
+      nộp, cần kiểm tra lại yêu cầu cụ thể trước khi tính có phải cắt bớt
+      không.
 - [ ] **C4. Tự đọc lại toàn bài bằng giọng của mình** (việc của Bi).
 - [x] **C5. Cập nhật `THUYET-TRINH.md`** — xong 2026-09-09, viết lại theo
       câu chuyện mới (giả thuyết → tưởng đúng → phát hiện confound → làm
