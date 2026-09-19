@@ -2,26 +2,25 @@
 
 Kaggle T4 sessions have shown intermittent stalls mid weight-load (tqdm
 "Loading weights: X%|... Materializing param=...") that never crash or
-progress — confirmed hanging a full 12h Kaggle session with zero further
-output (see experiments/viec3/KAGGLE.md, Run A 2026-09-18). A stuck call
-can't be recovered in-process (the OS-level read/allocation it's blocked
-on doesn't respond to a Python-level timeout), so this fails the whole
-process fast instead — a fresh Kaggle session can then be retried in
-minutes instead of losing a full 12h session for nothing.
+progress. Two full 12h Kaggle sessions were lost to this (Run A,
+2026-09-18 and 2026-09-19) with zero output afterwards.
 
-Runs the call on a daemon thread rather than a ThreadPoolExecutor: a pool's
-context manager calls shutdown(wait=True) on exit, which blocks until the
-stuck worker finishes — i.e. never, for a genuine hang. A daemon thread
-doesn't hold the process open, so main() can actually exit after this
-raises instead of hanging a second time waiting for the same stuck call.
+The stall can be inside native code that holds the GIL, so a Python-level
+timer (a thread + join(timeout), or a signal handler) never gets to run:
+a first version of this module used a daemon thread and was reproduced
+raising only after the hung call finished on its own. faulthandler's
+watchdog runs on a C thread that needs no GIL; with exit=True it dumps
+every thread's traceback to stderr and terminates the process with
+status 1. The traceback also shows where the load was stuck.
 
-train.py reloads the base model fresh every round (see its module
-docstring), so this guards every round of a run, not just the first.
+Nothing in-process can recover a stuck load, so failing fast is the goal:
+a fresh Kaggle session can be retried in minutes instead of losing 12h.
+train.py reloads the base model every round, so this guards every round.
 """
 
 from __future__ import annotations
 
-import threading
+import faulthandler
 from typing import Callable, TypeVar
 
 T = TypeVar("T")
@@ -30,24 +29,9 @@ DEFAULT_TIMEOUT_S = 180
 
 
 def load_with_timeout(load_fn: Callable[[], T], *, what: str, timeout_s: float = DEFAULT_TIMEOUT_S) -> T:
-    outcome: dict[str, object] = {}
-
-    def _run() -> None:
-        try:
-            outcome["value"] = load_fn()
-        except BaseException as exc:  # re-raised on the caller's thread below
-            outcome["error"] = exc
-
-    thread = threading.Thread(target=_run, daemon=True)
-    thread.start()
-    thread.join(timeout_s)
-
-    if thread.is_alive():
-        raise RuntimeError(
-            f"{what} didn't return within {timeout_s}s — known intermittent Kaggle "
-            "GPU/disk stall during weight loading (see experiments/viec3/KAGGLE.md). "
-            "Not recoverable in-process; exit and retry in a fresh Kaggle session."
-        )
-    if "error" in outcome:
-        raise outcome["error"]  # type: ignore[misc]
-    return outcome["value"]  # type: ignore[return-value]
+    print(f"[load-watchdog] {what}: exit after {timeout_s}s without returning", flush=True)
+    faulthandler.dump_traceback_later(timeout_s, exit=True)
+    try:
+        return load_fn()
+    finally:
+        faulthandler.cancel_dump_traceback_later()
