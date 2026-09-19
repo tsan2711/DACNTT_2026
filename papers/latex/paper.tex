@@ -365,7 +365,8 @@ splits.
 
 \emph{Training.} LoRA supervised fine-tuning
 (\texttt{transformers} + \texttt{peft} + TRL \texttt{SFTTrainer}), one
-epoch per round. We use SFT on verifier-accepted solutions rather than
+epoch per round at a learning rate of $10^{-5}$ in every run reported here.
+We use SFT on verifier-accepted solutions rather than
 online RL because it matches the select-then-train structure of the loop.
 
 \emph{Metrics, per round.}
@@ -379,9 +380,9 @@ problems on which all $k$ samples agree;
 (iv) for Design~I, the final training loss reported by
 \texttt{SFTTrainer} on that round's kept pool.
 
-\emph{Infrastructure.} A single Kaggle T4 GPU. Every configuration in both
-designs was run \emph{once}; we do not report seed variance
-(Section~\ref{sec:limitations}).
+\emph{Infrastructure.} A single Kaggle T4 GPU. Design~P and Run~C were run
+once; Runs~A and~B were run at two seeds (Section~\ref{sec:seedvar} and
+Section~\ref{sec:limitations}).
 
 \section{Results}
 \label{sec:results}
