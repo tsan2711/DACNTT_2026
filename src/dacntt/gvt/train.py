@@ -138,8 +138,11 @@ class HfLoraSftTrain:
         # 1e-5 (old default) barely moves LoRA r=16 on this model/task —
         # confirmed via experiments/viec3/diagnose_lr.py 2026-09-17: loss
         # stayed flat/noisy (0.84->0.72) at 1e-5 over 1 epoch/120 examples,
-        # vs a clean drop (0.63->0.24) at 5e-4 (arXiv 2602.04998's
-        # recommendation for LoRA r=16 on math, same order of magnitude).
+        # vs a clean drop (0.63->0.24) at 5e-4. Literature checked live
+        # 2026-09-19: arXiv 2602.04998 sweeps LoRA lr over 1e-6..1e-3 with
+        # its best cells around 1e-4..1e-3 (no single "5e-4" recommendation);
+        # arXiv 2609.01244 reports an optimal LoRA lr near 1e-3, ~33x the
+        # full-fine-tuning optimum (3e-5). 5e-4 is inside that range.
         # All prior A/B/C runs used the 1e-5 default — their "no
         # improvement" result may be this, not a genuine finding.
         learning_rate: float = 5e-4,

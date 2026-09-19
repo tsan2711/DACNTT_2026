@@ -3,7 +3,10 @@
 Bối cảnh: `HfLoraSftTrain` (src/dacntt/gvt/train.py) dùng learning_rate=1e-5
 cho LoRA r=16 (chỉ q_proj/v_proj) từ commit đầu tiên, chưa ai kiểm tra lại.
 Tài liệu tra được cho LoRA r=16 trên tác vụ toán tương đương (MetaMath,
-LoRA-Adam) khuyến nghị ~5e-4 (arXiv 2602.04998) — thấp hơn khoảng 50 lần.
+LoRA-Adam): arXiv 2602.04998 quét lr 1e-6..1e-3, vùng tốt nhất quanh
+1e-4..1e-3 (không có khuyến nghị đúng "5e-4" — sửa 2026-09-19 sau khi tra lại
+bài gốc); arXiv 2609.01244 nêu lr tối ưu của LoRA ~1e-3, gấp ~33 lần full
+fine-tuning. 1e-5 thấp hơn vùng đó khoảng 10-100 lần.
 Nếu đúng, mỗi vòng train gần như không dịch chuyển được adapter, bất kể đưa
 dữ liệu gì vào — giải thích tầm thường hơn cho cả hai hiện tượng đang thấy:
 pass@1 đứng yên, và A so B (vá verifier) không khác nhau.
@@ -142,7 +145,7 @@ def main() -> int:
     ap.add_argument("--generations", type=Path, default=DEFAULT_GEN)
     ap.add_argument("--n-examples", type=int, default=120, help="cap for a fast local check")
     ap.add_argument("--lr-a", type=float, default=1e-5, help="current default (suspect too low)")
-    ap.add_argument("--lr-b", type=float, default=5e-4, help="candidate fix (arXiv 2602.04998, r=16 math)")
+    ap.add_argument("--lr-b", type=float, default=5e-4, help="candidate fix (inside the 1e-4..1e-3 LoRA range of arXiv 2602.04998 / 2609.01244)")
     ap.add_argument("--out", type=Path, default=_REPO_ROOT / "results/viec3/diagnose-lr")
     ap.add_argument(
         "--select-only", action="store_true",
