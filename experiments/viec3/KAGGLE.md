@@ -176,10 +176,13 @@ generate, một cho SFTTrainer).
 
 **Hệ quả thực tế:** cấu hình full ở Ô 3 (500 đề, 5 vòng) không chạy vừa 1
 phiên Kaggle. Trước khi chạy full, hoặc: (a) giảm `--n`/`--k`/`--rounds` để
-vừa ~10-12h/phiên, hoặc (b) chia làm nhiều phiên nối tiếp — mỗi vòng đã ghi
-kết quả riêng ra `--out` (xem `_save_partial` trong `run.py`), nên phiên sau
-có thể tiếp tục đọc dữ liệu vòng trước, không mất trắng nếu phiên bị Kaggle
-tự ngắt giữa chừng.
+vừa ~10-12h/phiên, và thêm `--time-budget-hours 10`: sau mỗi vòng, nếu vòng
+kế (ước theo thời gian trung bình các vòng đã xong, +15%) không vừa ngân
+sách thì dừng sạch, kết quả các vòng đã xong được ghi ra `--out`, phiên kết
+thúc COMPLETE thay vì bị Kaggle cắt ở 12h. **Chạy nối tiếp qua nhiều phiên
+KHÔNG được hỗ trợ**: `_save_partial` chỉ ghi kết quả ra đĩa, `run.py` không
+có logic đọc lại để tiếp tục từ vòng dở (ghi sai ở bản cũ của mục này, đã
+sửa 2026-09-19).
 
 `Timeout during comparison` (log do chính `math-verify` in ra, không phải
 lỗi trong code) xuất hiện vài lần trên MATH500 khi SymPy so sánh biểu thức
@@ -287,9 +290,8 @@ n=1000 như `both`), ước tính mỗi vòng của A/B/C nhẹ hơn khoảng **
 1.5B chưa đo thật nhưng kỳ vọng chậm hơn. Vẫn vượt trần 12h/phiên nhưng gần
 vừa 1 tuần quota/lần, đỡ hơn hẳn ~33h của thiết kế `both` cũ.
 
-Hệ quả: mỗi lần A/B/C/seed/ablation vẫn cần chia nhiều phiên nối tiếp
-(`_save_partial` đã tự ghi kết quả sau mỗi vòng nên phiên sau đọc tiếp
-được), nhưng nhẹ hơn thiết kế cũ đáng kể — 6 lần chạy cô lập tổng GPU-giờ
+Hệ quả: mỗi lần A/B/C/seed/ablation phải vừa 1 phiên (dùng
+`--time-budget-hours`, xem trên; không có chạy nối tiếp), nhẹ hơn thiết kế cũ đáng kể — 6 lần chạy cô lập tổng GPU-giờ
 ước tính **thấp hơn hoặc tương đương** 5 lần chạy `both` của kế hoạch trước.
 
 Nếu vẫn quá chậm so với deadline thật: cân nhắc giảm `--k` (8→4) hoặc

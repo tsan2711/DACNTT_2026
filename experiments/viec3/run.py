@@ -46,6 +46,7 @@ import csv
 import json
 import random
 import sys
+import time
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -164,6 +165,23 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
 
+    started = time.monotonic()
+
+    def _out_of_time(records_so_far: list[RoundRecord]) -> bool:
+        if args.time_budget_hours is None or len(records_so_far) >= args.rounds:
+            return False
+        elapsed = time.monotonic() - started
+        per_round = elapsed / len(records_so_far)
+        if elapsed + per_round * 1.15 <= args.time_budget_hours * 3600:
+            return False
+        print(
+            f"  time budget {args.time_budget_hours}h: {elapsed / 3600:.1f}h used, "
+            f"~{per_round / 3600:.1f}h/round — stopping after "
+            f"{len(records_so_far)}/{args.rounds} rounds (results are saved)",
+            file=sys.stderr,
+        )
+        return True
+
     records = run_rounds(
         items,
         generator=generator,
@@ -177,6 +195,7 @@ def main(argv: list[str] | None = None) -> int:
         extra_exam_k=args.extra_exam_k,
         locked_exam=args.select_preset,
         on_round=_save_partial,
+        stop_after_round=_out_of_time,
         train_item_ids=train_ids,
         test_item_ids=test_ids,
         select_all=args.no_filter,
@@ -502,6 +521,15 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
             "(5e-4 — confirmed via experiments/viec3/diagnose_lr.py 2026-09-17 "
             "that the old 1e-5 barely moved the loss). All A/B/C runs before "
             "that date used 1e-5 with no way to override it from this CLI."
+        ),
+    )
+    parser.add_argument(
+        "--time-budget-hours", type=float, default=None,
+        help=(
+            "Stop cleanly after a round if the next one would not fit in this "
+            "many wall-clock hours (per-round time estimated from rounds so far, "
+            "+15%%). Use ~10 on Kaggle so the session ends COMPLETE with saved "
+            "partial results instead of being cancelled at the 12h cap."
         ),
     )
     parser.add_argument("--hf-epochs", type=float, default=1.0, help="hf mode only")

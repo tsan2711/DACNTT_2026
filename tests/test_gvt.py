@@ -303,3 +303,27 @@ def _item(item_id: str, problem: str, gold: str):
     from dacntt.gold.load import GoldItem
 
     return GoldItem(dataset="toy", item_id=item_id, gold=gold, problem=problem)
+
+
+def test_stop_after_round_ends_loop_cleanly() -> None:
+    items = [_item("a", "10 apples?", "10")]
+    generator = ScriptedGenerate({"10 apples?": [r"\boxed{10}", "11"] * 4})
+    adapter = _adapter({r"\boxed{10}": True, "11": False})
+    calls = []
+
+    def stop(records: list[RoundRecord]) -> bool:
+        calls.append(len(records))
+        return len(records) == 2
+
+    records = run_rounds(
+        items,
+        generator=generator,
+        trainer=NoOpTrain(),
+        select_adapter=adapter,
+        exam_adapters={"reward": adapter},
+        rounds=5,
+        k=2,
+        stop_after_round=stop,
+    )
+    assert len(records) == 2
+    assert calls == [1, 2]

@@ -39,6 +39,7 @@ def run_rounds(
     extra_exam_k: int | None = None,
     locked_exam: str = "reward",
     on_round: Callable[[list[RoundRecord]], None] | None = None,
+    stop_after_round: Callable[[list[RoundRecord]], bool] | None = None,
     train_item_ids: frozenset[str] | None = None,
     test_item_ids: frozenset[str] | None = None,
     select_all: bool = False,
@@ -48,6 +49,11 @@ def run_rounds(
     caller write partial results to disk as it goes, so a long run (e.g.
     Kaggle, killed by a session time limit) doesn't lose everything if it
     doesn't reach the end.
+
+    ``stop_after_round``, if given, is asked after each round (after
+    on_round) whether to stop; returning True ends the loop cleanly with the
+    rounds done so far, so a time-budgeted run finishes instead of being
+    killed. The extra_exam round is skipped when stopping early.
 
     ``train_item_ids``/``test_item_ids`` (Giai đoạn 2): if given, restrict
     training examples to ``train_item_ids`` and pass@*/styles-ABC scoring to
@@ -114,6 +120,8 @@ def run_rounds(
         prev_flags = record.flags.get(locked_exam)
         if on_round is not None:
             on_round(records)
+        if stop_after_round is not None and stop_after_round(records):
+            return records
     if extra_exam:
         records.append(
             _one_exam(
