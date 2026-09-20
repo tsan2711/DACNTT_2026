@@ -21,6 +21,7 @@ train.py reloads the base model every round, so this guards every round.
 from __future__ import annotations
 
 import faulthandler
+import time
 from typing import Callable, TypeVar
 
 T = TypeVar("T")
@@ -31,7 +32,13 @@ DEFAULT_TIMEOUT_S = 180
 def load_with_timeout(load_fn: Callable[[], T], *, what: str, timeout_s: float = DEFAULT_TIMEOUT_S) -> T:
     print(f"[load-watchdog] {what}: exit after {timeout_s}s without returning", flush=True)
     faulthandler.dump_traceback_later(timeout_s, exit=True)
+    started = time.monotonic()
     try:
-        return load_fn()
+        result = load_fn()
     finally:
         faulthandler.cancel_dump_traceback_later()
+    # experiments/viec3/supervise.py watches for this line from OUTSIDE the
+    # process: in Run A 2026-09-20 the in-process watchdog above printed its
+    # start line but never fired (process hung 12h anyway).
+    print(f"[load-watchdog] {what}: loaded in {time.monotonic() - started:.0f}s", flush=True)
+    return result
