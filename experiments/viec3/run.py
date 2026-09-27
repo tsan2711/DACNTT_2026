@@ -251,6 +251,32 @@ def _split_train_test(
     return frozenset(train_ids), frozenset(test_ids)
 
 
+def _prefetch_then_go_offline(model_id: str) -> None:
+    """Download the model's files once, with a watchdog, then force every
+    later from_pretrained() call (one per round — see train.py's module
+    docstring) to skip the network entirely.
+
+    Heartbeat evidence from a hung Run A (2026-09-27, heartbeat.log): the
+    stuck process had load=0.0 (no CPU spin) and 0 processes in D-state (disk
+    wait), yet held ~3GB of GPU memory — not a frozen machine, a process
+    asleep on something that isn't local disk I/O. That fits a network call
+    to the HF Hub (every from_pretrained() call checks for updates unless
+    told not to) blocking with no bound. Caching once and going offline for
+    the rest removes that network call from every subsequent round.
+    """
+    from dacntt.gvt._load_timeout import load_with_timeout
+
+    def _download() -> None:
+        from huggingface_hub import snapshot_download
+
+        snapshot_download(repo_id=model_id)
+
+    load_with_timeout(_download, what=f"snapshot_download({model_id}) [prefetch]")
+    os.environ["HF_HUB_OFFLINE"] = "1"
+    os.environ["TRANSFORMERS_OFFLINE"] = "1"
+    print(f"prefetched {model_id}, now HF_HUB_OFFLINE=1 for every round's reload", file=sys.stderr)
+
+
 def _backend(mode: str, args: argparse.Namespace, out_dir: Path, items: list):
     if mode == "dry":
         generator = ScriptedGenerate.from_gold(items, args.k)
@@ -261,6 +287,7 @@ def _backend(mode: str, args: argparse.Namespace, out_dir: Path, items: list):
         )
         return generator, trainer, note
     if mode == "hf":
+        _prefetch_then_go_offline(args.model)
         generator = HfGenerate(
             args.model,
             max_tokens=args.max_tokens,
