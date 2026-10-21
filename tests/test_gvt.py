@@ -327,3 +327,20 @@ def test_stop_after_round_ends_loop_cleanly() -> None:
     )
     assert len(records) == 2
     assert calls == [1, 2]
+
+
+def test_resume_records_continue_at_next_round() -> None:
+    items = [_item("a", "10 apples?", "10")]
+    generator = ScriptedGenerate({"10 apples?": [r"\boxed{10}", "11"] * 8})
+    adapter = _adapter({r"\boxed{10}": True, "11": False})
+    kwargs = dict(
+        generator=generator,
+        trainer=NoOpTrain(),
+        select_adapter=adapter,
+        exam_adapters={"reward": adapter},
+        k=2,
+    )
+    first = run_rounds(items, rounds=2, **kwargs)
+    resumed = run_rounds(items, rounds=4, resume_records=first, **kwargs)
+    assert [r.round for r in resumed] == [0, 1, 2, 3]
+    assert resumed[2].abc is not None  # compared against round 1's flags

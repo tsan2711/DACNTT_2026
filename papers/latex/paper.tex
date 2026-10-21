@@ -32,30 +32,27 @@ Capability Collapse in Iterative Self-Training of Small Reasoning Models}
 \maketitle
 
 \begin{abstract}
-Iterative self-training loops of the form generate $\rightarrow$ verify
-$\rightarrow$ select $\rightarrow$ train (GVT) improve small language
-models on mathematical reasoning without human labels, assuming the
-verifier reliably separates correct from incorrect solutions. We tested
-whether a rule-based verifier with a \emph{directional} bias --- rejecting
-correct solutions in unexpected formats while almost never accepting
-incorrect ones --- causes capability collapse over several rounds. We measured the bias on \texttt{math-verify}:
-\verb|\dfrac|/\verb|\tfrac| rewrites of correct answers are rejected
-$100\%$ of the time. Five GVT rounds on a \emph{pooled} GSM8K\,+\,MATH-500
-set appeared to confirm the hypothesis: Qwen2.5-1.5B pass@1 fell
-$50.0\%\to18.6\%$ and pass@8 $72.6\%\to48.6\%$. That design, however,
-trains one shared LoRA adapter on the pooled filtered set and scores on the
-selection items, separating neither verifier bias from cross-dataset
-interference nor capability loss from fit to the evaluation set. We re-ran
-with each dataset isolated on its own adapter, a held-out $30\%$ exam
-split, and the control the original lacked: the same run with the format
-bias patched. The collapse disappears --- pass@8 is flat throughout --- and
-patching changes nothing measurable across two paired seeds. The reason is
-prevalence: the affected format occurs in $\approx0.55\%$ of generations
-and never on GSM8K, so a $100\%$ rejection rate discards half a percent of
-the training pool. Published verifier-bias rates are conditional
-severities; practical impact is severity $\times$ prevalence, which must be
-measured in the target pipeline. Our striking initial collapse was
-substantially an artifact of the pooled, non-held-out design.
+Self-training loops (generate $\rightarrow$ verify $\rightarrow$ select
+$\rightarrow$ train, GVT) assume a reliable verifier. We tested whether a
+rule-based verifier with a directional format bias --- \texttt{math-verify}
+rejects \verb|\dfrac|/\verb|\tfrac| rewrites of correct answers $100\%$ of the
+time --- causes capability collapse over rounds. A pooled GSM8K\,+\,MATH-500 run
+appeared to confirm it (Qwen2.5-1.5B pass@8 $72.6\%\to48.6\%$), but it shared one
+adapter across datasets and scored on the selection items. With isolated
+adapters, a held-out exam split and a matched patched-verifier control, the
+collapse disappears at our training rate ($10^{-5}$) and patching changes nothing
+across two paired seeds: the biased format is only $\approx0.55\%$ of generations,
+so impact is severity $\times$ prevalence. A late check qualifies this: $10^{-5}$
+barely trains the adapter. At $10^{-4}$ (three seeds) accuracy falls by about two
+points, within noise, but the loss grows with the learning rate and at
+$5\times10^{-4}$ all four runs lose accuracy by round~2. The patch's effect flips
+sign between seeds, and no-filter and train-on-gold controls (two seeds each) show the verifier is
+not the driver. The decline has a different anatomy in each regime: under
+self-training, generations that drift and never answer rise from about $10\%$ to
+$40\%$ at $5\times10^{-4}$ while accuracy on finished solutions holds, and a larger
+token cap does not remove it, since the untrained model gains as much from it;
+under reference-solution training, responses halve in length and accuracy truly
+falls.
 
 \keywords{self-training \and verifier bias \and mathematical reasoning
 \and small language models \and experimental confounds \and pass@k.}
@@ -64,176 +61,128 @@ substantially an artifact of the pooled, non-held-out design.
 \section{Introduction}
 \label{sec:intro}
 
-A common recipe for improving the mathematical reasoning of a small
-language model (SLM) \emph{without additional human annotation} is to let
-the model generate its own solutions, keep those that an automated
-verifier judges correct, and fine-tune the model on the kept solutions,
-repeating the process for several rounds. We refer to this recipe as the
-\emph{Generate--Verify--Train} (GVT) loop. It underlies a family of
-methods, including STaR~\cite{ref_star}, ReST~\cite{ref_rest} and
-ReST-EM~\cite{ref_restem}, and rejection-sampling fine-tuning
-(RFT)~\cite{ref_rft}. Its appeal is that the verifier plays the role of a
-teacher that needs only to decide right from wrong; no reference solutions
-are required.
+A common recipe for improving the mathematical reasoning of a small language
+model (SLM) \emph{without human annotation} is to let the model generate its own
+solutions, keep those that an automated verifier judges correct, and fine-tune
+on the kept solutions, for several rounds. We call this the
+\emph{Generate--Verify--Train} (GVT) loop; it underlies STaR~\cite{ref_star},
+ReST~\cite{ref_rest}, ReST-EM~\cite{ref_restem} and rejection-sampling
+fine-tuning~\cite{ref_rft}. Every such method assumes that the verifier separates
+correct from incorrect solutions reliably, which a \emph{rule-based} verifier
+such as \texttt{math-verify}\footnote{\url{https://github.com/huggingface/math-verify},
+version 0.9.0 with antlr4 4.13.2 in this work.} violates in one direction: it
+compares an extracted final answer with the gold answer after normalisation, so
+it almost never accepts a wrong answer but rejects correct answers written in
+forms it does not recognise. We measured this bias directly
+(Section~\ref{sec:verifier}): on GSM8K the false-negative rate on correct
+solutions is effectively zero, on MATH-500 it is about $7.8\%$, and some valid
+rewrites, such as \verb|\dfrac| for \verb|\frac|, are rejected $100\%$ of the time.
 
-Every method in this family rests on an implicit assumption: the verifier
-separates correct from incorrect solutions reliably. This assumption is
-routinely violated when the verifier is \emph{rule-based} --- the most
-common choice for mathematics, because it is cheap, fast, and needs no
-training of its own. A rule-based verifier such as
-\texttt{math-verify}\footnote{\url{https://github.com/huggingface/math-verify},
-version 0.9.0 with antlr4 4.13.2 in this work.}
-extracts the final answer from a solution and compares it to the gold
-answer after normalisation. It does not read the reasoning, and its
-normalisation step never covers every equivalent way of writing an answer.
-As a result it produces \emph{false negatives}: it rejects solutions that
-are correct but written in a form it does not recognise. Crucially, this
-error is \emph{directional}. Because the verifier compares an extracted
-final answer against the gold, it almost never accepts a wrong answer --- a
-false positive would require an incorrect answer that normalises exactly to
-the gold, which is rare. Its errors are therefore overwhelmingly false
-negatives, all pushing in one direction.
-
-We measured this bias directly on \texttt{math-verify}
-(Section~\ref{sec:verifier}). On GSM8K, whose answers are simple integers,
-the false-negative rate on genuinely correct solutions is effectively
-zero. On MATH-500, whose answers contain fractions and non-trivial
-\LaTeX{}, it rises to roughly 7.8\%, and some individually valid rewrites
---- for instance writing \verb|\dfrac| instead of \verb|\frac| --- are
-rejected 100\% of the time even though the numeric value is correct. The
-bias is one-sided: we did not observe the verifier accepting incorrect
-final answers.
-
-This paper set out to ask a single question: \emph{when a directionally
-biased verifier of this kind is used as the filter inside a GVT loop, and
-the loop is run for many rounds rather than once, what is the consequence
---- does the model actually improve at reasoning, does it merely learn to
-write in the style the verifier prefers, or does it lose capability?}
-
-Our first experiments appeared to answer it decisively. Running five rounds
-on a pooled GSM8K\,+\,MATH-500 set, both pass@1 and pass@8 fell sharply for
-two model sizes, with the larger model collapsing harder. Taken at face
-value this is a striking result, and an earlier version of this work
-reported it as evidence that format-biased verifiers cause capability
-collapse.
-
-That conclusion does not survive a controlled re-examination, and reporting
-why is the main contribution of this paper. The pooled design has two
-properties that make it unable to answer the question it was built for.
-First, it trains \emph{one shared} LoRA adapter each round on the union of
-both datasets' accepted solutions, of which GSM8K supplies roughly $69\%$;
-what happens on MATH-500 therefore cannot be separated from what happens on
-GSM8K. Second, it evaluates on the same problems used to select training
-data, so any round-over-round change mixes genuine capability change with
-fit to the evaluation items. We rebuilt the experiment to remove both
-properties --- one dataset per run, one adapter per dataset, and a held-out
-$30\%$ exam split never used for selection --- and added the
-single-variable control the original design lacked: an otherwise identical
-MATH-500 run with the verifier's format bias patched.
-
-Under the corrected design, the collapse largely disappears and the control
-comes out null. Our own original hypothesis is not supported by the data
-that were built to test it properly.
+This paper asks a single question: \emph{when a directionally biased verifier is
+the filter in a multi-round GVT loop, does the model improve, merely learn the
+verifier's preferred style, or lose capability?} Our first experiments seemed to
+answer it decisively. Five rounds on a pooled GSM8K\,+\,MATH-500 set cut pass@1
+and pass@8 sharply for two model sizes, and an earlier version of this work
+reported this as evidence that format-biased verifiers cause collapse. It does
+not survive a controlled re-examination. The pooled design trains \emph{one}
+shared adapter on both datasets (GSM8K supplies about $69\%$ of the mixture) and
+scores on the very items used for selection. Rebuilt with one adapter per
+dataset, a held-out $30\%$ exam split and a matched patched-verifier control, the
+collapse disappears and the control is null, at the learning rate we used
+($10^{-5}$). A late diagnostic then showed that rate to be too low to train the
+adapter at all, and the rest of the paper re-examines the result at rates where
+the model does learn.
 
 \paragraph{Contributions.}
 \begin{itemize}
-\item We characterise the directional bias of a real rule-based verifier
-(\texttt{math-verify}) by format probe and by manual false-negative
-audit, rather than simulating a noise model.
-\item We run the GVT loop under two designs --- a \emph{pooled} design
-representative of common practice, and an \emph{isolated} design with
-per-dataset adapters and a held-out exam split --- and show that the two
-give qualitatively different answers to the same question: dramatic
-collapse under the first, essentially flat pass@8 under the second.
-\item We report the single-variable control that the pooled design could
-not support: repairing the verifier's format bias, with everything else
-held fixed, produces no measurable difference across two paired seeds. On
-this evidence the hypothesis that directional verifier bias drives the
-decline is \emph{not supported}.
-\item We identify why, and argue the point generalises: the bias is severe
-when triggered ($100\%$ rejection) but rare in practice (the affected
-format appears in $\approx0.55\%$ of generations, and never on GSM8K).
-Reported verifier-bias rates are conditional severities; their practical
-impact is severity $\times$ prevalence, and prevalence must be measured in
-the pipeline where the verifier will actually be used.
-\item We draw the methodological consequence: GVT-style experiments that
-pool several datasets into one training mixture, or that score on the
-selection set, can manufacture a collapse signal that isolation and
-held-out evaluation do not reproduce.
+\item We characterise the directional bias of a real rule-based verifier by
+format probe and manual false-negative audit, and show that its impact is
+severity $\times$ prevalence: $100\%$ rejection of a format that occurs in
+$\approx0.55\%$ of generations discards half a percent of the training pool.
+\item We show that a pooled design with selection-set scoring manufactures a
+collapse that isolation and held-out evaluation do not reproduce, and that the
+matched patched-verifier control is null at two seeds.
+\item We show that this flatness is conditional on the learning rate: $10^{-5}$
+barely trains the adapter, accuracy at $10^{-4}$ falls by about two points
+(within noise, three seeds), and the loss grows with the rate, reaching a
+decline at $5\times10^{-4}$. The patch's effect has no consistent sign across
+seeds, and no-filter and train-on-gold controls show the verifier is not the
+driver.
+\item We decompose the remaining decline and relate it to two recent studies
+(Section~\ref{sec:related}): under self-training it is mostly generations that
+drift and never answer, with accuracy on finished solutions unchanged; under
+reference-solution training it is shortened responses and a real loss of accuracy.
 \end{itemize}
 
 \section{Related Work}
 \label{sec:related}
 
-\paragraph{Iterative self-training for reasoning.}
-STaR~\cite{ref_star} introduced the generate--filter--retrain loop for
-reasoning without hand-written rationales. ReST~\cite{ref_rest} and
-ReST-EM~\cite{ref_restem} formalise it as alternating ``grow'' and
-``improve'' steps; ReST-EM applies it to MATH and APPS with PaLM-2,
-sampling 32 solutions per problem, and reports diminishing test gains after
-the first round, plus a one-round regression on APPS that it does not
-investigate. RFT~\cite{ref_rft} is the single-round rejection-sampling
-special case. All of these treat the correctness signal as trustworthy;
-none analyses a verifier that is biased in a fixed direction, and none
-tracks output style across rounds.
+\paragraph{Self-training and its limits.}
+STaR~\cite{ref_star} introduced the generate--filter--retrain loop, and
+ReST~\cite{ref_rest}, ReST-EM~\cite{ref_restem} and RFT~\cite{ref_rft} formalise
+it; ReST-EM reports diminishing test gains after the first round and an
+uninvestigated one-round regression on APPS. All treat the correctness signal as
+trustworthy. Yue et al.~\cite{ref_rllimit} show that RL raises pass@1 while the
+base model wins at large pass@$k$, and Teacher-Free Self-Training~\cite{ref_teacherfree}
+observes a pass@8 versus pass@64 crossover on a free-verifier domain, concluding
+that self-training ``amplifies but does not compound''. Training repeatedly on
+model-generated data erodes distribution tails~\cite{ref_collapse}, and Qiao et
+al.~\cite{ref_selectionbias} argue theoretically that a selector seeing only a
+narrow slice of the target distribution accelerates collapse.
 
-\paragraph{Verifier and reward error.}
-TinyV~\cite{ref_tinyv} measures that a rule-based verifier rejects a large
-fraction of correct solutions and \emph{repairs} the verifier with an
-auxiliary LLM check, evaluated in a single pass. From Accuracy to
-Robustness~\cite{ref_robustness} reports that rule-based verifiers for
-mathematical RL achieve only about 86\% recall on average (i.e.\ $\sim$14\%
-false negatives), an independent figure consistent with ours, but runs RL
-for a few hundred steps within one training phase and does not track how
-verifier recall interacts with self-training rounds. Imperfect
-Verifiers~\cite{ref_imperfect} gives the most formal noise model: the
-verifier flips its decision with fixed probabilities $\rho_0$ (false
-accept) and $\rho_1$ (false reject). Its Section~3.1 explicitly notes that
-``real-world noise can depend on content, formatting, prompt style'', but
-then assumes content-independent fixed rates and studies a single RL round.
-Our study addresses the multi-round version of that gap; our answer, unlike
-our initial expectation, is that a measured format-dependent bias of this
-magnitude does not by itself change the multi-round outcome.
+\paragraph{Verifier error.}
+TinyV~\cite{ref_tinyv} measures that rule-based verifiers reject many correct
+solutions and repairs them with an LLM check; From Accuracy to
+Robustness~\cite{ref_robustness} reports about $14\%$ false negatives for
+rule-based verifiers in mathematical RL, consistent with ours. Imperfect
+Verifiers~\cite{ref_imperfect} gives the most formal noise model, with fixed
+false-accept and false-reject probabilities, and notes that real noise can depend
+on formatting but then assumes content-independent rates in a single RL round.
+Egashira et al.~\cite{ref_delayplateau} classify verifier errors in RLVR on a
+synthetic arithmetic task (Qwen3-1.7B-Base, OLMo3-7B) with hand-designed patterns
+such as format-based false negatives, and find that systematic false negatives
+behave like random noise --- the model learns to avoid the triggering output and
+still improves --- whereas false positives can cause plateau or collapse. Our
+control tests the same question with a \emph{real} verifier whose bias we
+measured, real data, and several supervised rounds, and reaches the same
+conclusion.
 
-\paragraph{Limits of RL and self-training.}
-Yue et al.~\cite{ref_rllimit} show that RL raises pass@1 while the base
-model wins at large pass@$k$, i.e.\ RL sharpens an existing distribution
-rather than extending capability. Teacher-Free
-Self-Training~\cite{ref_teacherfree} runs three sequential self-training
-rounds on a free-verifier domain and observes a pass@8 vs.\ pass@64
-crossover --- the trained model wins at small sampling budget and loses at
-large budget --- concluding that self-training ``amplifies but does not
-compound''. Its verifier is exact string equality, with ``zero learned
-opinion''. Our isolated runs are closer to this picture than to a collapse
-picture: with the confounds removed, pass@8 is essentially preserved and
-what erodes, mildly, is first-attempt reliability.
+\paragraph{Auditing self-improvement.}
+Xu et al.~\cite{ref_phantom} audit three rounds of rank-32 LoRA self-training of
+Qwen3-8B ($\eta=10^{-4}$; filters by answer match, majority vote or an external
+teacher) against a frozen untrained control, and identify seven measurement
+failures that each invert a reported finding when its control is absent,
+including a fixed token cap under style drift and training-seed variance (the
+corruption-to-learning ratio of one method spans $0.55$--$1.53$ across seeds).
+Self-training does not improve rarely-solved problems ($0$--$2$ of $22$, against
+$8$--$11$ for teacher distillation) and corrupts problems solved at baseline. This
+is the study closest to ours in spirit, and our results meet theirs at three
+points: the A-versus-B gap changes sign between seeds; a $150$-problem exam set
+resolves only large effects; and self-training drifts in style, which costs the
+adapters answers (Section~\ref{sec:anatomy}). They hold the filter
+and learning rate fixed and use no measured format-biased verifier; we vary the
+verifier and the learning rate and add reference-solution and no-filter controls,
+but have no frozen control or distillation arm.
 
-\paragraph{Model collapse.}
-Training repeatedly on model-generated data erodes distribution tails and
-converges output toward the mean~\cite{ref_collapse}. Qiao et
-al.~\cite{ref_selectionbias} argue theoretically that a selector able to
-``see'' only a narrow slice of the target distribution becomes itself a
-source of bias that accelerates collapse. Our pooled runs looked like an
-empirical instance of that mechanism; our isolated runs do not reproduce
-it, which we read as a caution against inferring the mechanism from
-aggregate pass-rate curves alone (Section~\ref{sec:discussion}).
+\paragraph{Reference-guided training.}
+Kim et al.~\cite{ref_selfdistill} show that self-distillation conditioned on the
+ground-truth solution can cut mathematical accuracy by up to $40\%$ (Qwen3-1.7B/8B,
+DeepSeek-Distill-Qwen-7B, Olmo3-7B-Instruct) while \emph{shortening} responses,
+which they trace to suppressed epistemic verbalization. Our train-on-gold control
+is a supervised, small-model analogue with the same signature (response length
+$-59\%$, accuracy on finished solutions $37\%\to14\%$); we did not measure
+epistemic markers, so we claim the signature, not the mechanism. Self-training
+shows the \emph{opposite} length drift, which that literature does not predict.
 
-\paragraph{Single-round verifier-error studies.}
-Egashira et al.~\cite{ref_delayplateau} classify verifier errors in
-one-round RLVR on synthetic arithmetic and conclude that systematic false
-negatives behave like random noise --- they slow learning but do not cause
-collapse --- while false positives cause plateau or collapse. An earlier
-version of this work treated their conclusion as being in tension with
-ours. With the controlled runs in hand the tension is gone: our
-single-variable verifier control (Section~\ref{sec:control}) reaches the
-same conclusion they do, now in a multi-round supervised setting rather
-than a single RLVR phase, and with a real rather than simulated verifier.
-
-\paragraph{Summary.}
-No prior work combines a real, measured, format-biased rule-based verifier
-with multiple sequential self-training rounds and a matched patched-verifier
-control. We close that gap, and the answer is negative: within our
-measurement precision, the bias does not change the multi-round outcome.
+\paragraph{Positioning.}
+In the literature we surveyed (searched through October 2026) we found no study
+combining a real, measured, format-biased rule-based verifier with several
+sequential self-training rounds and a matched patched-verifier control. The
+closest are Egashira et al.\ (hand-designed errors, one RLVR phase) and Xu et
+al.\ (a measurement audit with answer, vote and teacher filters). We add that
+combination, an account of how pooling, selection-set scoring and an undertrained
+adapter each manufacture a misleading curve, and a decomposition of the decline
+that remains.
 
 \section{Setup}
 \label{sec:setup}
@@ -241,81 +190,53 @@ measurement precision, the bias does not change the multi-round outcome.
 \subsection{The GVT Loop}
 \label{sec:loop}
 
-Each round $t$ of our loop performs four steps.
-\begin{description}
-\item[Generate.] For every problem in the working set, the current model
-samples $k = 8$ solutions (temperature sampling).
-\item[Verify.] \texttt{math-verify} (version 0.9.0, antlr4 4.13.2) extracts
-the final answer from each solution and compares it to the gold answer.
-\item[Select.] Solutions the verifier accepts are kept; all others are
-discarded.
-\item[Train.] A \emph{fresh} LoRA adapter (rank 16, $\alpha = 32$) is
-attached to the \emph{base} model and trained by supervised fine-tuning on
-the kept solutions for one epoch. Adapters are \emph{not} accumulated
-across rounds: round $t$ starts from the base weights and learns only from
-round $t-1$'s accepted pool.
-\end{description}
-The loop is run for five rounds ($t = 0,\dots,4$), where $t = 0$ is the
-untrained base model.
+Each round $t$ has four steps. \emph{Generate:} the current model samples $k$
+solutions per problem at temperature $0.8$. \emph{Verify:} \texttt{math-verify}
+extracts the final answer and compares it with the gold. \emph{Select:} accepted
+solutions are kept. \emph{Train:} a \emph{fresh} LoRA adapter (rank $16$,
+$\alpha=32$) is attached to the \emph{base} model and trained by supervised
+fine-tuning on the kept solutions for one epoch; adapters are not accumulated, so
+round $t$ learns only from round $t-1$'s accepted pool. Rounds are indexed from
+$t=0$, the untrained base model. The first experiments use $k=8$ and five rounds.
 
 \subsection{The Verifier and Its Directional Bias}
 \label{sec:verifier}
 
-Before running the loop we characterised \texttt{math-verify} in two ways.
+\emph{Format probe.} We re-rendered gold answers from GSM8K and MATH-500 in
+individually valid formats (bare number, trailing-zero decimal, \verb|\frac|,
+\verb|\dfrac|, \verb|\tfrac|, boxed, dollar-delimited, sentence, with units) and
+asked the verifier to grade them against the original gold. On GSM8K plain
+rewrites are never rejected, while \verb|\dfrac|/\verb|\tfrac| are rejected
+$200/200$ (the command is not parsed). On MATH-500, \verb|\dfrac|/\verb|\tfrac|
+are rejected $146/146$ ($100\%$), trailing-zero decimals $59\%$, and
+boxed/dollar-delimited forms about $20\%$ of the time.
 
-\emph{Format probe.} We took gold answers from GSM8K and MATH-500 and
-re-rendered each in a set of individually valid formats (bare number,
-trailing-zero decimal, \verb|\frac|, \verb|\dfrac|, \verb|\tfrac|, boxed,
-dollar-delimited, full sentence, with units), then asked the verifier to
-grade the re-rendered answer against the original gold. On GSM8K, plain
-rewrites are never rejected; \verb|\dfrac| and \verb|\tfrac| are rejected
-$200/200$ (the verifier fails to parse the command). On MATH-500,
-\verb|\dfrac|/\verb|\tfrac| are rejected $146/146$ ($100\%$),
-trailing-zero decimals such as \texttt{0.50} are rejected $59\%$ of the
-time, and boxed/dollar-delimited forms are rejected about $20\%$ of the
-time.
+\emph{False-negative rate on real solutions.} For genuinely correct public
+model solutions (teacher traces for GSM8K, Qwen2.5-7B rollouts for MATH-500) we
+checked manually, for each rejected solution, whether the boxed answer matched the
+gold. The false-negative rate is $\mathbf{7.8\%}$ on MATH-500 ($10/128$) and
+$\mathbf{0\%}$ on GSM8K ($0/200$), identical for the \texttt{default} and
+\texttt{reward} presets. Of the ten MATH-500 cases, eight are wrong-token
+extraction from a long solution and two are valid rewrites the verifier cannot
+match; we never saw it accept an incorrect final answer.
 
-\emph{False-negative rate on real solutions.} We then took genuinely
-correct model-generated solutions (public teacher traces for GSM8K; public
-Qwen2.5-7B rollouts for MATH-500) and manually checked, for each solution
-the verifier rejected, whether the boxed answer actually matched the gold.
-The false-negative rate among correct solutions is $\mathbf{7.8\%}$ on
-MATH-500 ($10/128$) and $\mathbf{0\%}$ on GSM8K ($0/200$); the two verifier
-presets we tested (\texttt{default} and \texttt{reward}) give identical
-counts. Of the ten MATH-500 false negatives, eight are cases where the
-verifier extracts the wrong token from a long solution, and two are valid
-rewrites it cannot match (\verb|\left( 3, \frac{\pi}{2} \right)| vs.\
-\verb|(3, \frac{\pi}{2})|; \verb|6+9i| vs.\ \verb|6 + 9i|). We did not
-observe the verifier accepting an incorrect final answer; the error is
-one-directional.
-
-\emph{The patch.} For the control experiment we repaired exactly the
-largest identified failure mode: a normalisation pass that rewrites
-\verb|\dfrac| and \verb|\tfrac| to \verb|\frac| before the verifier's own
-parsing. This removes the $100\%$-rejection format class from the
-verifier's error profile while leaving every other behaviour untouched.
+\emph{The patch.} For the control we repaired the largest identified failure mode
+with a normalisation pass that rewrites \verb|\dfrac| and \verb|\tfrac| to
+\verb|\frac| before parsing, removing the $100\%$-rejection class and nothing else.
 
 \subsection{Two Experimental Designs}
 \label{sec:designs}
 
-Our results come from two designs, summarised in
-Table~\ref{tab:designs}. The distinction is the central point of this
-paper, so we state it explicitly rather than as a configuration detail.
-
-\emph{Design~P (pooled).} Both datasets are loaded together, and each round
-trains \emph{one} LoRA adapter on the union of the accepted solutions from
-both. Selection and evaluation use the same problems. This is the design
-of our initial experiments and, in structure, of much reported practice.
-
-\emph{Design~I (isolated).} One dataset per run, one adapter per run, and a
-held-out split: $30\%$ of the problems ($150$ of $500$) form an
-\texttt{exam} set that is \emph{never} used to select training data, while
-the remaining $350$ form the \texttt{select} set. All reported pass rates
-under Design~I are computed on the held-out exam set only.
+\emph{Design~P (pooled)} loads both datasets together and trains \emph{one}
+adapter per round on the union of accepted solutions, with selection and
+evaluation on the same problems. \emph{Design~I (isolated)} uses one dataset and
+one adapter per run, and holds out $30\%$ of the problems ($150$ of $500$) as an
+\texttt{exam} set never used for selection; all Design~I pass rates are on the exam
+set. Table~\ref{tab:designs} summarises them.
 
 \begin{table}[t]
 \caption{The two designs. Design~I removes the pooling confound and the
-selection/evaluation overlap, and adds the patched-verifier control.}
+selection/evaluation overlap and adds the patched-verifier control.}
 \label{tab:designs}
 \centering
 \begin{tabular}{lll}
@@ -328,61 +249,32 @@ Training mixture & $\approx$\,69\% GSM8K & single-domain \\
 Evaluation items & same as selection & held-out 30\% \\
 Verifier control & none & Run~B (patched) \\
 Models & 0.5B and 1.5B & 1.5B \\
-Runs & 2 & 3 (A, B, C) \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Design~I comprises three runs, all Qwen2.5-1.5B-Instruct, $n=500$,
-five rounds, $k=8$, \texttt{holdout-frac}~$=0.3$, seed~$0$, differing in
-exactly one respect each:
-\begin{description}
-\item[Run A.] MATH-500 only, original verifier. The dataset where the bias
-is present, isolated.
-\item[Run B.] MATH-500 only, \emph{patched} verifier. Identical to Run~A in
-every other respect; the single-variable control for the paper's central
-hypothesis.
-\item[Run C.] GSM8K only, original verifier. The dataset where the verifier
-is already near-clean ($0\%$ measured false negatives).
-\end{description}
-Run~A was additionally repeated with seed~$1$. Because the seed governs the
-train/exam partition as well as sampling, the repetition draws a
-\emph{different} 150-problem exam set, which lets us calibrate how much of
-any observed movement is attributable to the choice of evaluation items
-(Section~\ref{sec:seedvar}).
+Design~I has three runs, all Qwen2.5-1.5B-Instruct, $n=500$, five rounds, $k=8$,
+differing in one respect each: \textbf{Run~A} (MATH-500, original verifier),
+\textbf{Run~B} (MATH-500, patched verifier; the single-variable control) and
+\textbf{Run~C} (GSM8K, original verifier, already near-clean). Runs A and B were
+repeated at a second seed; since the seed also sets the train/exam partition, the
+repetition draws a different 150-problem exam set.
 
 \subsection{Models, Data, Training, Metrics}
 \label{sec:config}
 
-\emph{Models.} Qwen2.5-0.5B-Instruct and
-Qwen2.5-1.5B-Instruct.\footnote{\url{https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct},
-\url{https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct}.}
-Design~P uses both; Design~I uses the 1.5B model only.
-
-\emph{Data.} GSM8K~\cite{ref_gsm8k} and MATH-500 --- the 500-problem
-subset of MATH~\cite{ref_math} --- 500 problems each, drawn from the test
-splits.
-
-\emph{Training.} LoRA supervised fine-tuning
-(\texttt{transformers} + \texttt{peft} + TRL \texttt{SFTTrainer}), one
-epoch per round at a learning rate of $10^{-5}$ in every run reported here.
-We use SFT on verifier-accepted solutions rather than
-online RL because it matches the select-then-train structure of the loop.
-
-\emph{Metrics, per round.}
-(i) pass@1 and pass@8;
-(ii) style counts over all generations in the round, for labels including
-\texttt{boxed}, \texttt{dfrac}, \texttt{frac}, \texttt{dollar},
-\texttt{sentence}, \texttt{assignment}, \texttt{decimal};
-(iii) pre-filter answer diversity: the mean fraction of distinct normalised
-final answers among the $k$ samples for a problem, and the fraction of
-problems on which all $k$ samples agree;
-(iv) for Design~I, the final training loss reported by
-\texttt{SFTTrainer} on that round's kept pool.
-
-\emph{Infrastructure.} A single Kaggle T4 GPU. Design~P and Run~C were run
-once; Runs~A and~B were run at two seeds (Section~\ref{sec:seedvar} and
-Section~\ref{sec:limitations}).
+We use Qwen2.5-0.5B-Instruct and Qwen2.5-1.5B-Instruct (Design~P uses both,
+Design~I the 1.5B model only) and 500 problems each from GSM8K~\cite{ref_gsm8k}
+and MATH-500, the 500-problem subset of MATH~\cite{ref_math}. Training is LoRA
+supervised fine-tuning (\texttt{transformers}, \texttt{peft}, TRL
+\texttt{SFTTrainer}), one epoch per round, at a learning rate of $10^{-5}$ unless
+stated otherwise;\footnote{A post-hoc diagnostic shows this rate undertrains the
+adapter (Section~\ref{sec:lrcheck} and Limitation~1).} we use SFT rather than
+online RL because it matches the select-then-train structure of the loop. Metrics
+per round are pass@1 and pass@$k$, style counts over all generations (boxed,
+dfrac, dollar, \dots), pre-filter answer diversity (distinct normalised answers
+among the $k$ samples), and the training loss on the kept pool. All runs use one
+Kaggle T4 GPU; Design~P and Run~C were run once, Runs A and B at two seeds.
 
 \section{Results}
 \label{sec:results}
@@ -390,16 +282,22 @@ Section~\ref{sec:limitations}).
 \subsection{Design P: An Apparent Collapse}
 \label{sec:pooled}
 
-Table~\ref{tab:passk} reports pass@1 and pass@8 for both models across the
-five rounds of the pooled design; the two verifier presets produced
-identical values, so a single column is shown. All four series decline
-monotonically or nearly so (the only exception is a $+0.8$-point blip in
-0.5B pass@1 at round~1), and the 1.5B decline is severe and accelerating.
+Table~\ref{tab:passk} reports pass@1 and pass@8 for both models over five rounds
+of the pooled design (the two verifier presets give identical values). All series
+decline, and the 1.5B decline is severe and accelerating. Splitting the 1.5B run
+by dataset (Table~\ref{tab:bydataset}) sharpens the puzzle: under the original
+hypothesis MATH-500 (false-negative rate $7.8\%$) should degrade and GSM8K
+($0\%$) should hold, but both fall heavily and GSM8K loses more pass@1 in points.
+The accepted pool also contracts every round (0.5B $-16\%$, 1.5B $-60\%$, from
+$3{,}962$ to $1{,}566$ solutions) and 1.5B output style shifts, with
+\verb|\boxed{}| falling from $5{,}608$ to $2{,}693$ occurrences while
+dollar-delimited math rises from $1{,}453$ to $3{,}406$. Read alone, this is a
+coherent story of a shrinking, style-skewed pool driving capability down.
 
 \begin{table}[t]
 \caption{Design~P: pass@1 and pass@8 over five GVT rounds, pooled
 GSM8K + MATH-500, scored on the selection set. Round 0 is the untrained
-base model. Section~\ref{sec:confound} explains why these numbers cannot
+base model. Section~\ref{sec:pooled} explains why these numbers cannot
 be attributed to verifier bias.}
 \label{tab:passk}
 \centering
@@ -414,22 +312,6 @@ Model & Metric & R0 & R1 & R2 & R3 & R4 & $\Delta$ (R0$\to$R4) \\
 \bottomrule
 \end{tabular}
 \end{table}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{pass_at_k_by_round.png}
-\caption{Design~P: pass@1 and pass@8 across five rounds for both model
-sizes. Both metrics fall for both models. Section~\ref{sec:isolated} shows
-that this pattern does not survive isolation and held-out evaluation.}
-\label{fig:passk}
-\end{figure}
-
-Splitting the 1.5B pooled run by dataset (Table~\ref{tab:bydataset})
-sharpens the puzzle rather than resolving it. Under the original
-hypothesis, MATH-500 --- where the verifier's false-negative rate is
-$7.8\%$ --- should degrade and GSM8K --- where it is $0\%$ --- should hold
-steady. Instead both fall heavily, and GSM8K, the dataset with the clean
-verifier, loses more pass@1 in absolute points than MATH-500.
 
 \begin{table}[t]
 \caption{Design~P, 1.5B, split by dataset. GSM8K has a measured $0\%$
@@ -448,83 +330,33 @@ MATH-500 & pass@8 & 53.8\% & 52.6\% & 51.4\% & 45.0\% & 31.4\% & $-22.4$ pt \\
 \end{tabular}
 \end{table}
 
-The accepted training pool also contracts every round --- mildly for the
-0.5B model ($-16\%$ by round~4) and sharply for the 1.5B model ($-60\%$,
-from $3{,}962$ to $1{,}566$ solutions) --- and 1.5B output style shifts
-markedly, with \verb|\boxed{}| occurrences falling from $5{,}608$ to
-$2{,}693$ while dollar-delimited math rises from $1{,}453$ to $3{,}406$.
-Read on its own, this is a coherent story about a shrinking, style-skewed
-pool driving capability down.
+Two properties of Design~P block that inference. First, each round trains one
+adapter on the union of both datasets' accepted solutions, of which GSM8K
+supplies $68.4$--$70.2\%$ in every round; either dataset's trajectory is
+therefore a joint function of both pools, and no contrast within the design
+isolates the verifier. Second, it scores each round on the problems it also used
+to select training data, so a round-over-round change mixes capability change
+with fit to those items.
 
-\subsection{Why Design P Cannot Answer the Question}
-\label{sec:confound}
-
-Two properties of Design~P block the inference.
-
-\emph{Shared adapter over a pooled mixture.} Each round trains one adapter
-on the union of both datasets' accepted solutions.
-Table~\ref{tab:poolmix} shows the composition of that union: GSM8K supplies
-between $68.4\%$ and $70.2\%$ of it in every round. The adapter evaluated
-on MATH-500 is therefore one that learned roughly $69\%$ of its update
-signal from GSM8K, and vice versa. Whatever happens to either dataset's
-score is a joint function of both datasets' filtered pools, and no
-contrast within this design isolates the verifier's contribution. We note
-that the mixture ratio is \emph{stable} across rounds, which rules out a
-drifting-ratio explanation but does not remove the interference itself.
-
-\begin{table}[t]
-\caption{Design~P, 1.5B: composition of the shared training pool. GSM8K
-dominates the mixture in every round, so neither dataset's trajectory is
-independent of the other.}
-\label{tab:poolmix}
-\centering
-\begin{tabular}{lccccc}
-\toprule
-Round & 0 & 1 & 2 & 3 & 4 \\
-\midrule
-Kept, GSM8K & 2725 & 2551 & 2356 & 1837 & 1100 \\
-Kept, MATH-500 & 1237 & 1179 & 1039 & 800 & 466 \\
-GSM8K share & 68.8\% & 68.4\% & 69.4\% & 69.7\% & 70.2\% \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\emph{Selection and evaluation on the same problems.} Design~P scores each
-round on the problems it also used to choose training data. A round-over-round
-change therefore mixes capability change with fit to those specific items,
-and neither component can be recovered from the aggregate.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{selected_pool_by_round.png}
-\caption{Design~P: size of the verifier-accepted training pool by round.
-The pool contracts in both runs. Section~\ref{sec:isolated} shows pool
-contraction also occurs \emph{without} a corresponding pass@8 decline,
-which weakens the shrinking-pool explanation.}
-\label{fig:pool}
-\end{figure}
-
-\subsection{Design I: The Collapse Does Not Reproduce}
+\subsection{Design I: The Collapse Does Not Reproduce at the Original Learning Rate}
 \label{sec:isolated}
 
-Table~\ref{tab:isolated} reports the isolated runs on their held-out exam
-sets. The severe collapse of Table~\ref{tab:passk} is absent. pass@8 is
-flat in every run: $57.3\%\to56.0\%$ and $58.7\%\to58.7\%$ for Run~A at
-seeds 0 and 1, $57.3\%\to53.3\%$ for Run~B, and $92.7\%\to90.0\%$ for
-Run~C, against declines of $22$--$26$ points in the pooled design. On
-MATH-500 --- the dataset the hypothesis is about --- pass@1 falls by about
-three points at round~1 and is flat thereafter, and the two seeds of Run~A
-agree on this shape ($-2.7$ and $-3.4$ points end to end).
-
-The shape itself is informative, and having two seeds is what makes it
-readable. In both, essentially the entire pass@1 movement occurs at
-round~1 ($32.0\to29.3$ at seed~0; $36.7\to32.7$ at seed~1), after which
-rounds 1--4 show no trend in either direction ($29.3, 28.0, 29.3, 29.3$ and
-$32.7, 32.7, 31.3, 33.3$). This is a one-off cost of the first
-self-training round rather than a compounding process --- which is the
-signature the collapse hypothesis predicts and does not find here. It
-matches the ``amplifies but does not compound'' reading
-of~\cite{ref_teacherfree} more closely than any collapse account.
+Table~\ref{tab:isolated} reports the isolated runs on their held-out exam sets.
+The collapse is absent: pass@8 is flat in every run --- $57.3\%\to56.0\%$ and
+$58.7\%\to58.7\%$ for Run~A at seeds 0 and 1, $57.3\%\to53.3\%$ for Run~B,
+$92.7\%\to90.0\%$ for Run~C --- against declines of $22$--$26$ points in the
+pooled design. On MATH-500 pass@1 falls about three points at round~1 and is flat
+thereafter, and the two seeds agree ($-2.7$ and $-3.4$ points end to end);
+rounds 1--4 show no trend in either direction. This is a one-off cost of the
+first self-training round rather than a compounding process, which fits the
+``amplifies but does not compound'' reading of~\cite{ref_teacherfree}. Run~C
+retains a residual effect: GSM8K pass@1 falls $12.7$ points, almost all in the
+final round ($63.3\%\to54.0\%$), while its pass@8 does not move; with $150$
+problems and one seed we flag it as an open question, not a finding
+(Section~\ref{sec:lrcheck} reruns it at a higher learning rate). The accepted
+pools contract here as well (Run~C $-20\%$, Run~A $-3\%$) without any pass@8
+decline, so pool contraction and collapse, which moved together in Design~P,
+come apart.
 
 \begin{table}[t]
 \caption{Design~I: pass@1 and pass@8 on the held-out exam set (150
@@ -560,386 +392,513 @@ set, by round. Colour identifies the run, line style the seed, marker the
 run again, so the figure survives greyscale printing. Runs A and B ---
 identical except for the verifier patch --- track each other closely at both
 seeds. pass@8 is flat in every run, in contrast to the $22$--$26$ point
-declines of Design~P (Fig.~\ref{fig:passk}). The one visible movement is
+declines of Design~P. The one visible movement is
 Run~C's pass@1 in the final round.}
 \label{fig:isolated}
 \end{figure}
 
-Figure~\ref{fig:isolated} plots the same data. Run~C retains a residual
-effect worth naming: GSM8K pass@1 falls $12.7$
-points while its pass@8 does not move. The model does not lose the ability
-to reach a correct answer within eight attempts; it becomes less reliable
-at producing one on the first. Almost the entire drop occurs in the final
-round ($63.3\%\to54.0\%$), and with a $150$-problem exam set and a single
-seed we cannot presently separate this from noise. We flag it as the one
-open empirical question these runs leave behind, not as a finding.
-
-The accepted pools under Design~I contract as well --- Run~C from $1{,}901$
-to $1{,}515$ kept solutions ($-20\%$), Run~A from $872$ to $843$
-($-3\%$) --- yet pass@8 in both runs is flat. Pool contraction and
-capability collapse, which moved together in Design~P, come apart here.
-
-\subsection{Calibrating the Noise Floor}
+\paragraph{Noise floor.}
 \label{sec:seedvar}
+Round~0 is the untrained base model, identical across seeds; only the exam
+partition differs, yet round-0 pass@1 is $32.0\%$ at seed~0 and $36.7\%$ at
+seed~1 ($4.7$ points, seven problems; pass@8 differs by $1.4$). This is a
+between-partition variance. Most comparisons here are paired within a partition
+(round~0 against round~4 in one run, A against B at one seed), where it largely
+cancels, but it bounds comparisons of absolute levels across seeds, shows that a
+$150$-problem exam set resolves differences of a few points only weakly --- the
+regime of the A-versus-B gap of $0.6$ points --- and puts Run~C's $12.7$-point
+decline outside what partition choice explains.
 
-The two seeds of Run~A also give us something the study previously lacked:
-a measured scale for how large a difference must be before it means
-anything. Round~0 is the \emph{untrained base model}, identical in both
-seeds; the only thing that differs is which 150 problems the seed assigned
-to the exam partition. Yet round~0 pass@1 is $32.0\%$ at seed~0 and
-$36.7\%$ at seed~1 --- a gap of $4.7$ points, or seven problems --- with
-pass@8 differing by $1.4$ points.
-
-The figure is worth stating precisely, because it is easy to misuse. It is
-a \emph{between-partition} variance, and most of the comparisons this paper
-relies on are \emph{within}-partition and therefore paired: round~0 versus
-round~4 inside one run scores the same 150 problems, and Runs A and B at
-seed~0 share a partition. In those paired comparisons the partition
-variance largely cancels, so $4.7$ points is not an error bar for them. It
-does bound a different and equally important thing: any comparison of
-\emph{absolute} levels across runs with different seeds --- for instance
-Run~A's $32.0\%$ at seed~0 against $36.7\%$ at seed~1 --- carries several
-points of partition noise and should not be read as an effect.
-
-With that stated, the number still does useful work. It shows that a
-$150$-problem exam set resolves differences of a few points only weakly,
-which is the regime the A-versus-B gap of $0.6$ points sits in; and it puts
-the Run~C decline of $12.7$ points comfortably outside the range that
-partition choice alone can explain.
-
-\subsection{The Control: Patching the Verifier Changes Nothing}
+\subsection{The Control: Patching the Verifier, and Why It Changes Nothing}
 \label{sec:control}
-
-Runs A and B are identical in dataset, seed, split, model, and training
-configuration, and differ only in whether \verb|\dfrac|/\verb|\tfrac| are
-normalised before verification --- the one error class we measured at
-$100\%$ rejection. This is the single-variable control the paper's central
-hypothesis requires, and which Design~P could not provide.
-
-The two curves are indistinguishable at our measurement precision
-(Table~\ref{tab:isolated}). Over five rounds pass@1 ends at $29.3\%$
-unpatched versus $28.7\%$ patched --- a difference of $0.6$ points, i.e.\
-one problem out of $150$ --- and pass@8 at $56.0\%$ versus $53.3\%$, with
-Run~B's pass@8 oscillating non-monotonically ($55.3\to52.0\to57.3\to53.3$)
-in a manner consistent with sampling noise rather than a trend. Pre-filter
-answer diversity is likewise near-identical between the two
-(Table~\ref{tab:answer-diversity}), as are their per-round training losses
-($0.38\to0.43$ for A, $0.39\to0.44$ for B).
-
-The pattern repeats at seed~1, where the agreement is closer still: from
-round~2 onward the two runs report \emph{identical} pass@1
-($32.7\%$, $31.3\%$, $33.3\%$), and their end-to-end changes are $-3.4$
-versus $-4.0$ points. Across both seeds, no round shows a difference larger
-than $2.7$ points in pass@1, and the differences have no consistent sign.
-
-Repairing the verifier's measured format bias produces no measurable
-improvement. Within the precision of this experiment --- now two paired
-seeds --- the hypothesis that directional format bias in the verifier
-drives multi-round degradation is \emph{not supported}.
-Section~\ref{sec:prevalence} explains why.
-
-\subsection{Why the Patch Does Nothing: Severity Without Prevalence}
 \label{sec:prevalence}
 
-A null result is more useful when the mechanism behind it is identified,
-and our style counts supply one directly.
+Runs A and B are identical in dataset, seed, split, model and training
+configuration and differ only in whether \verb|\dfrac|/\verb|\tfrac| are
+normalised before verification --- the one error class measured at $100\%$
+rejection. The curves are indistinguishable (Table~\ref{tab:isolated}): after five
+rounds pass@1 ends at $29.3\%$ unpatched against $28.7\%$ patched (one problem of
+$150$) and pass@8 at $56.0\%$ against $53.3\%$, with Run~B oscillating
+non-monotonically ($55.3\to52.0\to57.3\to53.3$); answer diversity and per-round
+training loss are near-identical. At seed~1 the agreement is closer still: from
+round~2 the two runs report identical pass@1 ($32.7\%$, $31.3\%$, $33.3\%$), and
+across both seeds no round differs by more than $2.7$ points, with no consistent
+sign. Within the precision of this experiment the hypothesis that directional
+format bias drives multi-round degradation is \emph{not supported} at this
+learning rate.
 
-Round~0 gives an unusually clean measurement. At a fixed seed, Runs A and B
-generate from the same base model with the same sampling seed and have not
-yet trained on anything, so their round-0 generations are identical --- the
-style counts confirm this exactly (e.g.\ $29$ \verb|\dfrac| occurrences in
-both runs at seed~1). The \emph{only} difference at round~0 is which
-verifier scores those identical solutions. The patch's direct scoring
-effect is therefore isolated with no confounds at all, and it is: zero
-problems out of $150$ at seed~0 ($32.0\%$ both), and one problem out of
-$150$ at seed~1 ($36.7\%$ versus $37.3\%$).
+The reason is prevalence. At round~0, Runs A and B generate identical solutions
+from the same base model, so the patch's direct scoring effect is isolated: zero
+problems of $150$ at seed~0 and one at seed~1. Across the $4{,}000$ generations
+per round on MATH-500, \verb|\dfrac| appears in $20$--$29$ (about $0.55\%$),
+\verb|\tfrac| never, and on GSM8K neither occurs. The format probe's $100\%$ is
+severity \emph{conditional on the format occurring}; what governs the training
+pool is severity $\times$ prevalence, here $0.55\%$ of solutions wrongly
+discarded per round, which cannot plausibly drive a twenty-point change. Our
+audit agrees: of ten MATH-500 false negatives only two were format rewrites, and
+eight were wrong-token extraction that the patch does not touch.
+Verifier-bias figures in the literature, such as the $\sim$14\% of
+\cite{ref_robustness} and the rejected fractions of \cite{ref_tinyv}, are
+conditional severities measured on some reference distribution; whether they
+matter depends on how often the affected forms occur in \emph{that pipeline's}
+output, which is cheap to count and which we did not count until the hypothesis
+had failed.
 
-The reason is prevalence. Table~\ref{tab:prevalence} counts how often the
-patched format class actually occurs in the model's output. Across $4{,}000$
-generations per round on MATH-500, \verb|\dfrac| appears in $20$--$29$ of
-them --- about $0.55\%$ --- and \verb|\tfrac| never appears at all. On
-GSM8K, whose answers are integers, \verb|\dfrac| occurs zero times in every
-round, which is why no patched GSM8K run is worth spending compute on.
-
-\begin{table}[t]
-\caption{Occurrences of the patched format class among the $4{,}000$
-generations produced per round. The bias is severe when triggered
-($100\%$ rejection, Section~\ref{sec:verifier}) but is triggered rarely.}
-\label{tab:prevalence}
-\centering
-\begin{tabular}{llccccc}
-\toprule
-Dataset & Token & R0 & R1 & R2 & R3 & R4 \\
-\midrule
-MATH-500 & \verb|\dfrac| & 23--29 & 23 & 22 & 21--22 & 20--22 \\
-MATH-500 & \verb|\tfrac| & 0 & 0 & 0 & 0 & 0 \\
-GSM8K & \verb|\dfrac| & 0 & 0 & 0 & 0 & 0 \\
-GSM8K & \verb|\tfrac| & 0 & 0 & 0 & 0 & 0 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-This resolves an apparent tension in our own measurements. The format probe
-of Section~\ref{sec:verifier} reports $100\%$ rejection for
-\verb|\dfrac|/\verb|\tfrac|, which sounds severe, but it measures severity
-\emph{conditional on the format occurring}. The quantity that governs the
-training pool is severity $\times$ prevalence: $100\%$ of $0.55\%$ is
-$0.55\%$ of solutions wrongly discarded per round. A pool reduced by half a
-percent cannot plausibly drive a twenty-point capability change. Our own
-false-negative audit points the same way in retrospect: of the ten
-MATH-500 false negatives we found, only two were format rewrites, while
-eight were wrong-token extraction from long solutions --- a failure mode the
-patch does not address.
-
-We think this is the most transferable lesson of the study. Verifier-bias
-figures in the literature, including the $\sim$14\% false-negative rate
-of~\cite{ref_robustness} and the large rejected fractions
-of~\cite{ref_tinyv}, are conditional severity figures measured on some
-reference distribution. Whether such a bias matters in a given pipeline
-depends on how often the affected forms appear in \emph{that pipeline's}
-model output, which is a cheap thing to count and which we did not count
-until after the hypothesis had failed.
-
-\subsection{Pre-Filter Answer Diversity Increases, It Does Not Collapse}
+\subsection{Pre-Filter Answer Diversity Rises, It Does Not Collapse}
 \label{sec:answer-diversity}
 
-A natural companion question is whether the model converges onto a single
-\emph{answer} per problem --- whether the $k$ raw samples for one problem,
-\emph{before} the verifier sees them, become more alike as training
-proceeds. We measured this in both designs by extracting each sample's
-final answer and computing, per round, the mean fraction of distinct
-normalised answers among the $k=8$ samples and the fraction of problems on
-which all $k$ agree.
+Does the model converge onto one \emph{answer} per problem before the verifier
+sees the samples? We measured the mean fraction of distinct normalised answers
+among the $k=8$ samples and the fraction of problems on which all $k$ agree.
+Diversity rises in both designs, the opposite of a narrowing picture, and its
+size tracks the pass@1 decline: all-$k$ agreement falls $24.8\%\to1.7\%$ for
+Design~P's 1.5B run, $10.5\%\to7.3\%$ for 0.5B and $33.6\%\to16.0\%$ for Run~C,
+but only $14.6\%\to12.0\%$ (A) and $14.6\%\to12.2\%$ (B) at seed~0, whose pass@1
+barely moves. This fits a single underlying quantity, first-attempt reliability,
+rather than stylistic convergence: a model that still solves a problem tends to
+land on the same answer across attempts, while one whose reliability erodes
+answers more erratically, which depresses pass@1 while leaving pass@8
+comparatively intact.
+
+\subsection{A Learning-Rate Check: The Flatness Is Conditional}
+\label{sec:lrcheck}
+
+Every run above used a LoRA learning rate of $10^{-5}$. A one-round diagnostic on
+the same MATH-500 pool (Limitation~1) shows that rate barely trains the adapter:
+training loss oscillates between $0.68$ and $0.84$ with no downward trend, against
+a fall to $0.24$--$0.28$ at $5\times10^{-4}$. The flat curves and the null control
+could therefore reflect a training step that hardly moves the model. We reran Run~A
+and its control Run~B at $5\times10^{-4}$ at two seeds, and Run~A at $10^{-4}$ at
+three seeds and at $2\times10^{-4}$ at two, changing only the budget (three rounds and $k=4$, so pass@4 replaces
+pass@8). Seed~1 shares the exam partition of the seed-1 runs above and seed~2
+draws a new one; round-0 values differ from the earlier runs' only through
+sampling. The loss falls within round~0 from about $0.5$ to $0.25$ at
+$5\times10^{-4}$ and from about $0.6$ to $0.28$ at $10^{-4}$.
 
 \begin{table}[t]
-\caption{Pre-filter answer diversity across $k{=}8$ samples per problem, by
-round. A \emph{lower} ``\% all-$k$ agree'' means the model is \emph{less}
-consistent about what answer it gives to the same problem.}
-\label{tab:answer-diversity}
+\caption{Runs A and B rerun at $5\times10^{-4}$ (MATH-500, $k=4$, three
+rounds), held-out exam set of 150 problems. B differs from A only in the
+verifier patch; each seed draws its own exam partition. ``Boxed'' is the share
+of the $2{,}000$ generations in each round containing
+\texttt{\textbackslash boxed}.}
+\label{tab:lrcheck}
 \centering
-\begin{tabular}{lccccc}
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{lcccccc}
 \toprule
-Run / metric & R0 & R1 & R2 & R3 & R4 \\
+Run, seed & Round & pass@1 & pass@4 & Kept pool & Boxed \\
 \midrule
-\multicolumn{6}{l}{\emph{Design~P}} \\
-0.5B, unique answers / $k$ & 0.600 & 0.601 & 0.608 & 0.620 & 0.649 \\
-0.5B, \% all-$k$ agree & 10.5\% & 10.8\% & 9.2\% & 9.1\% & 7.3\% \\
-1.5B, unique answers / $k$ & 0.443 & 0.482 & 0.543 & 0.634 & 0.712 \\
-1.5B, \% all-$k$ agree & \textbf{24.8\%} & 21.4\% & 14.5\% & 6.6\% & \textbf{1.7\%} \\
+A (orig.), 1   & 0 & 33.3\% & 50.0\% & 440 & 52\% \\
+               & 1 & 32.7\% & 49.3\% & 391 & 51\% \\
+               & 2 & 23.3\% & 42.7\% & 326 & 36\% \\
+B (patched), 1 & 0 & 33.3\% & 50.7\% & 443 & 52\% \\
+               & 1 & 35.3\% & 50.0\% & 392 & 49\% \\
+               & 2 & 28.7\% & 48.7\% & 328 & 41\% \\
 \midrule
-\multicolumn{6}{l}{\emph{Design~I}} \\
-A (seed 0), unique answers / $k$ & 0.542 & 0.545 & 0.545 & 0.546 & 0.554 \\
-A (seed 0), \% all-$k$ agree & 14.6\% & 13.4\% & 13.2\% & 12.2\% & 12.0\% \\
-A (seed 1), unique answers / $k$ & 0.528 & 0.539 & 0.548 & 0.543 & 0.549 \\
-A (seed 1), \% all-$k$ agree & 16.0\% & 15.2\% & 13.2\% & 13.8\% & 12.6\% \\
-B (seed 0), unique answers / $k$ & 0.542 & 0.546 & 0.545 & 0.547 & 0.555 \\
-B (seed 0), \% all-$k$ agree & 14.6\% & 13.8\% & 14.2\% & 12.2\% & 12.2\% \\
-B (seed 1), unique answers / $k$ & 0.528 & 0.542 & 0.544 & 0.545 & 0.543 \\
-B (seed 1), \% all-$k$ agree & 16.0\% & 15.2\% & 14.0\% & 13.2\% & 12.8\% \\
-C, unique answers / $k$ & 0.359 & 0.364 & 0.413 & 0.444 & 0.500 \\
-C, \% all-$k$ agree & 33.6\% & 32.4\% & 25.2\% & 18.8\% & 16.0\% \\
+A (orig.), 2   & 0 & 31.3\% & 51.3\% & 424 & 54\% \\
+               & 1 & 31.3\% & 46.0\% & 386 & 50\% \\
+               & 2 & 27.3\% & 44.7\% & 350 & 37\% \\
+B (patched), 2 & 0 & 31.3\% & 52.0\% & 424 & 54\% \\
+               & 1 & 31.3\% & 44.7\% & 398 & 50\% \\
+               & 2 & 20.0\% & 40.7\% & 332 & 38\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-In both designs, answer-level diversity \emph{rises} --- the opposite of a
-``the model narrows onto one preferred output'' picture. (Raw-text
-uniqueness among the $k$ samples stays at $\approx\!1.0$ every round: at
-temperature $0.8$, independent samples are almost never byte-identical, so
-that metric is uninformative here.) The magnitude tracks the magnitude of
-the pass@1 decline: steep in Design~P's 1.5B run ($24.8\%\to1.7\%$ all-$k$
-agreement), moderate in Run~C ($33.6\%\to16.0\%$), and nearly flat in Runs
-A and B, which are also the runs whose pass@1 barely moves. This is
-consistent with a single underlying quantity --- first-attempt reliability
---- rather than with stylistic convergence: a model that still solves a
-problem tends to land on the same answer across attempts, while one whose
-reliability is eroding answers more erratically, which depresses pass@1
-while leaving pass@8 comparatively intact.
+Table~\ref{tab:lrcheck} shows three things. \emph{At $5\times10^{-4}$ the decline
+replicates:} by round~2 all four runs have lost accuracy, pass@1 by $10.0$ and
+$4.0$ (A) and $4.6$ and $11.3$ (B) points and pass@4 by $7.3$, $6.7$, $2.0$ and
+$11.3$ points, where one problem is $0.67$ points; at the original rate the same
+seed-1 split's pass@1 moved $-4.0$ at round~1 and then stayed within $1.4$
+points, and pass@8 did not move. Two of the four pass@1 declines and three of
+the four pass@4 declines exceed the $4.7$-point partition noise; the others are
+individually within it, so the evidence is the agreement in direction across all
+four runs. \emph{The loss of accuracy grows with the rate} (Table~\ref{tab:lrseries}): at
+$10^{-4}$ the adapter trains and, over three seeds, sample accuracy at round~2
+falls by $2.0$ points on average ($-1.5$, $-3.6$, $-1.0$) and pass@1 and pass@4 by
+$1.8$ each, individually within the $4$-point noise of $150$ problems apart from
+one pass@4 change of $-6.0$; at
+$2\times10^{-4}$ by $3.7$ ($-3.5$, $-3.8$) and at $5\times10^{-4}$ by $6.5$ ($-8.4$,
+$-4.6$). \emph{The patch has no
+consistent effect:} at seed~1 Run~B sits $5.4$ points of pass@1 and $6.0$ of
+pass@4 above Run~A at round~2, at seed~2 it sits $7.3$ and $4.0$ points
+\emph{below}. The sign flips with the seed, so the gap is trajectory noise; it
+exceeds every end-to-end A-versus-B difference at $10^{-5}$ (at most $2.7$
+points), which means that where the adapter moves, runs of nearly the same
+configuration end several points apart and the noise floor measured at $10^{-5}$
+is too small for this regime. The patch changes the first training pool by $0$--$3$
+problems, the prevalence account of Section~\ref{sec:prevalence} once more.
+
+\begin{table}[t]
+\caption{Run~A (MATH-500, original verifier, $k=4$, three rounds) across learning
+rates and seeds: pass@1, pass@4 and sample accuracy (600 exam generations) at
+round~0 $\to$ round~2, and the degenerate share of round-2 generations. The two
+$5\times10^{-4}$ rows are the A rows of Table~\ref{tab:lrcheck}.}
+\label{tab:lrseries}
+\centering
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llcccc}
+\toprule
+Rate & Seed & pass@1 & pass@4 & Sample acc. & Degenerate (R2) \\
+\midrule
+$10^{-4}$ & 1 & $33.3\to34.0$ & $50.0\to49.3$ & $33.7\to32.2$ & $19.5\%$ \\
+$10^{-4}$ & 2 & $31.3\to28.0$ & $51.3\to45.3$ & $30.8\to27.2$ & $19.5\%$ \\
+$10^{-4}$ & 3 & $29.3\to26.7$ & $40.0\to41.3$ & $28.5\to27.5$ & $22.7\%$ \\
+$2\times10^{-4}$ & 1 & $33.3\to31.3$ & $50.0\to46.7$ & $33.7\to30.2$ & $25.0\%$ \\
+$2\times10^{-4}$ & 2 & $31.3\to25.3$ & $51.3\to45.3$ & $30.8\to27.0$ & $22.2\%$ \\
+$5\times10^{-4}$ & 1 & $33.3\to23.3$ & $50.0\to42.7$ & $33.7\to25.3$ & $41.3\%$ \\
+$5\times10^{-4}$ & 2 & $31.3\to27.3$ & $51.3\to44.7$ & $30.8\to26.2$ & $36.3\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Two controls at $5\times10^{-4}$.}
+The \emph{no-filter} run trains on all $k$ samples of every selection problem
+regardless of correctness ($1{,}400$ examples, about two thirds of which the
+verifier would reject), removing the verifier from the loop. The
+\emph{train-on-gold} run ignores the model's generations and trains on the $350$
+reference solutions, identical every round, so its rounds are replicate
+fine-tunes of the base model and the difference between its rounds~1 and~2
+measures fit-to-fit spread. Both were run at two seeds, on the partitions of Run~A
+at the same seeds.
+
+\begin{table}[t]
+\caption{Controls at $5\times10^{-4}$ (MATH-500, $k=4$, three rounds), on the
+exam partition of Run~A at the same seed. Pool is the number of training examples
+per round.}
+\label{tab:controls}
+\centering
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lccccccc}
+\toprule
+Run & Pool & \multicolumn{3}{c}{pass@1} & \multicolumn{3}{c}{pass@4} \\
+ &  & R0 & R1 & R2 & R0 & R1 & R2 \\
+\midrule
+\multicolumn{8}{l}{\emph{Seed 1}} \\
+A (verifier-filtered) & 440$\to$326 & 33.3 & 32.7 & 23.3 & 50.0 & 49.3 & 42.7 \\
+No filter             & 1400 & 33.3 & 26.7 & 27.3 & 50.0 & 49.3 & 40.7 \\
+Train on gold         & 350  & 33.3 & 18.0 & 15.3 & 50.0 & 33.3 & 29.3 \\
+\midrule
+\multicolumn{8}{l}{\emph{Seed 2}} \\
+A (verifier-filtered) & 424$\to$350 & 31.3 & 31.3 & 27.3 & 51.3 & 46.0 & 44.7 \\
+No filter             & 1400 & 31.3 & 34.7 & 22.7 & 51.3 & 48.7 & 39.3 \\
+Train on gold         & 350  & 31.3 & 8.7 & 10.0 & 51.3 & 28.7 & 30.7 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:controls} gives two readings, and both replicate across seeds.
+Removing the filter does not help: the no-filter run ends at $27.3\%$ and $40.7\%$
+(seed~1) and $22.7\%$ and $39.3\%$ (seed~2), against Run~A's $23.3\%$ and
+$42.7\%$ and $27.3\%$ and $44.7\%$, differences within the seed-to-seed spread
+and of no consistent sign, even though the verifier gate keeps only about $31\%$ of
+the samples. Training on reference solutions is \emph{worse} than self-training:
+one pass takes pass@1 from $33.3\%$ to $18.0\%$ and pass@4 from $50.0\%$ to
+$33.3\%$ at seed~1 (its replicate round gives $15.3\%$ and $29.3\%$) and from
+$31.3\%$ to $8.7\%$ and from $51.3\%$ to $28.7\%$ at seed~2, while the model adopts
+the reference style (the share of generations with a \texttt{\$}-delimited span
+goes from $5\%$ to $98\%$ at seed~1). The decline at this rate
+therefore does not depend on the verifier or on the correctness of the training
+data; self-generated data is the gentler source, plausibly because it lies closer
+to the model's own distribution, which we have not tested. Section~\ref{sec:anatomy}
+shows that the two declines have different anatomies. No run in this study showed
+a sustained pass@$k$ improvement under self-training, which fits the ``amplifies
+but does not compound'' reading~\cite{ref_teacherfree}, and none is a collapse in
+the sense of Design~P (pass@4 falls $2$--$11$ points here, not $22$--$26$).
+
+\paragraph{Run~C at the corrected rate.}
+We also reran Run~C (GSM8K, original verifier, seed~1, three rounds, $k=4$) at
+$5\times10^{-4}$. It declines faster than any MATH-500 run: pass@1 falls
+$70.7\%\to64.7\%\to48.7\%$ and pass@4 $86.0\%\to86.0\%\to76.7\%$, against a pass@1
+of $65.3\%$ at round~2 at $10^{-5}$. The degenerate share rises from $2.5\%$ to
+$16.7\%$ and mean length from $958$ to $1{,}313$ characters, and, unlike on
+MATH-500, accuracy on the finished generations also falls ($71.5\%\to64.6\%$), so
+on GSM8K the loss is not only a termination effect. The residual first-attempt
+erosion of Section~\ref{sec:isolated} is therefore learning-rate dependent and
+larger at $5\times10^{-4}$.
+
+\subsection{Anatomy of the Decline}
+\label{sec:anatomy}
+
+Sample-level accuracy mixes two things: whether a model that finishes a solution
+gets it right, and whether it finishes at all. We separate them on the exam
+generations of every corrected-rate run. A generation is \emph{degenerate} if it
+is longer than $1{,}500$ characters and contains no \verb|\boxed|; this is a
+heuristic proxy for a response that never reached an answer within the $512$-token
+generation cap, and its accuracy is $1.7$--$7.8\%$ in every run and round.
+
+\begin{table}[t]
+\caption{What the round-2 decline consists of (MATH-500, corrected learning
+rate, exam generations, round 0 $\to$ round 2). ``Degenerate'' is the share
+of generations longer than $1{,}500$ characters with no
+\texttt{\textbackslash boxed}; ``non-degenerate accuracy'' is sample accuracy
+on the remaining generations. ``Truncated'' is the share of the round-0
+training pool longer than the $512$-token training limit. The first six rows
+are at $5\times10^{-4}$, then $2\times10^{-4}$ and $10^{-4}$; the $10^{-5}$ row is
+the original run ($k=8$, so its pool is not comparable); the last two rows
+(train on gold) are at $5\times10^{-4}$.}
+\label{tab:anatomy}
+\centering
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccccc}
+\toprule
+Run & Seed & Length (chars) & Degenerate & Non-degen.\ acc. & Truncated \\
+\midrule
+A (orig.)     & 1 & $1175\to1678$ & $9.8\to41.3\%$ & $37.2\to38.9\%$ & $24.5\%$ \\
+B (patched)   & 1 & $1175\to1659$ & $9.8\to35.7\%$ & $37.2\to40.2\%$ & $24.6\%$ \\
+A (orig.)     & 2 & $1154\to1641$ & $8.7\to36.3\%$ & $33.2\to36.6\%$ & $24.5\%$ \\
+B (patched)   & 2 & $1154\to1728$ & $8.7\to41.7\%$ & $33.6\to34.9\%$ & $24.5\%$ \\
+No filter     & 1 & $1175\to1668$ & $9.8\to38.8\%$ & $37.2\to38.4\%$ & $62.4\%$ \\
+No filter     & 2 & $1154\to1755$ & $8.7\to42.7\%$ & $33.2\to34.0\%$ & --- \\
+A, $2\times10^{-4}$ & 1 & $1175\to1433$ & $9.8\to25.0\%$ & $37.2\to38.9\%$ & $24.5\%$ \\
+A, $2\times10^{-4}$ & 2 & $1154\to1431$ & $8.7\to22.2\%$ & $33.2\to32.5\%$ & $24.5\%$ \\
+A, $10^{-4}$  & 1 & $1175\to1276$ & $9.8\to19.5\%$ & $37.2\to38.7\%$ & $24.5\%$ \\
+A, $10^{-4}$  & 2 & $1154\to1284$ & $8.7\to19.5\%$ & $33.2\to32.5\%$ & $24.5\%$ \\
+A, $10^{-4}$  & 3 & $1178\to1355$ & $9.3\to22.7\%$ & $31.2\to34.5\%$ & --- \\
+A, $10^{-5}$  & 1 & $1158\to1146$ & $8.8\to8.8\%$  & $38.5\to37.2\%$ & --- \\
+Train on gold & 1 & $1175\to485$  & $9.8\to0.0\%$  & $37.2\to14.0\%$ & $17.4\%$ \\
+Train on gold & 2 & $1154\to516$  & $8.7\to0.3\%$  & $33.2\to12.2\%$ & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:anatomy} shows two different failures. In all six self-training
+runs at $5\times10^{-4}$ the degenerate share rises from $9$--$10\%$ to
+$36$--$43\%$ and mean length grows by $40$--$50\%$, while accuracy on the
+non-degenerate generations does \emph{not} fall ($33$--$37\%\to34$--$40\%$).
+Holding the degenerate share at its round-0 level, Run~A at seed~1 would score
+$35.7\%$ at round~2, above its round-0 $33.7\%$. The round-2 decline is therefore
+mainly generations that do not finish, not a loss of accuracy on those that do
+(the conditioning is descriptive: if harder problems are the ones that
+degenerate, accuracy on the rest would rise without any change in ability). The
+degenerate generations are not long legitimate solutions cut by the cap: they open
+as ordinary solutions and drift into free-association text (``\ldots acknowledged
+hurdles acknowledged setbacks acknowledged failures \ldots''), with low exact
+repetition (mean 5-gram repeat ratio $0.02$, the same as finished generations), so
+they are not loops. Train-on-gold is the opposite: responses \emph{shorten} by
+$59\%$, the degenerate share vanishes, and accuracy on finished generations falls
+from $37\%$ to $14\%$ --- a real loss of accuracy, in the direction Kim et
+al.~\cite{ref_selfdistill} report. Across learning rates the drift is a dose--response
+(Table~\ref{tab:lrseries}): the degenerate share at round~2 is $8.8\%$ at
+$10^{-5}$, $19.5$--$22.7\%$ at $10^{-4}$ (three seeds), $22.2$--$25.0\%$ at
+$2\times10^{-4}$ and $36.3$--$41.3\%$ at $5\times10^{-4}$, while sample accuracy
+falls by $0.9$ (at $10^{-5}$, $k=8$), $2.0$, $3.7$ and $6.5$ points.
+
+\paragraph{Two tests of the pipeline.}
+The training limit (\texttt{max\_length}$=512$ tokens) equals the generation cap,
+so $24$--$26\%$ of the kept pool ($108$ of $440$ examples in Run~A at round~0) is
+truncated: it loses its final answer and end-of-sequence token and plausibly
+teaches the model not to stop. We reran Run~A at seed~1 and $5\times10^{-4}$ with a
+training limit of $1{,}024$ tokens, so that no kept example is truncated, and
+re-scored the round-2 adapter of that run and of a matched replicate that keeps
+the $512$-token limit on the same exam problems ($k=4$). The drift does not
+fall: at the $512$-token generation cap the degenerate share is $37.2\%$ with the
+longer limit against $30.0\%$ in the replicate ($600$ samples each, standard
+error about $2$ points). Truncated training examples are therefore not what makes
+the models drift, which also fits the no-filter run, whose pool is $62$--$68\%$
+truncated and whose degenerate share ($38.8\%$) is no higher than that of the
+filtered runs. The replicate also reproduces the decline of Run~A at seed~1
+(pass@1 $33.3\to31.3\to25.3\%$, pass@4 $50.0\to48.0\to44.0\%$, against
+$23.3\%$ and $42.7\%$ at round~2 in the first run).
+
+\begin{table}[t]
+\caption{Adapters re-scored on the same exam problems (seed-1 partition, $k=4$,
+$150$ problems) under a $512$- and a $1{,}536$-token generation cap. Round-2
+adapters from runs at $5\times10^{-4}$ (``replicate'' keeps the $512$-token
+training limit, ``$1024$ limit'' trains with no truncated example) and
+$2\times10^{-4}$, against the untrained model. pass@1 and pass@4 are noisy on
+$150$ problems (re-scoring the same adapter moves them by about $4$ points);
+sample accuracy and the degenerate share rest on $600$ samples.}
+\label{tab:reeval}
+\centering
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llccccc}
+\toprule
+Model & Cap & pass@1 & pass@4 & Sample acc. & Degenerate & Acc.\ finished \\
+\midrule
+Untrained                & 512  & 36.0\% & 52.0\% & 36.3\% & 8.7\%  & 39.2\% \\
+                         & 1536 & 40.7\% & 59.3\% & 43.2\% & 2.5\%  & 44.1\% \\
+$5\times10^{-4}$, replicate & 512  & 29.3\% & 46.7\% & 28.3\% & 30.0\% & 38.1\% \\
+                         & 1536 & 35.3\% & 52.0\% & 34.2\% & 23.0\% & 43.3\% \\
+$5\times10^{-4}$, $1024$ limit & 512  & 26.0\% & 45.3\% & 27.5\% & 37.2\% & 40.8\% \\
+                         & 1536 & 30.7\% & 50.7\% & 29.5\% & 32.7\% & 41.3\% \\
+$2\times10^{-4}$         & 512  & 27.3\% & 48.7\% & 28.5\% & 28.7\% & 37.9\% \\
+                         & 1536 & 32.0\% & 52.7\% & 32.0\% & 23.7\% & 40.8\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Re-scoring the same adapters under a $1{,}536$-token cap, with everything else
+fixed (Table~\ref{tab:reeval}), shows that the cap is not the explanation. The
+untrained model gains as much from the larger cap as the adapters do (sample
+accuracy $36.3\%\to43.2\%$, degenerate share $8.7\%\to2.5\%$), so the deficit of
+the round-2 adapters against it does not close: $-8.0$, $-8.8$ and $-7.8$ points
+at $512$ tokens for the replicate, the $1024$-limit and the $2\times10^{-4}$
+adapter, and $-9.0$, $-13.7$ and $-11.2$ at $1{,}536$. Accuracy on finished
+generations matches the untrained model's at both caps ($38.1\%$ against $39.2\%$
+at $512$ and $43.3\%$ against $44.1\%$ at $1{,}536$ for the replicate), but the
+untrained model finishes $97.5\%$ of its generations at $1{,}536$ tokens and the
+adapters $67$--$77\%$. The adapters thus have a lasting termination problem that
+more tokens do not remove, and it shrinks with the learning rate: re-scored on
+their own exam sets, the $10^{-4}$ adapters of seeds~2 and~3 leave $6.2\%$ and
+$12.8\%$ of generations unfinished at $1{,}536$ tokens. The fixed cap of
+Xu et al.\ is therefore not the whole story here: the style change is real, and
+it costs the adapters answers whatever the cap.
 
 \section{Discussion}
 \label{sec:discussion}
 
-\subsection{Withdrawing the Shrinking-Pool Explanation}
-
-An earlier version of this work explained the Design~P curves with a
-self-reinforcing shrinking-pool mechanism: the biased verifier accepts a
-smaller and more style-skewed set each round, the next round trains only on
-that set, and the skew compounds. The mechanism is coherent, and matches
-Qiao et al.~\cite{ref_selectionbias} theoretically. The isolated runs do
-not support it.
-
-Two observations undercut it directly. First, the pool contracts under
-Design~I as well --- $20\%$ in Run~C --- with no corresponding pass@8
-decline, so contraction of this magnitude is not sufficient for capability
-loss. Second, and more decisively, removing the bias that supposedly drives
-the skew changes nothing (Section~\ref{sec:control}). A mechanism whose
-causal ingredient can be removed with no effect on the outcome is not the
-operative mechanism.
-
-What remains is a narrower and better-supported statement: in the pooled
-design, each dataset's adapter update was dominated by the other dataset's
-filtered data, and evaluation ran on the selection items. Those two
-properties are sufficient to produce the observed curves without any appeal
-to verifier bias, and when both are removed the curves largely flatten.
-
-\subsection{What Exactly Differs Between the Designs}
+\subsection{Interpretation}
 \label{sec:threevars}
 
-Honesty about attribution requires naming a limitation of our own
-comparison. Design~I differs from Design~P in three respects at once:
-datasets are isolated; evaluation moved to a held-out split; and $n$ per run
-fell from $1{,}000$ pooled problems to $500$. We therefore cannot apportion
-the difference between Table~\ref{tab:passk} and Table~\ref{tab:isolated}
-across these three changes.
+An earlier version of this work explained the Design~P curves with a
+self-reinforcing shrinking-pool mechanism: the biased verifier accepts a smaller,
+more style-skewed set each round and the skew compounds. It is coherent and
+matches Qiao et al.~\cite{ref_selectionbias} theoretically, but the isolated runs
+do not support it. The pool contracts under Design~I as well ($20\%$ in Run~C)
+with no pass@8 decline, and removing the bias that supposedly drives the skew
+changes nothing (Section~\ref{sec:control}). What remains is narrower: in the
+pooled design each dataset's update was dominated by the other's filtered data and
+evaluation ran on the selection items, which suffices to produce the observed
+curves without any appeal to verifier bias.
 
-The held-out split alone plausibly accounts for a substantial share:
-Design~P's curves rise or hold in early rounds and fall later, which is the
-shape expected when a model first fits and then departs from the very items
-being scored. We make no attempt to rank the three factors, and we do not
-claim that isolation \emph{alone} removes the collapse.
-
-The comparison that \emph{is} clean is internal to Design~I: Runs A, B and C
-share every configuration except the single variable each is meant to vary.
-The refutation in Section~\ref{sec:control} rests only on that internal
-comparison, not on the Design~P/Design~I contrast.
-
-\subsection{Reconciling with One-Round Studies}
-
-Egashira et al.~\cite{ref_delayplateau} report that systematic false
-negatives in one-round RLVR act like random noise and do not cause
-collapse. Our controlled result agrees with theirs, and extends it in two
-directions they did not cover: the multi-round supervised self-training
-regime, and a real rather than simulated verifier whose bias was measured
-before use. That two quite different setups converge on ``systematic false
-negatives are tolerable'' is, we think, the most useful positive statement
-this study can make.
+Attribution also needs a caveat on our own comparison. Design~I differs from
+Design~P in three respects at once (isolation, a held-out split, and $n$ per run
+falling from $1{,}000$ pooled problems to $500$), so we cannot apportion the
+difference among them and do not claim that isolation alone removes the collapse.
+The clean comparisons are internal to Design~I and to its corrected-rate
+counterparts, where runs share every configuration except the one variable varied;
+the verifier control rests on those, not on the P/I contrast. That control agrees
+with Egashira et al.~\cite{ref_delayplateau}, who find that systematic false
+negatives in one-round RLVR behave like random noise: two quite different setups
+converging on ``systematic false negatives are tolerable'' is the most useful
+positive statement this study can make.
 
 \subsection{Practical Implications}
 
-For practitioners building GVT-style pipelines, our experience suggests
-three concrete precautions, in descending order of importance.
-
-\emph{Do not pool datasets into one adapter if you intend to report
-per-dataset trajectories.} A shared adapter trained on a mixture that is
-$69\%$ one domain does not yield per-domain results that can be interpreted
-independently. Isolation costs less than it appears: each isolated run in
-our study used half the problems of a pooled run.
-
-\emph{Hold out evaluation items from selection.} Scoring on the selection
-set is the single change most likely to manufacture a dramatic
-round-over-round curve.
-
-\emph{Include the null control.} Our central claim survived two model
-sizes, tens of thousands of generations and a coherent mechanism story, and
-failed the first time a single-variable control was run against it. If a
-pipeline attributes an effect to a specific verifier defect, the cheapest
-decisive experiment is to repair that defect and re-run.
-
-Finally, the earlier practical advice stands on its own and is unaffected
-by the reversal: a rising pass@1 across rounds is not sufficient evidence
-of improvement, and pass@$k$ should be tracked in parallel. Our Run~C
-illustrates the converse case as well --- a falling pass@1 with flat
-pass@8, which would be misread as capability loss if pass@1 were the only
-metric reported.
+For GVT-style pipelines our experience suggests six precautions.
+\emph{Do not pool datasets into one adapter} if you report per-dataset
+trajectories: a mixture that is $69\%$ one domain gives per-domain results that
+cannot be read independently, and isolation costs less than it appears.
+\emph{Hold out evaluation items from selection}, the single change most likely to
+manufacture a dramatic round-over-round curve.
+\emph{Verify that the training step fits:} a flat curve from an adapter whose loss
+does not fall is not evidence of stability, and a one-round diagnostic would have
+shown it before any multi-round run.
+\emph{Report length and termination, not only accuracy:} the accuracy of finished
+solutions did not fall while the share of unfinished ones quadrupled, a style-drift
+failure of the kind Xu et al.~\cite{ref_phantom} document.
+\emph{Run the no-filter, train-on-gold and null controls:} a short SFT pass
+degraded our model whatever the data were, and repairing the suspected defect and
+re-running is the cheapest decisive experiment --- our central claim survived two
+model sizes, tens of thousands of generations and a coherent mechanism story, and
+failed the first time a single-variable control was run against it.
+\emph{Track pass@$k$ alongside pass@1:} a rising pass@1 is not sufficient evidence
+of improvement, and Run~C shows the converse, a falling pass@1 with flat pass@8
+that would be misread as capability loss if pass@1 were the only metric.
 
 \section{Limitations}
 \label{sec:limitations}
 
 \begin{enumerate}
-\item \emph{Limited seed replication.} Runs A and B have each been executed
-at two seeds, which agree, so the null control rests on two paired
-comparisons rather than one. Run~C and the pooled runs were executed once;
-replicating Run~C is the immediate next step, since its $12.7$-point pass@1
-decline is the one effect in this study that exceeds the noise floor.
-\item \emph{Small exam set.} Design~I scores on $150$ held-out problems,
-where one problem is $0.67$ points, and re-partitioning alone moves round-0
-pass@1 by $4.7$ points (Section~\ref{sec:seedvar}). Differences of a few
-points --- including the entire A-versus-B gap --- are below the resolution
-of this setup.
+\item \emph{The headline null result was obtained at a learning rate that
+undertrains.} Every run in Sections~\ref{sec:isolated}--\ref{sec:control} uses
+$10^{-5}$ (Section~\ref{sec:config}). A one-round diagnostic on the same MATH-500
+pool, every other hyperparameter fixed, shows training loss oscillating between
+$0.68$ and $0.84$ with no clear downward trend at $10^{-5}$ (six logged steps:
+$0.836$, $0.729$, $0.678$, $0.737$, $0.699$, $0.724$), against a drop to the
+$0.24$--$0.28$ range at $5\times10^{-4}$ ($0.626$, $0.354$, $0.242$, $0.240$,
+$0.248$, $0.281$). The flat curves and the null control of Design~I were therefore
+obtained with an adapter that barely moved; Section~\ref{sec:lrcheck} reruns the
+loop at higher rates, and the Design~P/Design~I contrast itself was measured at
+$10^{-5}$ only.
+\item \emph{The corrected-rate evidence is thin.} Every corrected-rate run has
+three rounds, $k=4$ and a $150$-problem exam set. A and B have two seeds at
+$5\times10^{-4}$, A has three at $10^{-4}$ and two at $2\times10^{-4}$, and the
+no-filter and train-on-gold controls have two; Run~C at the corrected rate and
+the token-cap re-scoring are single seeds, and the learning-rate grid is coarse. The patched-versus-unpatched gap flips sign between seeds, so we find no
+consistent patch effect, but cannot rule out a small one.
+\item \emph{The anatomy of the decline rests on a heuristic.} A generation is
+called degenerate if it is longer than $1{,}500$ characters and has no
+\verb|\boxed|; accuracy on the remaining generations is descriptive, and
+conditioning on it can raise accuracy without any change in ability if harder
+problems are the ones that degenerate.
+\item \emph{Limited seed replication at the original rate.} Runs A and B were run
+at two seeds, which agree; Run~C and the pooled runs were run once, and Run~C's
+$12.7$-point pass@1 decline is the one effect at $10^{-5}$ that exceeds the noise
+floor.
+\item \emph{Small exam set.} Design~I scores on $150$ held-out problems, where one
+problem is $0.67$ points and re-partitioning alone moves round-0 pass@1 by $4.7$
+points (Section~\ref{sec:seedvar}); differences of a few points, including the
+entire A-versus-B gap, are below the resolution of this setup.
 \item \emph{Three variables change between designs}
-(Section~\ref{sec:threevars}); the Design~P/Design~I contrast is therefore
-suggestive rather than attributive.
-\item \emph{Design~I covers one model size.} The pooled runs used 0.5B and
-1.5B; the isolated runs use 1.5B only, so we cannot say whether the
-apparent ``larger collapses harder'' pattern of Design~P also dissolves
-under isolation.
-\item \emph{One patch, one bias class.} Run~B repairs
-\verb|\dfrac|/\verb|\tfrac| parsing, the error class we measured at $100\%$
-rejection. It does not repair the eight-of-ten false negatives caused by
-wrong-token extraction from long solutions, so our null result concerns
-format-class bias specifically, not verifier error in general.
-\item \emph{Five rounds, one verifier, one training method.} Whether the
-curves change beyond five rounds, under a different verifier, or under full
-fine-tuning or online RL, is untested.
+(Section~\ref{sec:threevars}), so the Design~P/Design~I contrast is suggestive
+rather than attributive, and Design~I covers one model size, so we cannot say
+whether the apparent ``larger collapses harder'' pattern of Design~P also
+dissolves under isolation.
+\item \emph{One patch, one bias class, one verifier, one training method.} Run~B
+repairs \verb|\dfrac|/\verb|\tfrac| parsing, the error class measured at $100\%$
+rejection, not the eight-of-ten false negatives caused by wrong-token extraction,
+so the null concerns format-class bias specifically. Whether results change beyond
+five rounds, under another verifier, or under full fine-tuning or online RL is
+untested.
 \end{enumerate}
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-We asked whether a directionally biased rule-based verifier --- one that
-rejects correct-but-differently-formatted solutions and almost never
-accepts incorrect ones --- causes capability collapse when used as the
-filter in a multi-round GVT self-training loop. Our first experiments, run
-on a pooled two-dataset set and scored on the selection items, produced a
-dramatic collapse in both pass@1 and pass@8 that appeared to answer the
-question affirmatively.
+We asked whether a directionally biased rule-based verifier causes capability
+collapse when used as the filter in a multi-round GVT loop. Pooled experiments
+scored on the selection items produced a dramatic collapse, but isolating each
+dataset, holding out an exam split and adding a matched patched-verifier control
+removes it at our training rate, and the control is null at two seeds. The reason
+is prevalence: the affected format is about half a percent of generations, so a
+$100\%$ rejection rate discards half a percent of the training pool.
 
-Rebuilding the experiment to isolate each dataset on its own adapter, to
-score on a held-out split, and to include the matched patched-verifier
-control changes the answer. The collapse does not reproduce: pass@8 is flat
-in every isolated run, and the MATH-500 result replicates across two seeds.
-The control comes out null at both seeds: repairing the verifier's measured
-$100\%$-rejection format class alters neither pass@1, pass@8, answer
-diversity, nor training loss. The reason is that the affected format occurs
-in about half a percent of generations, so a rejection rate of $100\%$
-conditional on that format removes half a percent of the training pool ---
-severity and prevalence are different quantities, and only the second one
-governs the pipeline. What remains is a mild first-attempt erosion on
-GSM8K, larger than the noise floor but so far measured at one seed.
+That rate was too low to train the adapter. At $10^{-4}$ the adapter trains and
+accuracy falls by about two points over three seeds, within noise; at
+$5\times10^{-4}$ all four runs, patched and unpatched, lose accuracy by round~2,
+and the loss grows with the learning rate.
+The verifier control survives in a weaker form: the patch's effect flips sign
+between seeds, the decline occurs with no filter at all, and training on
+reference solutions is worse, at both seeds of each control; on GSM8K the decline
+at $5\times10^{-4}$ is larger still. What the decline is made of differs by regime
+(Section~\ref{sec:anatomy}): under self-training it is mostly generations that
+drift and never answer, with accuracy on finished solutions unchanged, not caused
+by truncated training examples, and not removed by tripling the generation cap
+(the untrained model gains as much from it); under reference-solution training it
+is shortened responses and a real loss of accuracy. Read as accuracy under a fixed
+token cap, the first looks like lost reasoning, the measurement trap Xu et al.\
+warn of, although here the unfinished answers are lost at any cap.
 
-The finding we can defend is therefore methodological rather than
-mechanistic. Pooling several datasets into one training mixture, and
-scoring on the problems used for selection, are together sufficient to
-produce a collapse signature in a GVT loop that isolation and held-out
-evaluation do not reproduce --- and a mechanism story built on that
-signature survived considerable scrutiny before a single-variable control
-dismissed it. We report the reversal in full because the pooled design that
-produced it is not unusual, and because the corrected design was cheaper to
-run than the one it replaced.
+The finding we can defend is therefore methodological rather than mechanistic.
+Pooling and selection-set scoring together suffice to produce a collapse
+signature that isolation and held-out evaluation do not reproduce; an undertrained
+adapter produces reassuringly flat curves; and accuracy alone hides whether a
+model finishes its answers. Each was found only because a control was run against
+it, and we report the reversals in full because the designs that produced them
+are not unusual.
 
 \paragraph{Future work.}
-Repeat Runs B and C at further seeds --- Run~A is already replicated --- to
-establish whether the Run~C pass@1 erosion is real and to bound the size of
-any effect the verifier patch might have; run the no-filter ablation, which
-trains on all
-$k$ samples without verifier selection and thereby separates
-selection-driven contraction from ordinary self-training on model output;
-and extend the isolated design to a second model size to test whether the
-size-dependent severity seen under pooling survives isolation.
+Characterise the generations that still never answer under a large cap (they open
+normally and drift into unrelated text) and test whether decoding settings or an
+end-of-sequence penalty remove them; refine the learning-rate grid between $10^{-4}$ and $5\times10^{-4}$ and replicate
+Run~C (GSM8K) at further seeds and rates; extend the corrected-rate runs to five rounds with $k=8$ so they compare
+directly with Table~\ref{tab:isolated}; and extend the isolated design to a second
+model size.
 
-A second, independent format-class bug gives a natural next operating point
-for the same control design. \texttt{math-verify}'s rich LaTeX extraction
-(square roots, complex numbers, tuples, polynomials) only activates inside a
-recognised delimiter (\verb|\boxed{...}| or \verb|$...$|); undelimited text
-falls back to a bare-number heuristic that silently drops the rest of the
-expression. Our gold answers are stored undelimited, so whenever a model
-correctly boxes a compound answer --- exactly what our GVT prompt asks for
---- gold is parsed as a truncated stub while the prediction is parsed in
-full, and the two compare unequal. Re-examining the format probe
-(Section~\ref{sec:verifier}) attributes only $17/41$ of the MATH-500
-\texttt{boxed} rejections to this mechanism specifically ($8.5\%$; the
-remaining $24/41$ are the pre-existing unparseable gold formats noted
-above, which fail identically whether or not the answer is boxed), giving
-an estimated damage of $8.5\% \times 51.5\% \approx 4.4\%$ under the
-prevalence measured in Section~\ref{sec:prevalence} --- roughly eight times
-\verb|\dfrac|'s $0.55\%$ and, unlike \verb|\dfrac|, untested by this or any
-study we are aware of. We implemented and unit-tested the
-matching patch (wrap gold in \verb|\boxed{}| whenever the prediction already
-contains one and gold does not, verified against every writing-style
-variant from the format probe of Section~\ref{sec:verifier} with no
-regression elsewhere); running it as a
-Run-D control against the chosen headline configuration, exactly as Run~B
-isolated the \verb|\dfrac| patch against Run~A, is queued next.
+A second format-class defect gives a natural next control. \texttt{math-verify}'s
+rich \LaTeX{} extraction only activates inside a recognised delimiter
+(\verb|\boxed{...}| or \verb|$...$|), while our gold answers are stored
+undelimited, so a correctly boxed compound answer can be compared against a
+truncated gold stub. The format probe attributes $17/41$ of MATH-500
+\texttt{boxed} rejections to this mechanism ($8.5\%$; the other $24/41$ are
+pre-existing unparseable gold formats), an estimated damage of $8.5\%\times51.5\%
+\approx4.4\%$ of solutions under the measured prevalence --- roughly eight times
+\verb|\dfrac|'s $0.55\%$ and untested by any study we know of. We implemented and
+unit-tested a patch (wrap gold in \verb|\boxed{}| whenever the prediction contains
+one and gold does not) and queue it as a Run-D control against the headline
+configuration, as Run~B was against Run~A.
 
 \begin{credits}
 \subsubsection{\ackname}
@@ -978,6 +937,11 @@ Huang, Y., Zeng, W., Zeng, X., Zhu, Q., He, J.: From Accuracy to
 Robustness: A Study of Rule- and Model-based Verifiers in Mathematical
 Reasoning. arXiv:2505.22203 (2025)
 
+\bibitem{ref_selfdistill}
+Kim, J., Luo, X., Kim, M., Lee, S., Kim, D., Jeon, J., Li, D., Yang, Y.:
+Why Does Self-Distillation (Sometimes) Degrade the Reasoning Capability of
+LLMs? arXiv:2603.24472 (2026)
+
 \bibitem{ref_selectionbias}
 Qiao, X., Du, X., Liu, W., Zhang, J., Mai, P., Zhang, M., Pang, Y.:
 When Sample Selection Bias Precipitates Model Collapse. arXiv:2606.13732
@@ -1000,6 +964,10 @@ Self-Training (ReST) for Language Modeling. arXiv:2308.08998 (2023)
 \bibitem{ref_teacherfree}
 Strozzi, I.L.: Teacher-Free Self-Training Amplifies but Does Not Compound:
 A Pass@k Crossover on a Free-Verifier Domain. arXiv:2606.07856 (2026)
+
+\bibitem{ref_phantom}
+Xu, C., Yan, N., Chen, L., Kechadi, M.-T.: Phantom Gains: Auditing
+Self-Improvement Against a Measured Null. arXiv:2608.20290 (2026)
 
 \bibitem{ref_tinyv}
 Xu, Z., Li, Y., Jiang, F., Ramasubramanian, B., Niu, L., Lin, B.,

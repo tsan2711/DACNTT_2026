@@ -1,0 +1,4 @@
+round,n,boxed,dfrac,tfrac,frac,dollar,sentence,assignment,unit,decimal,decimal_trailing,int_float
+0,2000,1038,12,0,1115,103,6,481,0,230,24,5
+1,2000,1019,9,0,1097,72,10,484,0,230,24,6
+2,2000,728,5,0,1014,128,12,451,0,202,24,8

@@ -1,0 +1,12 @@
+[load-watchdog] snapshot_download(Qwen/Qwen2.5-1.5B-Instruct) [prefetch]: exit after 180s without returning
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[load-watchdog] snapshot_download(Qwen/Qwen2.5-1.5B-Instruct) [prefetch]: loaded in 10s
+prefetched Qwen/Qwen2.5-1.5B-Instruct, now HF_HUB_OFFLINE=1 for every round's reload
+[load-watchdog] AutoModelForCausalLM.from_pretrained(Qwen/Qwen2.5-1.5B-Instruct) [generate]: exit after 180s without returning
+`torch_dtype` is deprecated! Use `dtype` instead!
+Skipping import of cpp extensions due to incompatible torch version. Please upgrade to torch >= 2.11.0 (found 2.10.0+cu128).
+[load-watchdog] AutoModelForCausalLM.from_pretrained(Qwen/Qwen2.5-1.5B-Instruct) [generate]: loaded in 5s
+cap 512: {'pass_at_1': 0.36, 'pass_at_k': 0.52, 'sample_acc': 0.36333333333333334, 'mean_chars': 1152.3016666666667, 'degenerate_share': 0.08666666666666667, 'acc_finished': 0.39233576642335766}
+[load-watchdog] AutoModelForCausalLM.from_pretrained(Qwen/Qwen2.5-1.5B-Instruct) [generate]: exit after 180s without returning
+[load-watchdog] AutoModelForCausalLM.from_pretrained(Qwen/Qwen2.5-1.5B-Instruct) [generate]: loaded in 2s
+cap 1536: {'pass_at_1': 0.4066666666666667, 'pass_at_k': 0.5933333333333334, 'sample_acc': 0.43166666666666664, 'mean_chars': 1424.7333333333333, 'degenerate_share': 0.025, 'acc_finished': 0.441025641025641}

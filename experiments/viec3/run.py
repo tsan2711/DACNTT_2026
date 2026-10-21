@@ -43,8 +43,11 @@ os.environ.setdefault("CUDA_VISIBLE_DEVICES", "0")
 
 import argparse
 import csv
+import faulthandler
 import json
 import random
+import shutil
+import signal
 import sys
 import time
 from pathlib import Path
@@ -59,6 +62,7 @@ from dacntt.gold.sources import DATASETS, GSM8K, MATH500, SOURCES
 from dacntt.gvt.generate import HfGenerate, MlxGenerate, ScriptedGenerate
 from dacntt.gvt.loop import RoundRecord, run_rounds
 from dacntt.gvt.measure import STYLE_IDS
+from dacntt.gvt.state import load_records, save_records
 from dacntt.gvt.train import HfLoraSftTrain, MlxLoraTrain, NoOpTrain
 from dacntt.report.manifest import _pkg_version, write_manifest
 from dacntt.verify.adapter import MathVerifyAdapter
@@ -78,8 +82,17 @@ def main(argv: list[str] | None = None) -> int:
     out_dir: Path = args.out
     cache_dir: Path = args.cache
 
+    out_dir.mkdir(parents=True, exist_ok=True)
+    state_path = out_dir / "state.json"
+    resume_records: list[RoundRecord] = []
+    if args.resume and state_path.exists():
+        resume_records = load_records(state_path)
+        print(f"resuming: {len(resume_records)} round(s) already done", file=sys.stderr)
+    _register_stack_dump(out_dir)
+
     if args.seed is not None:
-        _seed_everything(args.seed)
+        # + n_resumed so a resumed process doesn't replay round 0's RNG stream.
+        _seed_everything(args.seed + len(resume_records))
 
     if args.model is None:
         args.model = DEFAULT_HF_MODEL if mode == "hf" else DEFAULT_MLX_MODEL
@@ -115,7 +128,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.select_preset not in exam_adapters:
         exam_adapters[args.select_preset] = select_adapter
 
-    generator, trainer, note = _backend(mode, args, out_dir, items)
+    resume_adapter = _resume_adapter(out_dir, resume_records)
+    generator, trainer, note = _backend(mode, args, out_dir, items, resume_adapter)
+    if args.inject_hang_at_round is not None:
+        generator = _HangOnce(generator, args.inject_hang_at_round, out_dir / ".hang_injected", len(resume_records))
     print(note, file=sys.stderr)
     if args.patch_verifier:
         print(
@@ -159,6 +175,10 @@ def main(argv: list[str] | None = None) -> int:
             out_dir / "manifest.json",
             _manifest(args, mode, note, records_so_far, items, train_ids, test_ids),
         )
+        _snapshot_adapter(out_dir, len(records_so_far))
+        save_records(state_path, records_so_far, rounds_total=args.rounds)
+        if not args.keep_snapshots:
+            _prune_snapshots(out_dir, keep=len(records_so_far))
         print(
             f"  ...round {records_so_far[-1].round} done, "
             f"wrote {out_dir / 'table.md'} ({len(records_so_far)}/{args.rounds} rounds)",
@@ -168,10 +188,18 @@ def main(argv: list[str] | None = None) -> int:
     started = time.monotonic()
 
     def _out_of_time(records_so_far: list[RoundRecord]) -> bool:
+        done_here = len(records_so_far) - len(resume_records)
+        if args.rounds_per_process is not None and done_here >= args.rounds_per_process:
+            print(
+                f"  rounds-per-process={args.rounds_per_process}: exiting after "
+                f"{len(records_so_far)}/{args.rounds} rounds so the next round gets a fresh process",
+                file=sys.stderr,
+            )
+            return True
         if args.time_budget_hours is None or len(records_so_far) >= args.rounds:
             return False
         elapsed = time.monotonic() - started
-        per_round = elapsed / len(records_so_far)
+        per_round = elapsed / done_here
         if elapsed + per_round * 1.15 <= args.time_budget_hours * 3600:
             return False
         print(
@@ -200,6 +228,7 @@ def main(argv: list[str] | None = None) -> int:
         test_item_ids=test_ids,
         select_all=args.no_filter,
         train_on_gold=args.train_on_gold,
+        resume_records=resume_records,
     )
     write_reports(records, items, out_dir, args.k, args.select_preset)
     write_manifest(
@@ -251,6 +280,74 @@ def _split_train_test(
     return frozenset(train_ids), frozenset(test_ids)
 
 
+def _register_stack_dump(out_dir: Path) -> None:
+    """On SIGUSR1 dump every thread's Python stack to out_dir/stacks.log. The
+    handler is C-level (no GIL, no stdout), so it works on a wedged process;
+    kaggle_driver.py sends it right before killing a stalled child."""
+    if not hasattr(signal, "SIGUSR1"):
+        return
+    handle = open(out_dir / "stacks.log", "a", buffering=1)
+    faulthandler.register(signal.SIGUSR1, file=handle, all_threads=True)
+    _KEEP_OPEN.append(handle)
+
+
+_KEEP_OPEN: list = []
+
+
+def _snapshot_adapter(out_dir: Path, n_rounds_done: int) -> None:
+    src = out_dir / "adapters"
+    if not src.exists():
+        return
+    dst = out_dir / f"adapters_ckpt_{n_rounds_done}"
+    tmp = out_dir / f"adapters_ckpt_{n_rounds_done}.tmp"
+    for stale in (tmp, dst):
+        if stale.exists():
+            shutil.rmtree(stale)
+    shutil.copytree(src, tmp)
+    tmp.rename(dst)
+
+
+def _prune_snapshots(out_dir: Path, keep: int) -> None:
+    """state.json now says ``keep`` rounds are done, so only that snapshot is
+    needed; older ones are removed only after the state was saved."""
+    for path in out_dir.glob("adapters_ckpt_*"):
+        suffix = path.name.removeprefix("adapters_ckpt_")
+        if suffix.isdigit() and int(suffix) != keep:
+            shutil.rmtree(path, ignore_errors=True)
+
+
+def _resume_adapter(out_dir: Path, resume_records: list[RoundRecord]) -> str | None:
+    if not resume_records:
+        return None
+    snap = out_dir / f"adapters_ckpt_{len(resume_records)}"
+    return str(snap) if snap.exists() else None
+
+
+class _HangOnce:
+    """Test-only fault injection (--inject-hang-at-round): block forever the
+    first time a given absolute round starts generating, so the driver's
+    stall detection + resume can be exercised cheaply. A marker file makes
+    the retry (a fresh process) run normally."""
+
+    def __init__(self, inner, at_round: int, marker: Path, offset: int) -> None:
+        self._inner = inner
+        self._at = at_round
+        self._marker = marker
+        self._calls = offset
+
+    def __getattr__(self, name):
+        return getattr(self._inner, name)
+
+    def generate_batch(self, problems, *, k: int = 1):
+        if self._calls == self._at and not self._marker.exists():
+            self._marker.write_text("hung once")
+            print(f"[inject] hanging forever at round {self._at}", file=sys.stderr, flush=True)
+            while True:
+                time.sleep(3600)
+        self._calls += 1
+        return self._inner.generate_batch(problems, k=k)
+
+
 def _prefetch_then_go_offline(model_id: str) -> None:
     """Download the model's files once, with a watchdog, then force every
     later from_pretrained() call (one per round — see train.py's module
@@ -277,7 +374,9 @@ def _prefetch_then_go_offline(model_id: str) -> None:
     print(f"prefetched {model_id}, now HF_HUB_OFFLINE=1 for every round's reload", file=sys.stderr)
 
 
-def _backend(mode: str, args: argparse.Namespace, out_dir: Path, items: list):
+def _backend(
+    mode: str, args: argparse.Namespace, out_dir: Path, items: list, resume_adapter: str | None = None
+):
     if mode == "dry":
         generator = ScriptedGenerate.from_gold(items, args.k)
         trainer = NoOpTrain()
@@ -290,6 +389,7 @@ def _backend(mode: str, args: argparse.Namespace, out_dir: Path, items: list):
         _prefetch_then_go_offline(args.model)
         generator = HfGenerate(
             args.model,
+            adapter_path=resume_adapter,
             max_tokens=args.max_tokens,
             temp=args.temp,
             gen_batch_size=args.gen_batch_size,
@@ -569,6 +669,26 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     )
     parser.add_argument("--max-seq-length", type=int, default=512)
     parser.add_argument("--no-train", action="store_true")
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="continue from out/state.json (rounds already done) instead of round 0",
+    )
+    parser.add_argument(
+        "--rounds-per-process",
+        type=int,
+        default=None,
+        help="exit cleanly after this many rounds in this process (the driver "
+        "relaunches with --resume), so no process reloads the model more than "
+        "~3 times",
+    )
+    parser.add_argument(
+        "--keep-snapshots",
+        action="store_true",
+        help="keep every round's adapter snapshot (adapters_ckpt_N, ~9MB each) so "
+        "reeval.py can re-score the model that took round N's exam",
+    )
+    parser.add_argument("--inject-hang-at-round", type=int, default=None, help=argparse.SUPPRESS)
     parser.add_argument(
         "--extra-exam",
         action="store_true",

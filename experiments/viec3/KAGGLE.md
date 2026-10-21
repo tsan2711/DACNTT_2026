@@ -1,5 +1,9 @@
 # Việc 3 trên Kaggle (GPU T4) — số paper
 
+> **Quy trình chạy hiện hành (từ 2026-10-04): xem mục "Chạy bằng kaggle_driver"
+> ở CUỐI file.** Các ô 1–5 bên dưới là lịch sử; ghi chú về chạy dài 5 vòng
+> `k=8` và "ngân sách thời gian" là của thiết kế cũ.
+
 Mac chỉ thử code. Số liệu bài báo lấy ở đây. Không sửa `math-verify`.
 
 Cùng thiết kế với Mac: mỗi vòng generate k lần/đề → máy chấm giữ bài đúng →
@@ -298,3 +302,36 @@ Nếu vẫn quá chậm so với deadline thật: cân nhắc giảm `--k` (8→
 `--rounds` (5→3) cho **cả 3 chạy A/B/C cùng lúc** (không phải chỉ một trong
 ba — giữ cấu hình giống hệt nhau giữa A/B/C mới so sánh được) — đánh đổi độ
 chi tiết lấy tốc độ, ghi rõ trong Limitations nếu làm vậy.
+
+## Chạy bằng kaggle_driver (hiện hành)
+
+**Vì sao đổi:** nhiều phiên 12h bị treo mà không rõ nguyên nhân; mọi watchdog
+trong tiến trình (thread, `faulthandler`, `supervise.py`) đều không cứu được.
+Cách làm hiện nay không phụ thuộc vào nguyên nhân:
+
+- `experiments/viec3/kaggle_driver.py` chạy **mỗi vòng trong một tiến trình
+  riêng** (`run.py --resume --rounds-per-process 1`), trạng thái lưu ở
+  `OUT/state.json` + `OUT/adapters_ckpt_N`. Tiến trình con chỉ ghi ra **file**
+  (`--log`), không qua ống stdout. Driver kill + chạy lại nếu GPU rảnh 0% liên
+  tục quá `--idle-minutes` (mặc định 20); trước khi kill gửi SIGUSR1 để
+  `run.py` ghi stack mọi luồng vào `OUT/stacks.log`.
+- `run.py --keep-snapshots` giữ adapter của mọi vòng (cần cho `reeval.py`).
+- `experiments/viec3/reeval.py` chấm lại adapter vòng N (`--snapshot N`; `0` =
+  model gốc) với các trần token sinh khác nhau (`--caps 512 1536`) → `reeval_N.json`.
+- Dựng notebook: `tools/build_kaggle_notebook.py` (code chưa push GitHub được
+  nhúng vào ô 1 dạng tar base64). Lấy metadata bằng
+  `kaggle kernels pull <id> -p DIR -m`, rồi `kaggle kernels push -p OUT`.
+
+**Thời gian đo thật** (Qwen2.5-1.5B, MATH-500 n=500, k=4, `--max-tokens 512`,
+T4): ~45 phút/vòng, 3 vòng ≈ 2,2h GPU; `--no-filter` ~55 phút/vòng (pool 1.400
+ví dụ); GSM8K nhanh hơn. Một notebook chạy được 4 run liên tiếp (~9h) trong
+trần 12h.
+
+**Mẹo vận hành:**
+- `kaggle kernels status/quota` đôi khi treo >120s: bọc `perl -e 'alarm 90; exec @ARGV' kaggle ...`.
+- Tải output lớn rất chậm: dùng `kaggle kernels output ID -p DIR --file-pattern 'REGEX'`
+  chỉ lấy `table.md|metrics.csv|styles.csv|generations.jsonl|train_logs|reeval_*.json|*.log`.
+- Kiểm chứng rẻ phải có **hình dạng giống ca lỗi** (nhiều vòng, nhiều lần load
+  model), không chỉ vòng 0 nhỏ — các smoke test 1 vòng luôn "qua" trong khi
+  chạy full vẫn treo.
+- Đừng để `/tmp` hay scratchpad giữ file quan trọng: bị xóa mỗi ngày.

@@ -133,14 +133,98 @@ Lệnh chạy đầy đủ cho từng bước nằm ở `experiments/viec3/KAGGL
       nhật 2026-09-18: bảng `tab:isolated` đã có đủ seed 0 + seed 1 cho Run
       A/B, không còn hedging "single seed"** — xác nhận qua compile thật
       (xem C3). Còn thiếu: ablation `--no-filter` (đang chờ chạy, xem mục
-      "vòng chạy cuối cùng" phía trên) và — mới phát hiện 2026-09-17/18 —
-      **chưa có chỗ nào trong bài nhắc tới nghi vấn learning rate** (`diagnose_lr.py`
-      xác nhận `lr=1e-5` cũ gần như không học; đã đổi default sang `5e-4`,
-      đang chờ chạy lại Run A để biết kết luận A/B/C có bị ảnh hưởng không —
-      xem `experiments/viec3/diagnose_lr.py`). Nếu Run A-lr-mới đổi kết quả,
-      Limitations/Conclusion cần viết lại phần tương ứng; nếu không đổi,
-      thêm 1 câu vào Limitations ghi nhận đã kiểm tra và loại trừ. Bản nháp
-      cũ `papers/DRAFT.md` đã đánh dấu lỗi thời, không dùng nữa.
+      "vòng chạy cuối cùng" phía trên). **Cập nhật 2026-09-30: nghi vấn
+      learning rate đã đưa vào bài** — Limitations mục 1 (mới, đặt lên đầu)
+      trình bày kết quả thật của `diagnose_lr.py` (1 round LoRA SFT,
+      lr=1e-5 loss dao động 0.68–0.84 không giảm, lr=5e-4 tụt sạch xuống
+      ~0.24–0.28), footnote ở §3.4 Training trỏ tới mục này, và Future Work
+      đặt việc rerun Design I ở lr=5e-4 lên ưu tiên số 1. Nói rõ trong bài:
+      Run A-lr-mới **chưa chạy xong** (quota Kaggle cạn, 6 lần treo liên
+      tiếp), nên kết luận null hiện tại được ghi là **provisional** chứ
+      không khẳng định chắc. Khi Run A-lr-mới có kết quả thật (xem
+      `kaggle-freeze-and-quota.md`), nếu đổi kết quả A/B/C thì viết lại
+      đoạn này; nếu không đổi, sửa "provisional" thành đã xác nhận. Bản
+      nháp cũ `papers/DRAFT.md` đã đánh dấu lỗi thời, không dùng nữa.
+      **Cập nhật 2026-10-04: Run A lr=5e-4 đã chạy xong** (3 vòng, k=4,
+      seed 1): pass@1 33.3→32.7→23.3, pass@4 50.0→49.3→42.7 — KHÔNG còn
+      phẳng như lr=1e-5. Đã viết vào bài: mục Results mới
+      `sec:lrcheck` (Bảng `tab:lrcheck`), abstract/intro/discussion/
+      conclusion đổi sang "null chỉ đúng ở lr=1e-5", Limitations mục 1 viết
+      lại, Future work đặt B/C/seed 2 ở lr mới lên đầu. Dữ liệu:
+      `results/viec3/a-math500-lr-fixed/`. Chưa chạy lại B (control vá
+      verifier) và C ở lr mới — chưa kết luận được verifier có liên quan.
+      **Cập nhật 2026-10-04 (tối): Run B lr=5e-4 cũng xong** (cùng cấu hình
+      A + `--patch-verifier`): pass@1 33.3→35.3→28.7, pass@4 50.7→50.0→48.7
+      (A: 23.3 / 42.7 ở vòng 2). B giảm ÍT hơn A ~5.4 điểm pass@1 / 6.0
+      pass@4, đúng chiều giả thuyết gốc nhưng cỡ ngang nhiễu và chỉ 1 seed;
+      B vẫn giảm nên \dfrac không giải thích hết. Bài đã ghi: control
+      "null ở 1e-5, chưa kết luận được ở lr mới". Còn thiếu: Run C + seed 2
+      của A/B ở lr mới. Dữ liệu: `results/viec3/b-math500-lr-fixed/`.
+      **Cập nhật 2026-10-07: seed 2 của A và B ở lr=5e-4 xong** (v55, 4.5h).
+      Seed 2 vòng 2: A 27.3/44.7, B 20.0/40.7 (pass@1/pass@4) — B giảm NHIỀU
+      hơn A, ngược seed 1 (B hơn A 5.4/6.0). Cả 4 run đều giảm (pass@4 −2.0
+      đến −11.3) ⇒ "phẳng" ở 1e-5 là hiện vật của undertrain; còn bản vá
+      verifier không có tác dụng nhất quán (dấu lật theo seed) ⇒ control vẫn
+      đứng. Bài đã viết lại sec:lrcheck (4 run, 21 trang), abstract,
+      conclusion, limitations, future work (no-filter / train-on-gold / C ở
+      lr mới / 5 vòng k=8). Dữ liệu: `results/viec3/{a,b}-math500-lr-fixed-seed2/`.
+      **Cập nhật 2026-10-08: no-filter + train-on-gold ở lr=5e-4 xong** (v56,
+      4.95h, seed 1). Vòng 2 pass@1/pass@4: A 23.3/42.7, no-filter 27.3/40.7,
+      train-on-gold 15.3/29.3 (rơi ngay vòng 1: 18.0/33.3; văn phong chuyển
+      sang lời giải mẫu: `$` 5%→98%). ⇒ mức giảm là do bước SFT ở lr này,
+      không do dữ liệu tự sinh hay verifier; lọc hay không lọc gần như
+      không khác. Bài thêm bảng `tab:controls` + đoạn "Two controls", sửa
+      abstract/conclusion/limitations/future work (22 trang). Dữ liệu:
+      `results/viec3/{nofilter,gold}-math500-lr-fixed/`. Còn thiếu: quét
+      lr trung gian, seed thêm cho 2 control, Run C ở lr mới, 5 vòng k=8.
+      **Cập nhật 2026-10-08: phân tích cấu tạo mức giảm + đối chiếu tài liệu.**
+      Self-training: tỉ lệ đầu ra lan man (>1500 ký tự, không có \boxed) tăng
+      ~10%→~40%, độ chính xác trên bài làm xong KHÔNG giảm; train-on-gold:
+      lời giải ngắn đi 59%, chính xác giảm 37%→14%. Phát hiện lỗi pipeline:
+      max_length huấn luyện 512 = trần sinh 512 ⇒ 24–26% ví dụ bị cắt cụt
+      (no-filter 62–68% nhưng không lan man hơn ⇒ chưa chứng minh nhân quả).
+      Bài thêm mục "Anatomy of the Decline" + Related Work (Xu 2608.20290,
+      Kim 2603.24472, Egashira đọc lại toàn văn) — 24 trang. CHƯA CHẠY:
+      Run A với --max-seq-length 1024 + đánh giá lại với trần token lớn hơn
+      (chờ quota reset 10/10). **lr=1e-4 (v57) xong:** pass@1 33.3→29.3→34.0,
+      pass@4 50.0→50.7→49.3 (loss 0.65→0.28 ⇒ có học nhưng KHÔNG giảm);
+      lan man vòng 2: 8.8% (1e-5) / 19.5% (1e-4) / 41.3% (5e-4) ⇒ trôi tăng
+      theo lr (dose–response). Bài 25 trang, đã viết lại abstract/conclusion
+      ("phẳng" đúng ở 1e-5 và 1e-4, giảm ở 5e-4). Dữ liệu:
+      `results/viec3/a-math500-lr1e4/`.
+      **Cập nhật 2026-10-11: v58 (msl1024 + đánh giá lại với trần token).**
+      Bản lặp lại A seed 1 (msl 512) tái hiện mức giảm (25.3/44.0 ở vòng 2).
+      Train với max_length 1024 (không ví dụ nào bị cắt): lan man vẫn 37.2%
+      (so 30.0%) ⇒ cắt cụt ví dụ huấn luyện KHÔNG phải nguyên nhân. Đánh giá
+      lại adapter vòng 2 với trần 1536 token: độ chính xác mẫu 28.3→34.2%
+      (bản lặp) và 27.5→29.5% (msl1024); lan man chỉ giảm 30→23% / 37→33% ⇒
+      trần token góp một phần, không giải thích hết. Bài đã thêm Bảng
+      `tab:reeval`. Dữ liệu: `results/viec3/a-lr5e4-keep/`, `a-lr5e4-msl1024/`.
+      Đợt 3 (v59) đang chạy: đánh giá lại model gốc ở 512/1536 (mốc so
+      sánh còn thiếu) + lr 1e-4 seed 2, 3 + lr 2e-4 seed 1.
+      **2026-10-11: REFACTOR bài 25 → 16 trang.** Bỏ 2 hình + 2 bảng phụ của
+      Design P (pass_at_k, selected_pool, poolmix, prevalence, answer-
+      diversity), gộp control+prevalence, gộp 3 mục Discussion đầu, nén
+      Related Work/Intro/Limitations (7 mục gọn), Abstract ~240 từ. Giữ đủ:
+      Bảng passk, bydataset, isolated(+hình), lrcheck, controls, anatomy,
+      reeval. Bản trước refactor: /tmp/refs/paper.tex.pre_refactor (không
+      nằm trong git!). Còn chờ v59 để chèn số: base@1536, 1e-4 seed 2/3,
+      2e-4 seed 1 (sửa Table lrcheck/anatomy/reeval, Abstract, Conclusion,
+      Limitations #2).
+      **2026-10-11 (tối): v59 xong (11.4h)** — lr 1e-4 seed 2,3 / 2e-4 seed 1
+      + đánh giá lại model gốc. Kết quả: độ chính xác mẫu vòng 2 giảm
+      2.0 (1e-4, 3 seed) / 3.5 (2e-4) / 6.5 (5e-4); lan man 20.6 / 25.0 /
+      38.8% ⇒ dose–response. Model gốc ở trần 1536 cũng tăng (36.3→43.2%,
+      lan man 8.7→2.5%) ⇒ khoảng cách adapter–gốc KHÔNG thu hẹp ⇒ KHÔNG
+      phải lỗi trần token (đảo ngược nhận định của v58). Bài cập nhật
+      (17 trang), báo cáo viết lại (5 trang; generator ở
+      tools/make_report_20261011.js). Zip nộp: ...TranDuyAnh-nop.zip.
+      **2026-10-12: v60 xong (8.9h)** — no-filter seed 2, train-on-gold seed 2,
+      lr 2e-4 seed 2, Run C (GSM8K) 5e-4. Hai đối chứng TÁI HIỆN ở seed 2
+      (gold: pass@1 31.3→10.0; no-filter 31.3→22.7); 2e-4 trung bình −3.7
+      điểm chính xác mẫu; Run C GSM8K giảm mạnh (pass@1 70.7→48.7, pass@4
+      86.0→76.7, chính xác trên bài làm xong cũng giảm 71.5→64.6). Bài 18
+      trang, báo cáo 6 trang, zip làm lại. Quota còn 1.8h (reset 17/10).
 - [x] **C3. Compile thử** — **xong 2026-09-18, dùng `tectonic` (cài qua
       brew, không cần MacTeX ~4GB) thay vì Overleaf.** Compile sạch, ra
       `paper.pdf` (18 trang, không lỗi fatal). 4 cảnh báo overfull/underfull

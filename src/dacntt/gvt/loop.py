@@ -44,8 +44,13 @@ def run_rounds(
     test_item_ids: frozenset[str] | None = None,
     select_all: bool = False,
     train_on_gold: bool = False,
+    resume_records: Sequence[RoundRecord] | None = None,
 ) -> list[RoundRecord]:
-    """on_round, if given, runs after each round is appended — lets the
+    """``resume_records``: rounds already finished by an earlier process; the
+    loop continues at the next round index. The caller must have built
+    ``generator`` on the adapter those rounds ended with.
+
+    on_round, if given, runs after each round is appended — lets the
     caller write partial results to disk as it goes, so a long run (e.g.
     Kaggle, killed by a session time limit) doesn't lose everything if it
     doesn't reach the end.
@@ -86,9 +91,11 @@ def run_rounds(
     k's (e.g. pass@8 vs pass@32) — still valid per-item (added/lost use
     ``any(row)`, order-independent), just not an apples-to-apples k.
     """
-    records: list[RoundRecord] = []
-    prev_flags: list[list[bool]] | None = None
-    for index in range(rounds):
+    records: list[RoundRecord] = list(resume_records or [])
+    prev_flags: list[list[bool]] | None = (
+        records[-1].flags.get(locked_exam) if records else None
+    )
+    for index in range(len(records), rounds):
         record = _one_exam(
             items,
             generator,

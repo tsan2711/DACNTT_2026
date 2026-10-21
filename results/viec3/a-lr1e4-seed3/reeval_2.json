@@ -1,0 +1,23 @@
+{
+ "snapshot": 2,
+ "n_exam": 150,
+ "k": 4,
+ "caps": {
+  "512": {
+   "pass_at_1": 0.24,
+   "pass_at_k": 0.4,
+   "sample_acc": 0.25833333333333336,
+   "mean_chars": 1381.26,
+   "degenerate_share": 0.235,
+   "acc_finished": 0.32461873638344224
+  },
+  "1536": {
+   "pass_at_1": 0.29333333333333333,
+   "pass_at_k": 0.44666666666666666,
+   "sample_acc": 0.295,
+   "mean_chars": 1852.0766666666666,
+   "degenerate_share": 0.12833333333333333,
+   "acc_finished": 0.3326959847036329
+  }
+ }
+}
