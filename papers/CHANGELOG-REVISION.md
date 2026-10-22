@@ -612,3 +612,69 @@ cắt khi polish.
 
 20. **"Lr cao hơn thì giảm nhiều hơn — chắc không?"** Không chắc. Seed 1 giảm đều (−1.5/−3.5/−8.3), seed 2 gần phẳng
     (−3.7/−3.8/−4.7). Chỉ chắc là ở 5e-4 mọi run đều giảm.
+
+## 10. Đợt sửa thứ năm (2026-10-22): sửa nốt moderate/minor của re-review r3
+
+Bi yêu cầu "phải làm paper hoàn thiện", nên đợt này sửa nốt các mục ở 9.3 và phần moderate/minor còn lại trong
+`paper-revised-r3_review/final_issues.json`. Không chạy thí nghiệm mới, chỉ phân tích lại trên CPU từ log có sẵn.
+
+### 10.0 Script mới (CPU, chỉ đọc) — `experiments/viec3/review_cpu/dot4/`
+
+| Script | Làm gì | Kết quả dùng |
+|---|---|---|
+| `boot.py` | Bootstrap ghép cặp theo bài (2000 lần) cho ΔCap và 3 phần của decomposition (finished s̄Δf / cap-share Δs(f̄−c̄) / cap-accuracy (1−s̄)Δc) | ΔCap ở 5e-4: seed 1 +2.3 tới +4.7 (chỉ B loại 0: [0.2, 9.5]); seed 2 +8.2 tới +14.2 (đều loại 0). Phần cap-share chiếm 12–30% mức giảm ở seed 1, 52–72% ở seed 2. Replicate −0.2, msl1024 +0.7. Kết quả ở `boot.txt` |
+| `unparsed.py` | Bọc 51 gold không parse được vào `\boxed{}` rồi chấm lại | 46/51 parse được và được chấp nhận → sửa gold-storage và loại gold-không-parse **chồng nhau**, không được cộng |
+| `poolP.py` | Đếm pool từng vòng của Design P | 0.5B: 2533→2123; 1.5B: 3962→3730→3395→2638→1566 |
+
+Kiểm tra trực tuyến (WebFetch trang arxiv.org/html): Egashira et al. (2608.20290) và Xu et al. (2605.02909), dùng để
+sửa đoạn mô tả hai bài trong Related work.
+
+### 10.1 Các thay đổi chính, theo mục
+
+| Mục | Vấn đề review | Sửa thành | Bằng chứng |
+|---|---|---|---|
+| §4.6 decomposition | Không có CI; "termination" gộp cả phần cap-accuracy | Chỉ gọi phần **cap-share** là termination; thêm **bảng mới `tab:decomp`** gồm mọi run 5e-4, kèm CI; đoạn đọc: rõ ràng chỉ ở seed 2, ở seed 1 mức tăng cỡ chênh lệch do sampling (43.2 vs 40.7) | `boot.py` |
+| Abstract, contributions, §5.1, Conclusion | "termination accounts for a quarter to two thirds" | "12–30% ở seed 1, 52–72% ở seed 2; cap-hit tăng rõ chỉ ở một seed, không có trong replicate"; phần finished lớn hơn ở 4/6 run | `boot.py` |
+| Cả bài | Cap-hit của model chưa train ghi "43%" | "41–48%" (40.7–48.2 theo split của seed) | Table cap-hit |
+| §3.2 | 7.8% "biased low"; quan hệ với tỉ lệ trong vòng lặp | Nêu rõ 7.8% ước lượng cái gì; chiều lệch so với tỉ lệ trong vòng lặp **chưa biết**; 8 ca "wrong token" phần lớn là đáp án ghép (trùng với lớp compound của probe) | audit cũ |
+| §3.2 gold-storage | Pool tăng "17–23%"; tỉ lệ offset; suy rộng sang run không re-score | "Khoảng một phần năm" (440→542, 872→1066); offset 4.7–8.0 điểm chỉ ở 3 run self-training đã re-score, run khác là ngoại suy; tỉ số thay đổi gốc/re-score 0.73–0.78, nên cận 2.2 trên thang re-score gần 3 | `rescored_ci.py`, `unparsed.py` |
+| Bảng mới `tab:inventory` (§3.3) | Không có chỗ nào liệt kê đủ các run | Bảng liệt kê mọi run có dữ liệu: rate, k, số vòng, seed, pool vòng 0; một seed cố định cùng lúc partition, tập selection và randomness lúc train | metrics.csv |
+| §3.4 | B−A được dùng làm ví dụ seed variance; số CI | Ví dụ chính là replicate (3.2 điểm); "một CI loại 0 chưa đủ, một CI chứa 0 không loại được hiệu ứng"; Table 8 có 76 CI cộng khoảng 10 CI trong text, không độc lập; nói rõ các measure post hoc dùng bản re-score riêng (`review_cpu/scored/`) | ci.md |
+| §4.1 | Giải thích Design P bằng dose | Thêm đoạn: mức giảm lớn nhất (−12.1, −13.8) đến từ pool **nhỏ nhất** (3395, 2638); model 0.5B có 2533 mẫu (≈2.9× Run A) nhưng giảm ít → dose không giải thích hết | `poolP.py` |
+| §4.2, §4.3 | "Little change at 1e-5" nói chung chung | Chỉ đúng cho các run MATH-500 ở 420–436 step; là tính chất của rate × số step. Offset chấm điểm của B (vòng 0 seed 1 +0.6) | Table 5 |
+| §4.5 | No-filter / train-on-gold diễn giải quá mức | No-filter "chưa bao giờ tốt hơn… kém hơn về pass@4 ở cả hai seed, nhưng không quy được cho filter"; check 1 của train-on-gold là cận dưới, check 2 làm mức giảm lớn hơn (−24.7/−22.0) nhưng đo một defect khác | ci.md |
+| §5.1 | Phần "style" | Tỉ lệ boxed đặt trước đã được đánh giá và **không đạt**: không hội tụ mà giảm (52→36, 54→37) | Table 5 |
+| Related work | Mô tả Xu, Egashira thiếu và sai | Egashira: Qwen2.5-1.5B-Instruct ở appendix, định nghĩa FP, plateau của domain luôn bị reject (liên quan gold không parse); Xu: filter là answer match / majority vote, có nhánh distillation làm positive control, F3 truncation 16.5→65.3% | WebFetch |
+| Limitation 3 (#46) | Liệt kê thiếu điều kiện chỉ có một seed | Liệt kê đủ: Run C ở cả hai rate, truncation check (một cặp replicate + một run msl1024), từng lần re-score theo token cap | inventory |
+| Limitation 6 | "5–8 điểm cho mọi run" | 4.7–8.0 ở 3 run đã re-score, run khác là ngoại suy; nêu chồng lấn 46/51 với gold không parse | `unparsed.py` |
+| Limitation 9, Future work | "43%" | "41–48%" | — |
+| Limitation 10 | "76 intervals… about four by chance" | 76 trong Table 8 cộng khoảng 10 trong text, không độc lập, "about four" chỉ là ước chừng | — |
+| Limitation 11 (#28) | Contamination "affects all arms alike" | Không nhất thiết: nếu self-training làm quên các bài đã thuộc, một phần mức giảm trong run có thể là mất phần đã thuộc chứ không phải mất kỹ năng | lập luận |
+| Limitation 12 (#47) | Recipe | Không nhánh nào cải thiện rõ so với vòng 0, kể cả train-on-gold → không có positive reference cho thấy recipe này giúp được model 1.5B; mức giảm có thể một phần do recipe | Table 8 |
+| Future work (#29) | Patch gold-storage: chưa nói cách khớp dose | Giữ dose cố định (subsample pool đã patch về cỡ pool cũ, hoặc cố định số step); cần nhiều seed mỗi nhánh | — |
+
+### 10.2 Biên dịch
+
+`tectonic paper_revised.tex` → **29 trang** (trước là 25, do thêm hai bảng `tab:inventory` và `tab:decomp` cùng các đoạn
+giải thích), không có reference hay citation bị undefined.
+
+### 10.3 Câu giáo sư có thể hỏi thêm (đợt 5)
+
+21. **"Termination là gì, chiếm bao nhiêu?"** Mức giảm accuracy tách được thành 3 phần: (a) đúng ít hơn trên các bài
+    viết xong, (b) **nhiều generation chạm cap hơn** (cap-share), (c) đúng ít hơn trên các generation chạm cap. Chỉ (b)
+    là termination. Ở 5e-4 nó chiếm 12–30% ở seed 1 và 52–72% ở seed 2, và chỉ ở seed 2 thì cap-hit tăng rõ (CI loại 0).
+    Bản trước gộp (b) với (c), nên nói "a quarter to two thirds".
+
+22. **"Tại sao cận 2.2 lại thành khoảng 3?"** Defect gold-storage làm mọi thay đổi trên thang gốc chỉ còn khoảng
+    0.73–0.78 lần thay đổi trên thang re-score. 2.2 / 0.75 ≈ 3. Vậy trên thang đúng thì cận còn lỏng hơn.
+
+23. **"46/51 gold là sao?"** Có 51 gold không parse được, đã bị loại khỏi audit. Bọc chúng vào `\boxed{}` thì 46 cái
+    parse được và được chấp nhận. Tức là phần lớn chúng **cùng một lỗi** với defect gold-storage, nên hai mức sửa
+    không được cộng dồn.
+
+24. **"Design P giảm mạnh có phải do train nhiều step hơn không?"** Không hẳn. Mức giảm tăng tốc đúng lúc pool **nhỏ
+    đi** (3395, 2638 mẫu), và model 0.5B có pool gấp khoảng 2.9 lần Run A nhưng giảm ít. Nên dose không giải thích hết,
+    và nguyên nhân vẫn để ngỏ.
+
+25. **"Có nhánh nào làm model tốt lên không?"** Không, kể cả train trên lời giải tham chiếu. Vì vậy không loại được
+    khả năng chính recipe (loss tính cả prompt, LoRA r16 q/v) đã gây hại. Cái này nằm ở Limitation 12.

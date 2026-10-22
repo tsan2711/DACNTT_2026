@@ -57,19 +57,21 @@ ends $3.2$ points of sample accuracy away) and are not a pre-specified equivalen
 the effect only loosely. Whether the model learns the verifier's style is not
 established either way: our pre-set rule cannot detect it while accuracy falls,
 and the \verb|\boxed| share does not discriminate. Accuracy falls in every run
-at the highest rate; that the decline grows with the rate rests on one seed. At
-$5\times10^{-4}$, generations that finish within the $512$-token cap are
-$5$--$11$ points less accurate than the untrained model's on the same problems,
-and the share that hits the cap, already $43\%$ for the untrained model, rises
-$2$--$14$ points in six runs (not in a replicate of one of them); by run,
-$34$--$74\%$ of the sample-accuracy decline lies in finished accuracy and the
-rest in termination. At lower rates the cap-hit share does not rise (changes of
-$-3.3$ to $+1.1$ points). A further verifier defect (bare-stored gold against boxed predictions)
-rejects $15.5$--$18.6\%$ of the loop's correct solutions and lowers absolute
-pass@1 by about $5$--$8$ points; re-scored without it, sample accuracy still falls
-in all five runs we re-scored. Patching a rarer defect and removing the filter
-make no consistent difference, but both controls are underpowered and differ in
-training dose. A sharp decline in an earlier pooled design does not reproduce
+at the highest rate; that the decline grows with the rate rests on one seed. On
+MATH-500 at $5\times10^{-4}$ (four verifier-filtered runs and two no-filter
+controls), generations that finish within the $512$-token cap are $5$--$11$
+points less accurate than the untrained model's on the same problems, and the
+share that hits the cap, already $41$--$48\%$ for the untrained model, rises
+$2$--$14$ points, clearly only at one seed and not in a replicate; the
+finished-accuracy part of the decline is the larger one in four of the six. At lower
+rates the cap-hit share does not rise (changes of $-3.3$ to $+1.1$ points). A
+storage defect in our pipeline (bare gold against boxed predictions) makes the
+verifier reject $15.5$--$18.6\%$ of the solutions a repaired verifier accepts and
+lowers absolute pass@1 by $4.7$--$8.0$ points in self-training; re-scored without
+it, sample accuracy still falls in all five runs we re-scored (three
+self-training, two train-on-gold). Patching a rarer defect and removing the
+filter make no consistent difference, but both controls are underpowered and
+differ in training dose. A sharp decline in an earlier pooled design does not reproduce
 under isolation and held-out scoring, but that design also trained on about
 $4.5\times$ more examples per round, so its cause is not identified.
 
@@ -137,13 +139,14 @@ the pool from drift; the only strong style convergence occurs when training on
 reference solutions, where no verifier is in the loop and accuracy falls. Our
 pre-set rule cannot rule out verifier-style learning.
 \item A post hoc description of what training at the highest rate changes, using
-the token count of each generation: at $5\times10^{-4}$ on MATH-500 the accuracy
-of finished generations, compared with the untrained model on the same problems,
-falls $5.5$--$10.6$ points, and this finished-accuracy part is $34$--$74\%$ of the
-sample-accuracy decline depending on the run; the cap-hit share rises only at
-that rate, by $2$--$14$ points in six runs (at lower rates it changes by $-3.3$
-to $+1.1$). At lower rates finished accuracy is also lower,
-but the intervals mostly include zero. A character-length heuristic we first
+the token count of each generation: at $5\times10^{-4}$ on MATH-500 (four
+verifier-filtered runs and two no-filter controls) the accuracy of finished
+generations, compared with the untrained model on the same problems, falls
+$5.5$--$10.6$ points; the cap-hit share rises only at that rate, by $2$--$14$
+points, with intervals excluding zero at seed~2 and for one run at seed~1 (at
+lower rates it changes by $-3.3$ to $+1.1$); how the decline divides between
+the two varies by seed and is imprecise. At lower rates finished accuracy is
+also lower, but the intervals mostly include zero. A character-length heuristic we first
 used overstated the role of unfinished generations, and we show why.
 \item Design lessons, stated with their limits: a verifier-patch control whose
 treatment changes $0$--$4$ training examples cannot detect an effect, which a
@@ -181,17 +184,21 @@ rule-based verifiers, i.e.\ about $14\%$ of correct responses rejected, but for
 \texttt{math-verify} itself on their MATH subset a recall of $0.95$ (about $5\%$
 false negatives; their Table~5, on DeepSeek-R1-Distill-Qwen-32B outputs). Our
 MATH-500 audit gives $7.8\%$ (95\% Wilson interval $4.3$--$13.8\%$) on another
-model's solutions, a figure biased low by its correctness check
+model's solutions, a figure whose relation to the loop's own rate is not known
 (Section~\ref{sec:verifier}), and a pipeline-specific defect alone rejects
-$15.5$--$18.6\%$ of the loop's own correct solutions. These figures differ in
+$15.5$--$18.6\%$ of the loop's own solutions that a repaired verifier accepts. These figures differ in
 verifier version, solution source and denominator, so we compare them only in
 order of magnitude. Imperfect Verifiers~\cite{ref_imperfect} gives the most formal noise model,
 with fixed false-accept and false-reject probabilities, and notes that real noise
 can depend on formatting but then assumes content-independent rates. Egashira et
 al.~\cite{ref_delayplateau} classify verifier errors in RLVR on a synthetic
-arithmetic task (Qwen3-1.7B-Base, OLMo3-7B) with hand-designed patterns such as
-format-based false negatives, and find that systematic false negatives behave
-like random noise whereas false positives can cause plateau or collapse. Our
+arithmetic task (Qwen3-1.7B-Base and OLMo3-7B, with Qwen2.5-1.5B-Instruct, our
+model, in an appendix) with hand-designed patterns such as format-based false
+negatives, and find that systematic false negatives behave like random noise
+whereas false positives (rewards given to answers that are near the truth, or
+that contain a keyword) can cause plateau or collapse; they also note that a
+domain whose queries are always rejected can at best plateau, which is the
+position of our unparseable-gold problems. Our
 setting differs in paradigm (offline rejection-sampling SFT with a fresh adapter
 per round, not on-policy RL) and in task (real benchmark problems). Our patch
 control cannot test their false-negative finding, because it changes too little
@@ -206,10 +213,13 @@ related observation.
 
 \paragraph{Auditing self-improvement.}
 Xu et al.~\cite{ref_phantom} audit three rounds of rank-32 LoRA self-training of
-Qwen3-8B ($\eta=10^{-4}$; filters by answer match, majority vote or an external
-teacher) against a frozen untrained control, and identify seven measurement
-failures that each invert a reported finding when its control is absent,
-including a fixed token cap under style drift and training-seed variance.
+Qwen3-8B ($\eta=10^{-4}$; filters by answer match or majority vote, plus a
+distillation arm from an external teacher as a positive control) against a
+frozen untrained control, and identify seven measurement failures that each
+invert a reported finding when its control is absent, including training-seed
+variance and a fixed token cap under style drift: their distillation arm, the
+most effective one, scored as the most destructive because its truncation rate
+rose from $16.5\%$ to $65.3\%$.
 Self-training does not improve rarely-solved problems and corrupts problems
 solved at baseline. This is the study closest to ours in spirit. Our per-problem
 added/lost counts point the same way (more problems lost than gained), though
@@ -217,7 +227,10 @@ without their frozen control and with net counts that only restate the change
 in pass@$k$ (Section~\ref{sec:config}), and our
 adapters also drift in style (longer outputs, fewer \verb|\boxed| answers), and
 a fixed token cap matters in our setting too: the untrained model already hits
-it in $43\%$ of MATH-500 generations. Their setup differs in model size, rank and filters; we lack their
+it in $41$--$48\%$ of MATH-500 generations. Their finding is a warning that a
+decline under a fixed cap can be misread as lost capability; this is why we
+separate finished accuracy from termination and re-score at a larger cap
+(Section~\ref{sec:anatomy}). Their setup differs in model size, rank and filters; we lack their
 per-round frozen arm (we re-score the untrained model once,
 Section~\ref{sec:anatomy}) and a distillation arm, and we add a measured
 format-biased verifier, a learning-rate series and reference-solution and
@@ -282,20 +295,28 @@ and no longer matches a correct boxed prediction.
 problem for the first $200$ problems of each dataset (teacher traces for GSM8K,
 Qwen2.5-7B-Instruct rollouts for MATH-500), not the 1.5B model's own outputs.
 Correctness was established by a scripted comparison of the boxed answer with
-the gold string (\texttt{src/dacntt/read.py}), and we then counted how many of
+the gold string after normalisation (\texttt{src/dacntt/read.py}: delimiters,
+braces, spaces and commas removed, \verb|\dfrac|/\verb|\tfrac| read as
+\verb|\frac|, simple fractions compared by value), and we then counted how many of
 these correct solutions the verifier rejects. The false-negative rate is
 $7.8\%$ on MATH-500 ($10$ of $128$ correct solutions; $24$ problems with
 unparseable gold excluded) and $0\%$ on GSM8K ($0/200$; 95\% Wilson interval
 $0$--$1.9\%$, one-sided upper bound $1.3\%$), identical for the \texttt{default}
 and \texttt{reward} extraction presets of \texttt{math-verify}. Of the ten
-MATH-500 cases, eight are wrong-token extraction from a long solution and two
-are valid rewrites the verifier cannot match. Two features of the audit bias
-the $7.8\%$ low. Because correctness was a string comparison with the gold, a
-correct answer written in an equivalent but different form (e.g.\
-\verb|\frac43| for \verb|\frac{4}{3}|) was classed as incorrect and left out of
-the denominator; that is exactly the class the gold-storage defect below
-rejects. And the $24$ excluded problems are ones the verifier can never score
-correct. The audit also inspected only rejected solutions, so it cannot measure
+MATH-500 cases, eight are rejected when the whole solution is verified but
+accepted when only the boxed answer is, which we labelled wrong-token
+extraction from a long solution, and two are rewrites the normalisation
+equates but the verifier does not match (e.g.\ \verb|6 + 9i| for \verb|6+9i|).
+Most of the eight are compound answers ($3\sqrt{13}$, $6-5i$, $11\sqrt2$, a
+list, a polynomial), so they overlap with the compound class of the format
+probe; the two labels describe where the failure shows, not exclusive causes.
+The $7.8\%$ estimates the false-negative rate on Qwen2.5-7B-Instruct solutions
+for problems whose gold the verifier can parse, among answers our normalisation
+recognises as correct. Correct answers in forms it does not equate are left out
+of the denominator, and the $24$ problems with unparseable gold are counted as a
+separate defect below; relative to the loop's own rate, where the 1.5B model
+writes longer and, after training, less boxed solutions, the direction of the
+difference is not known. The audit also inspected only rejected solutions, so it cannot measure
 the false-positive rate; that the verifier rarely accepts wrong answers is an
 assumption here, not a measurement.
 
@@ -305,7 +326,9 @@ in each $150$-problem exam partition. The loop keeps these problems: every
 sample is rejected, so they never enter the training pool and always count as
 unsolved. They lower absolute pass rates by up to $12$ points but are constant
 within a partition, so they cancel in within-run and same-partition
-comparisons.
+comparisons. Wrapping the gold in \verb|\boxed{}|, the re-score described
+below, makes $46$ of these $51$ golds parseable, so the two corrections overlap
+and should not be added (\path{experiments/viec3/review_cpu/dot4/unparsed.py}).
 
 \emph{The patch.} For the control we repaired the most \emph{severe} identified
 failure mode with a normalisation pass that rewrites \verb|\dfrac| and
@@ -321,29 +344,41 @@ in \verb|\boxed{}| when the prediction contains one and the gold does not
 \texttt{dose.py}, \texttt{flips.py}). This defect is far more frequent than the \verb|\dfrac|
 class. Over all $500$ problems it rejects $15.5$--$18.6\%$ of the generations
 the re-scored verifier accepts (Run~A at $5\times10^{-4}$, seeds~1 and~2, and
-at $10^{-5}$, seed~0, every round), and accepting them would enlarge the kept
-pool by $17$--$23\%$ (round~0 of Run~A at seed~1: $440\to542$; at $10^{-5}$:
-$872\to1{,}066$), against $0$--$4$ examples (under $1\%$) for the \verb|\dfrac|
-patch. In a hand
+at $10^{-5}$, seed~0, every round). The kept pool covers only the $350$
+selection problems, where the share is slightly higher: accepting these
+generations would enlarge the round-0 pool by about a fifth (Run~A at seed~1:
+$440\to542$, $+23\%$; at $10^{-5}$: $872\to1{,}066$, $+22\%$), against $0$--$4$
+examples (under $1\%$) for the \verb|\dfrac| patch. In a hand
 check of $30$ random flips, $29$ pairs were the same value written differently
 (e.g.\ \verb|\frac43| and \verb|\frac{4}{3}|; one prediction had an empty box).
 The $15.5$--$18.6\%$ assumes that the re-scored verifier itself accepts no wrong
 answer, which we did not measure. On the exam set the defect lowers absolute
 pass@1 by $6.7$--$8.0$ points at round~0 and throughout the $10^{-5}$ runs, by
 $4.7$ points at round~2 under $5\times10^{-4}$, and by $0.7$--$3.3$ points for
-train-on-gold after round~0. The offset is therefore not constant: it is
-largest at round~0 and smaller after strong training, so with the original
-verifier the declines below are, if anything, \emph{understated}. We keep the original verifier's numbers in every table, since
-that is the verifier the loop trained with; they are therefore about $5$--$8$
-points too low in absolute terms for self-training. The declines do not depend on
-it. Re-scored, with paired bootstrap intervals as in Section~\ref{sec:config},
+train-on-gold after round~0. The absolute offset is therefore not constant, but
+as a share of re-scored pass@1 it roughly is ($6.7/40.0$ and $4.7/28.0$, both
+$17\%$, for Run~A at seed~1; $20\%$ throughout at $10^{-5}$): the defect rejects
+about the same fraction of correct answers in every round, and the absolute
+offset shrinks because accuracy falls. Two consequences follow. With the original
+verifier the declines below are \emph{understated}, by a factor of about $0.73$--$0.78$
+(the ratios of original to re-scored sample-accuracy changes below), and the
+same factor shrinks every original-verifier difference and interval, including
+the $2.2$-point bound on gains, which on the re-scored scale is nearer $3$
+points. And the fraction of correct answers this defect rejects does not fall
+over the rounds, so for this one defect class the model does not learn to avoid
+what the verifier rejects; this is the only direct test of verifier adaptation
+we have, and it covers one defect. We keep the original verifier's numbers in
+every table, since that is the verifier the loop trained with; they are
+therefore $4.7$--$8.0$ points too low in absolute terms for self-training. Re-scored, with paired bootstrap intervals as in Section~\ref{sec:config},
 sample accuracy changes by $-10.7$ [$-14.8$, $-6.7$] and $-6.0$ [$-9.7$, $-2.2$]
 points for Run~A at $5\times10^{-4}$ (seeds~1 and~2; original verifier $-8.3$
 and $-4.7$), by $-3.3$ [$-5.9$, $-0.7$] for Run~A at $10^{-5}$, seed~0 (original
 $-2.4$), and by $-24.7$ and $-22.0$ for train-on-gold. In pass@1 the same runs go
 from $40.0\%$ to $28.0\%$ and from $38.0\%$ to $32.0\%$ (interval $[-14.0,+2.0]$
 for the latter), from $40.0\%$ to $36.7\%$, and from $40.0\%$ to $16.0\%$ and
-from $38.0\%$ to $13.3\%$. Only these five runs were re-scored. Both arms of the patch control
+from $38.0\%$ to $13.3\%$. Only these five runs were re-scored, three of them
+self-training; that the other runs' declines would also survive a re-score is
+an extrapolation from these three. Both arms of the patch control
 (Section~\ref{sec:control}) carry this defect.
 
 \subsection{Two Experimental Designs}
@@ -360,7 +395,8 @@ them.
 
 \begin{table}[t]
 \caption{The two designs. They differ in more than the intended variables;
-the training dose per round is the largest unintended difference.}
+the most quantifiable unintended difference is the training dose per round
+(about $4.5\times$ as many optimizer steps in Design~P).}
 \label{tab:designs}
 \centering
 \begin{tabular}{lll}
@@ -382,7 +418,36 @@ Design~I has three runs, all Qwen2.5-1.5B-Instruct, five rounds, $k=8$, differin
 in one respect each: \textbf{Run~A} (MATH-500, original verifier), \textbf{Run~B}
 (MATH-500, patched verifier) and \textbf{Run~C} (GSM8K, original verifier). Runs
 A and B were repeated at a second seed; since the seed also sets the train/exam
-partition, the repetition draws a different 150-problem exam set.
+partition, the repetition draws a different 150-problem exam set. Most of the
+later evidence comes from higher-rate runs introduced in
+Section~\ref{sec:lrcheck}; Table~\ref{tab:inventory} lists every run. A
+``seed'' sets the exam partition, the selection set and the training randomness
+at once; runs with the same seed share the partition.
+
+\begin{table}[t]
+\caption{All runs (Qwen2.5-1.5B-Instruct unless stated). Design~P was run once
+per model. ``Pool'' is the round-0 kept pool (training examples; optimizer
+steps are half of it).}
+\label{tab:inventory}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{llllll}
+\toprule
+Design / run & Data & Rate & $k$, rounds & Seeds & Pool \\
+\midrule
+P (0.5B, 1.5B) & GSM8K+MATH-500 & $10^{-5}$ & 8, 5 & one run each & $2{,}533$, $3{,}962$ \\
+I: A, B & MATH-500 & $10^{-5}$ & 8, 5 & 0, 1 & $872$, $833$ (A) \\
+I: C & GSM8K & $10^{-5}$ & 8, 5 & 0 & $1{,}901$ \\
+I: A & MATH-500 & $10^{-4}$ & 4, 3 & 1, 2, 3 & $424$--$455$ \\
+I: A & MATH-500 & $2\times10^{-4}$ & 4, 3 & 1, 2 & $440$, $424$ \\
+I: A, B & MATH-500 & $5\times10^{-4}$ & 4, 3 & 1, 2 & $440$, $424$ \\
+I: no filter, gold & MATH-500 & $5\times10^{-4}$ & 4, 3 & 1, 2 & $1{,}400$, $350$ \\
+I: A replicate, 1024 limit & MATH-500 & $5\times10^{-4}$ & 4, 3 & 1 & $440$ \\
+I: C & GSM8K & $5\times10^{-4}$ & 4, 3 & 1 & $971$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Models, Data, Training, Metrics}
 \label{sec:config}
@@ -429,22 +494,29 @@ recomputed from the saved generations with the same verifier; it reproduces
 the reported pass rates except for six round values that differ by one problem
 ($0.6$--$0.7$ points), most likely because of \texttt{math-verify} comparison
 timeouts
-(\texttt{experiments/viec3/bootstrap\_ci.py}). These intervals cover the
+(\texttt{experiments/viec3/bootstrap\_ci.py}). The post hoc measures of
+Section~\ref{sec:anatomy} (Table~\ref{tab:anatomy}, the matched column of
+Table~\ref{tab:ci} and the decomposition) use a separate re-scoring of the same
+generations (\texttt{review\_cpu/scored/}), which differs from the values behind
+Tables~\ref{tab:lrseries} and~\ref{tab:ci} by up to one problem in some further
+rounds (e.g.\ $10^{-4}$, seed~1, round~2: pass@1 $33.3$ against $34.0\%$); no
+conclusion depends on these differences. These intervals cover the
 choice of problems and the sampling of generations for a given trained adapter;
 they do \emph{not} cover training-seed variance, which we can only see
 informally across our two or three seeds, so they understate the uncertainty of
-run-level conclusions. Our own data show by how much: at $5\times10^{-4}$ and
-seed~2, Runs A and B, whose round-0 training pools are identical ($424$
+run-level conclusions. Our own data suggest by how much: a replicate of Run~A
+at $5\times10^{-4}$, seed~1, with the same configuration, ends $3.2$ points of
+sample accuracy away from the original (Section~\ref{sec:anatomy}); and at
+seed~2 Runs A and B, whose round-0 training pools are identical ($424$
 examples each), end $7.3$ points apart in round-2 pass@1 (interval
-$[-14.0,-0.7]$, Section~\ref{sec:lrcheck}). The patch also changes how under
-$1\%$ of exam generations are graded, and the later pools diverge ($386$ vs
-$398$, $350$ vs $332$) as the two trajectories separate, but the starting
-difference between the runs is almost nothing. An interval that excludes zero
-is therefore necessary, not sufficient, for a reproducible effect. We also
-make no correction for multiplicity: Table~\ref{tab:ci} alone holds $76$
-intervals, and at the 95\% level about four would exclude zero by chance if
-nothing changed, so we rest conclusions on patterns across runs and seeds, not
-on any single interval. Single proportions use Wilson intervals.
+$[-14.0,-0.7]$, Section~\ref{sec:lrcheck}), though that is a single interval
+near zero. A single interval that excludes zero is therefore not sufficient
+evidence of a reproducible effect, and one that includes zero does not rule an
+effect out. We also make no correction for multiplicity: Table~\ref{tab:ci}
+alone holds $76$ intervals and the text about ten more, and at the 95\% level
+about four of the $76$ would exclude zero by chance if nothing changed (fewer
+or more, since they are not independent), so we rest conclusions on patterns
+across runs and seeds, not on any single interval. Single proportions use Wilson intervals.
 
 \section{Results}
 \label{sec:results}
@@ -459,8 +531,11 @@ by one problem, see Table~\ref{tab:bydataset}). The
 1.5B decline is severe and accelerating; the 0.5B decline is small ($-3.7$ and
 $-5.6$ points). Splitting the 1.5B run by dataset (Table~\ref{tab:bydataset})
 shows both datasets falling heavily, although GSM8K has a measured $0\%$
-false-negative rate. The accepted pool also contracts every round (1.5B: from
-$3{,}962$ to $1{,}566$ solutions) and the 1.5B output style shifts, with
+false-negative rate, though that rate was measured on external solutions in
+the untrained model's style, not on Design~P's late-round outputs. The accepted
+pool also contracts every round (1.5B: $3{,}962$, $3{,}730$, $3{,}395$,
+$2{,}638$, $1{,}566$; 0.5B: $2{,}533$ to $2{,}123$;
+\path{experiments/viec3/review_cpu/dot4/poolP.py}) and the 1.5B output style shifts, with
 \verb|\boxed{}| falling from $5{,}608$ to $2{,}693$ of $8{,}000$ generations while
 dollar-delimited math rises from $1{,}453$ to $3{,}406$.
 
@@ -512,10 +587,11 @@ scores, if anything. Design~I lets us check that expectation, since it also
 generates on its $350$ selection problems: there, sample accuracy on the
 selection problems falls as much as or more than on the exam (e.g.\ Run~A at
 $5\times10^{-4}$: $-8.2$ and $-5.3$ points against $-8.3$ and $-4.7$ on the
-exam; at $10^{-4}$, seed~1: $-6.2$ against $-1.5$). Training on a problem's own
-accepted solutions therefore did not protect it, and selection-set scoring is
-unlikely to have masked or created the pooled decline, though this is checked
-only in the other design. Third, and not anticipated when we designed the follow-up, Design~P
+exam; at $10^{-4}$, seed~1: $-6.2$ against $-1.5$; no intervals, and not
+checked at $10^{-5}$). Training on a problem's own accepted solutions therefore
+did not protect it, so selection-set scoring is unlikely to have masked a
+decline; since the selection problems sometimes fall more, it may have
+enlarged one, and it remains a candidate contributor. Third, and not anticipated when we designed the follow-up, Design~P
 trains on far more examples per round: $3{,}962$ at round~0 for the 1.5B model,
 against $872$ for the isolated MATH-500 run at the same learning rate. With one
 epoch and the same batch size this is about $4.5\times$ as many optimizer steps
@@ -528,8 +604,15 @@ at the same rate, is the one $10^{-5}$ run that declines clearly. One reading
 consistent with these data is that Design~P's adapter changed the model more.
 It rests on two assumptions we have not tested: that more optimizer steps act
 like a higher learning rate, and that Run~C's decline comes from its dose
-rather than its dataset (a single comparator). Pooling or scoring may also have
-contributed; no run separates these explanations.
+rather than its dataset (a single comparator). Dose also explains at most the
+level of the decline, not its time course: with a fresh adapter each round,
+the round-$t$ model is trained on the round-$(t-1)$ pool alone, and the pools
+shrink, yet the largest pass@1 drops ($-12.1$ and $-13.8$ points) come from the
+two smallest pools ($3{,}395$ and $2{,}638$). Something carried through the
+data, such as pool composition or style, fits this acceleration better. The
+0.5B model, trained on $2{,}533$ examples at round~0 (about $2.9\times$ Run~A),
+declines only a little, though it is a different model. Pooling or scoring may
+also have contributed; no run separates these explanations.
 
 \subsection{Design I at $10^{-5}$: Small Declines, a Larger One on GSM8K}
 \label{sec:isolated}
@@ -608,19 +691,28 @@ $10^{-4}$--$5\times10^{-4}$. The adapter therefore learns, but slowly, and it
 changes the outputs little: mean length and the share of generations that hit
 the token cap are essentially unchanged from round~0 to round~4 (cap-hit
 $46.9\to47.4\%$ at seed~0 and $40.7\to41.8\%$ at seed~1 for Run~A;
-Table~\ref{tab:anatomy}). A flat pass@$k$ curve here is evidence that this
-training step did little, not evidence that GVT is stable.
+Table~\ref{tab:anatomy}). This holds for the MATH-500 runs at about $420$--$436$
+steps per round; Run~C at the same rate, with about twice the steps, does
+change its outputs. ``Little change'' is therefore a property of rate and
+steps together, not of the rate alone. A flat pass@$k$ curve in the MATH-500
+runs is evidence that this training step did little, not evidence that GVT is
+stable.
 
 \paragraph{Noise.}
-Round~0 is the untrained base model; only the exam partition and the sampling
-differ between seeds, yet round-0 pass@1 is $32.0\%$ at seed~0 and $36.7\%$ at
-seed~1, and on the third partition used later round-0 pass@4 is $40.0\%$ against
-$50.0\%$ and $51.3\%$ on the other two (Table~\ref{tab:lrseries}). Re-sampling the
-same model on the same problems moves pass@1 by up to $6.7$ points
-(Section~\ref{sec:anatomy}). A single 150-problem pass@1 has a standard error of
-about $3.8$ points. We therefore no longer judge differences against one
-``noise floor''; we report the bootstrap intervals above and treat agreement
-across seeds as the only evidence about training-seed variance.
+Round~0 is the untrained base model, so round-0 differences between seeds
+mostly measure how hard each partition is: round-0 pass@1 is $32.0\%$ at
+seed~0 and $36.7\%$ at seed~1, and on the third partition used later round-0
+pass@4 is $40.0\%$ against $50.0\%$ and $51.3\%$ on the other two
+(Table~\ref{tab:lrseries}). These levels cancel in within-run changes. Noise in
+the changes themselves is better seen elsewhere: re-sampling the same model on
+the same problems moves pass@1 by up to $6.7$ points
+(Section~\ref{sec:anatomy}), and a single 150-problem pass@1 has a standard
+error of about $3.8$ points. Agreement across seeds tests partition and
+training variance together; training variance alone is seen only in
+same-partition pairs (A against B at the same seed, Section~\ref{sec:lrcheck},
+and the replicate of Section~\ref{sec:anatomy}). We therefore report the
+bootstrap intervals above rather than judge differences against one ``noise
+floor''.
 
 \subsection{The Patch Control Could Not Detect an Effect}
 \label{sec:control}
@@ -630,14 +722,19 @@ Runs A and B are identical in dataset, seed, split, model and training
 configuration and differ only in whether \verb|\dfrac|/\verb|\tfrac| are
 normalised before verification. Their curves are close
 (Table~\ref{tab:isolated}): at round~4, B minus A is $-0.7$ [$-3.3$, $+2.0$] points of
-pass@1 at seed~0 and $+0.0$ [$-2.7$, $+2.7$] at seed~1 (95\% intervals). This null is
-uninformative, for two reasons we should have checked before running it. First,
+pass@1 at seed~0 and $+0.0$ [$-2.7$, $+2.7$] at seed~1 (95\% intervals). Run~B's
+exam is graded with the patched verifier, so these differences also contain a
+grading offset: at seed~1 the identical round-0 generations already score
+$0.6$ points higher in B, so the model part of the seed-1 difference is about
+$-0.6$. Narrow intervals here bound the difference between two nearly identical
+trajectories, not a patch effect. This null is uninformative, for two reasons
+we should have checked before running it. First,
 the treatment is tiny: \verb|\dfrac| appears in $20$--$29$ of the $4{,}000$
 generations per round ($0.50$--$0.73\%$), \verb|\tfrac| never, and only the
 correct ones among those are wrongly discarded; the kept pools of A and B differ
 by $4$ examples at seed~0 ($872$ vs $876$) and $3$ at seed~1 ($833$ vs $836$),
-under $0.5\%$ of the pool. Second, at $10^{-5}$ the adapter changes the outputs
-little (Section~\ref{sec:isolated}), so two nearly identical pools would give
+under $0.5\%$ of the pool. Second, at $10^{-5}$ and the step count of these
+MATH-500 runs the adapter changes the outputs little (Section~\ref{sec:isolated}), so two nearly identical pools would give
 nearly identical models whatever the verifier did. We cannot separate these
 two explanations. The result is therefore: \emph{removing one rare format defect
 had no detectable effect}, which the prevalence count alone predicts; it is not
@@ -653,10 +750,11 @@ the affected forms occur in that loop's own output, which is cheap to count.
 
 Over all problems of each run (in Design~I the $500$ selection and exam items
 together, not the exam alone) we also measured, before filtering, the fraction of
-problems on which all $k=8$ samples give the same extracted answer. It falls in
-every run, more where pass@1 falls more: $24.8\%\to1.7\%$ for Design~P's 1.5B
+problems on which all $k=8$ samples give the same extracted answer, for
+Design~P's 1.5B run and the $10^{-5}$ Design~I runs at seed~0. It falls in
+every one: $24.8\%\to1.7\%$ for Design~P's 1.5B
 run, $33.6\%\to16.0\%$ for Run~C, $14.6\%\to12.0\%$ (A) and $14.6\%\to12.2\%$
-(B) at seed~0. This agreement is mechanically tied to accuracy (problems on
+(B). This agreement is mechanically tied to accuracy (problems on
 which every sample is correct are all-agreement problems) and to generations
 that hit the token cap, so it adds little beyond the accuracy change and does not by itself
 rule out stylistic convergence, which concerns how answers are written rather
@@ -669,7 +767,7 @@ and draw no conclusion from them.
 \subsection{Higher Learning Rates}
 \label{sec:lrcheck}
 
-Because $10^{-5}$ changed the outputs little, we reran the MATH-500 runs at
+Because $10^{-5}$ changed the MATH-500 outputs little, we reran the MATH-500 runs at
 higher rates with a smaller budget (three rounds, $k=4$, so pass@4 replaces
 pass@8 and the pools are about half as large): Runs~A and B at $5\times10^{-4}$
 at two seeds, and Run~A at $10^{-4}$ at three seeds and at $2\times10^{-4}$ at
@@ -746,9 +844,13 @@ $5\times10^{-4}$ (Table~\ref{tab:lrseries}).
 points of pass@1 at seed~1 and $-7.3$ [$-14.0$, $-0.7$] at seed~2. The sign flips with the seed, and
 the seed-2 interval excludes zero although the patch changes the first training
 pool by $0$--$3$ examples. Same-seed runs that start from almost the same pool
-thus end several points apart once the adapter moves (their later pools differ
-by $1$--$18$ examples as the trajectories separate), which is a direct look at
-trajectory noise in this regime.
+can thus end several points apart once the adapter moves (their later pools
+differ by $1$--$18$ examples as the trajectories separate). This is one pass@1
+interval whose upper end only just clears zero, so on its own it is weak
+evidence of trajectory noise; the replicate of Run~A at seed~1
+(Section~\ref{sec:anatomy}), which ends $3.2$ points of sample accuracy and
+$4.1$ points of matched finished accuracy away from the original, points the
+same way.
 
 \begin{table}[t]
 \caption{Run~A (MATH-500, original verifier, $k=4$, three rounds) across learning
@@ -785,8 +887,10 @@ the last-round accuracy of generations below the $512$-token cap minus the
 untrained model's accuracy on the same problem mix (Section~\ref{sec:anatomy};
 $2{,}000$ resamples, \texttt{experiments/viec3/review\_cpu/capanat.py}). The
 intervals do not include training-seed variance. Recomputed values match the
-reported ones except B, seed~1 at $10^{-5}$, whose round-4 pass@8 is one problem
-lower ($58.0\%$ against $58.7\%$).}
+reported ones except six round values that differ by one problem
+(Section~\ref{sec:config}), e.g.\ B, seed~1 at $10^{-5}$, whose round-4 pass@8
+is $58.0\%$ against $58.7\%$; the matched column uses the separate re-scoring
+described there.}
 \label{tab:ci}
 \centering
 \scriptsize
@@ -862,7 +966,9 @@ Train on gold         & 350  & 31.3 & 8.7 & 10.0 & 51.3 & 28.7 & 30.7 \\
 \end{tabular}
 \end{table}
 
-Removing the filter has no effect of consistent sign. At round~2,
+Removing the filter is never better than keeping it on any measure beyond
+noise, and is worse on pass@4 at both seeds, but the dose difference means
+this cannot be attributed to the filter. At round~2,
 no-filter minus Run~A is $+4.0$ [$-2.7$, $+10.7$] (seed~1) and $-4.7$ [$-12.0$, $+2.7$] (seed~2) points
 of pass@1, of mixed sign, and $-2.0$ [$-8.7$, $+4.7$] and $-5.3$ [$-12.0$, $+1.3$] points of pass@4,
 negative at both seeds, so pass@4 weakly favours keeping the filter; for sample
@@ -884,9 +990,16 @@ this drop could be verifier error. We checked this in two ways after the runs
 final \verb|\boxed| content equals the stored gold string after light
 normalisation are $14$ of $600$ generations at seed~1 and $11$ of $600$ at
 seed~2; counting them correct would raise round-2 sample accuracy by about $2$
-points. Second, the gold-storage re-score of Section~\ref{sec:verifier} leaves
-the sample-accuracy decline at $-24.7$ and $-22.0$ points. Neither check is a
-full hand audit, but both put verifier error far below the size of the fall.
+points. This is a lower bound: exact string match misses equivalent forms, and
+the about $14\%$ of round-2 generations with no \verb|\boxed| at all are not
+covered. Second, the gold-storage re-score of Section~\ref{sec:verifier} makes
+the sample-accuracy decline larger, not smaller ($-24.7$ and $-22.0$ points
+against $-19.7$ and $-18.7$), because the defect penalises round~0 more; but it
+repairs one defect and does not test whether answers in the new style are
+parsed correctly. Neither check is a hand audit. Even several times the first
+bound would be far below a fall of about $19$ points, and finished accuracy
+falls to $12$--$15\%$, so we think the fall is mostly real, but a format-shift
+error is not measured.
 Its rounds are replicate fine-tunes on
 identical data (their final training losses agree to three decimals), so the
 difference between its rounds~1 and~2 mainly reflects generation sampling. No
@@ -902,7 +1015,7 @@ $3.8\%$ to $15.0\%$ and mean length from $958$ to $1{,}313$ characters, and
 accuracy on the finished generations falls clearly ($71.9\%\to63.3\%$; $-12.1$
 points matched). In the three-part split of Section~\ref{sec:anatomy}, about
 half of this run's sample-accuracy decline ($51\%$) is in the finished-accuracy
-part and about half in termination, so on GSM8K, in this single run, the loss is
+part and $43\%$ in the cap-share part (Table~\ref{tab:decomp}), so on GSM8K, in this single run, the loss is
 both less accurate solutions and more unfinished ones. This
 run uses a different partition, $k$ and round count from the $10^{-5}$ Run~C, so
 the two can be compared only through their within-run changes ($-1.3$ points of
@@ -927,8 +1040,9 @@ fall near it ($22$--$37$ of $600$ per run and round have $480$--$507$ tokens),
 a threshold of $500$ raises the cap-hit share by at most about $1.6$ points and
 one of $512$ lowers it by at most about $4.0$, and with either the share still
 rises only at $5\times10^{-4}$. The untrained model already hits the cap in
-$43.0$--$43.2\%$ of its MATH-500 exam generations ($48.2\%$ on the seed-3
-partition, $3.5$--$3.8\%$ on GSM8K), and only $4$--$7\%$ of those are accepted.
+$40.7$--$48.2\%$ of its MATH-500 exam generations, depending on partition and
+sampling ($43.0$--$43.2\%$ on the $k=4$ seed-1 and seed-2 partitions; $3.5$--$3.8\%$
+on GSM8K), and only $4$--$7\%$ of those are accepted.
 The $512$-token cap is therefore binding from the start, not a consequence of
 training.
 
@@ -996,7 +1110,8 @@ last-round finished accuracy with the untrained model's finished accuracy on the
 the number of finished last-round samples it has. Problems with no finished
 last-round sample drop out ($22$--$45$ of the $150$ per run); where a problem had
 no finished round-0 sample we use its accuracy over all round-0 samples
-($6$--$21$ problems, $34$--$37$ in the gold runs); intervals use $2{,}000$
+($6$--$21$ problems, $34$--$37$ in the gold runs), which, being mostly cap-hit
+accuracy, biases the baseline down for those problems; intervals use $2{,}000$
 problem-level bootstrap resamples. Because training changes which problems
 finish, the matched metric conditions on an outcome of training and is
 descriptive, not a causal effect. On that matched basis finished
@@ -1006,27 +1121,72 @@ symmetrically into a finished-accuracy part
 $\bar s\,\Delta f$, a cap-share part $\Delta s\,(\bar f-\bar c)$ and a
 cap-accuracy part $(1-\bar s)\,\Delta c$, where $s$ is the share of finished
 generations, $f$ and $c$ the accuracy of finished and cap-hit generations, and
-bars denote round-0/last-round means. The finished-accuracy part is $73\%$ of
-the decline for A seed~1, $62\%$ for B seed~1, $74\%$ for no-filter seed~1, but
-only $59\%$, $39\%$ and $34\%$ for A, B and no-filter at seed~2. Termination
-(the other two parts) is thus $26$--$41\%$ in four runs and the larger part,
-$61\%$ and $66\%$, for B and no-filter at seed~2. These six runs do not
-exhaust $5\times10^{-4}$: in the replicate and the $1{,}024$-token-limit run of
-Run~A at seed~1 (below) the cap-hit share does not rise ($43.2\to43.0\%$ and
-$43.8\%$), and the finished-accuracy part is $89\%$ and $85\%$ of the decline.
-At $10^{-4}$ and $2\times10^{-4}$ the cap-hit share does not rise, the
-finished-accuracy part exceeds the whole (smaller) change in four of the five
-runs and is $93\%$ of it in the fifth ($10^{-4}$, seed~2), and matched finished
-accuracy falls by $0.6$ to $4.7$ points with intervals including zero.
-Termination therefore contributes materially to the decline only at the highest
-rate, where its share varies from about a tenth to two thirds by run (a
-$10^{-5}$ run, seed~1, puts $63\%$ of its $1.4$-point decline in termination,
-but that decline is within noise). The long
+bars denote round-0/last-round means. Only the cap-share part measures
+termination; the cap-accuracy part is a change in how often unfinished text is
+still accepted. Table~\ref{tab:decomp} gives the three parts and paired
+bootstrap intervals ($2{,}000$ resamples) for the cap-hit change and for the
+finished-accuracy share (\path{experiments/viec3/review_cpu/dot4/boot.py}).
+This decomposition uses the unmatched finished accuracy, so its finished part
+still contains the shift in which problems finish.
+
+\begin{table}[t]
+\caption{Decomposition of the change in sample accuracy (points, round~0 $\to$
+last round, MATH-500 exam unless stated) into finished-accuracy, cap-share and
+cap-accuracy parts, with the change in cap-hit share. Intervals: paired
+problem-level bootstrap, $2{,}000$ resamples. The share is the finished part
+over the whole change.}
+\label{tab:decomp}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{lccccccc}
+\toprule
+Run, seed & $\Delta$cap-hit & $\Delta$acc. & Finished & Cap-share & Cap-acc. & Fin.\ share \\
+\midrule
+\multicolumn{7}{l}{\emph{$5\times10^{-4}$}} \\
+A, 1 & $+3.0$ [$-1.7,7.7$] & $-8.3$ & $-6.0$ & $-1.3$ & $-1.0$ & $73\%$ [$43,108$] \\
+B, 1 & $+4.6$ [$0.2,9.5$] & $-6.7$ & $-4.2$ & $-2.0$ & $-0.5$ & $62\%$ [$21,100$] \\
+No filter, 1 & $+2.3$ [$-2.5,6.8$] & $-8.2$ & $-6.0$ & $-1.0$ & $-1.1$ & $74\%$ [$46,106$] \\
+A, 2 & $+8.2$ [$3.8,12.3$] & $-4.7$ & $-2.7$ & $-3.4$ & $+1.5$ & $59\%$ [$-11,114$] \\
+B, 2 & $+11.0$ [$6.2,16.0$] & $-9.2$ & $-3.6$ & $-4.8$ & $-0.8$ & $39\%$ [$6,64$] \\
+No filter, 2 & $+14.2$ [$9.3,18.8$] & $-10.2$ & $-3.5$ & $-6.1$ & $-0.6$ & $34\%$ [$5,57$] \\
+A replicate, 1 & $-0.2$ [$-4.5,4.3$] & $-5.2$ & $-4.6$ & $+0.1$ & $-0.7$ & $89\%$ [$41,162$] \\
+A, 1024 limit, 1 & $+0.7$ [$-3.7,5.2$] & $-5.7$ & $-4.8$ & $-0.3$ & $-0.5$ & $85\%$ [$42,169$] \\
+C (GSM8K), 1 & $+11.2$ [$7.8,14.7$] & $-15.3$ & $-7.8$ & $-6.6$ & $-0.9$ & $51\%$ [$30,66$] \\
+\multicolumn{7}{l}{\emph{$2\times10^{-4}$ and $10^{-4}$}} \\
+A, $2\times10^{-4}$, 1 & $-2.3$ [$-6.7,2.3$] & $-3.5$ & $-4.3$ & $+1.0$ & $-0.2$ & $124\%$ \\
+A, $2\times10^{-4}$, 2 & $-3.3$ [$-7.7,1.0$] & $-3.7$ & $-5.2$ & $+1.4$ & $+0.1$ & $142\%$ \\
+A, $10^{-4}$, 1 & $-0.5$ [$-4.5,3.7$] & $-1.8$ & $-3.1$ & $+0.2$ & $+1.0$ & $169\%$ \\
+A, $10^{-4}$, 2 & $-0.2$ [$-4.3,4.0$] & $-3.7$ & $-3.4$ & $+0.1$ & $-0.3$ & $93\%$ \\
+A, $10^{-4}$, 3 & $-2.5$ [$-6.3,1.3$] & $-1.0$ & $-1.4$ & $+1.1$ & $-0.7$ & $139\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At $5\times10^{-4}$ the cap-hit rise has an interval excluding zero in all three
+seed-2 runs and in B at seed~1; at seed~1 the other rises ($+2.3$ and $+3.0$)
+are about the size of two samplings of the untrained model on the same
+partition ($43.2\%$ at $k=4$ against $40.7\%$ at $k=8$), and the replicate and
+the $1{,}024$-limit run do not rise at all. The cap-share part is $12$--$30\%$
+of the decline at seed~1 and $52$--$72\%$ at seed~2; the cap-accuracy part is
+small ($-1.1$ to $+1.5$ points). The finished-accuracy shares have wide
+intervals, and they split by seed (every seed-1 run $62$--$74\%$, every seed-2
+run $34$--$59\%$); since seed sets the partition, this may be partition
+variation rather than run-specific anatomy. What the table supports is
+qualitative: at $5\times10^{-4}$ both parts contribute, in a balance that
+differs by partition. At $10^{-4}$ and $2\times10^{-4}$ the cap-hit share does
+not rise, the finished-accuracy part exceeds the whole (smaller) change in four
+of the five runs and is $93\%$ of it in the fifth, and matched finished accuracy
+falls by $0.6$ to $4.7$ points with intervals including zero. Termination
+therefore contributes materially to the decline only at the highest rate, and
+clearly only at one seed (at $10^{-5}$ the declines are too small to divide
+reliably). The long
 generations that remain open as ordinary solutions and then drift into loosely
 related prose (e.g.\ ``\ldots acknowledged hurdles acknowledged setbacks
 \ldots''), with low exact repetition (mean word 5-gram repeat ratio about
-$0.02$, similar to other generations); this description rests on inspection of
-examples, not on a systematic annotation. Train-on-gold is different: responses
+$0.02$, similar to other generations, though the decoding repetition penalty of
+$1.1$ suppresses exact repeats by itself); this description rests on inspection
+of examples, not on a systematic annotation. Train-on-gold is different: responses
 shorten by $55$--$59\%$, cap-hit falls from $43\%$ to $7$--$8\%$, and finished
 accuracy collapses ($-25.6$ and $-25.9$ points matched). This collapse may owe
 something to the training recipe rather than to the data alone: the loss is
@@ -1044,12 +1204,14 @@ together with a matched replicate that keeps the $512$-token limit. Removing the
 truncation changed little in this one run: the round-2 cap-hit share is
 $43.8\%$ with the longer limit, $43.0\%$ in the replicate and $46.2\%$ in the
 original Run~A, and matched finished accuracy falls by $5.7$, $5.0$ and $9.1$
-points. The differences between the three arms are within the spread we see
-between same-configuration replicates, and the longer limit does not remove
+points. The differences between the three arms are within the spread of the
+one same-configuration pair we have (the original and the replicate, which are
+themselves two of the three arms, $4.1$ points apart matched), so this pair is
+a poor estimate of replicate noise; and the longer limit does not remove
 every unterminated example: $43$ of the $440$ accepted round-0 examples
 ($9.8\%$) are cap-hit generations, which have no end-of-sequence token under
-any training limit. With one run per arm this can only exclude a large
-truncation effect. The replicate reproduces the
+any training limit. With one run per arm this can only exclude a truncation
+effect much larger than the $4$-point gap between the pair. The replicate reproduces the
 direction of Run~A's decline (pass@1 $33.3\to31.3\to25.3\%$, pass@4
 $50.0\to48.0\to44.0\%$).
 
@@ -1090,12 +1252,17 @@ the whole story, though with one adapter per row and no intervals it does not
 establish it. The untrained model gains \emph{more} from the larger cap than the adapters
 do (sample accuracy $+6.9$ points, against $+5.9$, $+2.0$ and $+3.5$), so the
 adapters' deficit does not close: $-8.0$, $-8.8$ and $-7.8$ points at $512$ tokens
-and $-9.0$, $-13.7$ and $-11.2$ at $1{,}536$, consistent with a deficit that lies
-mostly in what the adapters write rather than in where they are cut off. Since
-re-scoring the same adapter moves pass@1 by up to $6.7$ points, differences of
-one to three points between rows are not interpretable. The data suggest that
-tripling the cap does not remove the gap, for single adapters on one partition;
-they do not show what a still larger cap would do.
+and $-9.0$, $-13.7$ and $-11.2$ at $1{,}536$. This does not separate less
+accurate solutions from generations that do not stop: at $1{,}536$ tokens the
+proxy's ``Acc.\ finished'' is close for all four rows ($40.8$--$44.1\%$) while its
+``Degenerate'' share is $2.5\%$ for the untrained model and $23$--$33\%$ for the
+adapters, which points to non-termination, though the proxy undercounts cap
+hits. Since re-scoring the same adapter moves pass@1 by up to $6.7$ points,
+differences of one to three points between rows, including the comparison of
+gains, are not interpretable. The data suggest that the gap persists at a
+tripled cap, whether from less accurate solutions or from generations that do
+not stop, for single adapters on one partition; they do not show what a still
+larger cap would do.
 
 \section{Discussion}
 \label{sec:discussion}
@@ -1124,14 +1291,19 @@ this. The pattern fixed in advance for this reading (pass@1 up, pass@$k$ flat,
 style converging) requires pass@1 to rise, so it cannot fire in runs where
 accuracy falls, and pass@1 never rises detectably (the largest rise is $+0.7$
 [$-6.7$, $+8.0$], at $10^{-4}$, seed~1); the rule is one-sided and its silence is
-not evidence against verifier-style learning. The post hoc \verb|\boxed| share
-does not settle it either. The share of all generations with \verb|\boxed| falls
-($52\%\to36\%$ and $54\%\to37\%$ at $5\times10^{-4}$, Table~\ref{tab:lrcheck}),
-but the kept pool ($89$--$91\%$ boxed at round~0) is less boxed than the
-\emph{finished} exam generations it is compared with ($95.6\%$ and $98.5\%$),
-and the finished share falls ($69.7\%$ and $82.9\%$) as the pool's does
-($73$--$77\%$ by round~2). That is what imitation of the pool would predict as
-well as what drift would, so the share does not discriminate. It is also not a
+not evidence against verifier-style learning. Its style leg, the pre-set
+\verb|\boxed| share, was evaluated on its own and also fails: in self-training
+the share does not converge but falls (all $2{,}000$ generations per round:
+$52\%\to36\%$ and $54\%\to37\%$ at $5\times10^{-4}$, Table~\ref{tab:lrcheck};
+the $600$ exam generations: $55.5\%\to38.3\%$ and $58.5\%\to42.5\%$). The post
+hoc refinements do not settle it either. The kept pool ($89$--$91\%$ boxed at
+round~0) is less boxed than the \emph{finished} exam generations it is compared
+with ($95.6\%$ and $98.5\%$), and the finished share falls ($69.7\%$ and
+$82.9\%$) as the pool's does ($73$--$77\%$ by round~2). That is what imitation of
+the pool would predict as well as what drift would, so the share does not
+discriminate. The one direct test we have points away from adaptation for one
+defect class: the fraction of correct answers the gold-storage defect rejects
+stays at $15.5$--$18.6\%$ in every round (Section~\ref{sec:verifier}). It is also not a
 clean measure of what the verifier prefers, because the gold-storage defect
 (Section~\ref{sec:verifier}) penalises some \verb|\boxed| answers. The one strong style convergence (\texttt{\$} spans
 $5\%\to98\%$, \verb|\boxed| $52\%\to86\%$) happens under train-on-gold, with no
@@ -1143,18 +1315,23 @@ highest rate, the model gets less accurate on the solutions it does finish. The 
 $5\times10^{-4}$, in both GSM8K runs ($10^{-5}$ and $5\times10^{-4}$) and, on
 MATH-500 at $10^{-5}$, only just, for A and B at seed~0, which are close to one
 replicate; at $10^{-4}$ and $2\times10^{-4}$ the point estimates are negative
-but the intervals include zero. More generations run into the token cap only at
-$5\times10^{-4}$, by $2$--$14$ points in six runs (not in a replicate), and
-termination accounts for $26$--$41\%$ of the decline in four of those runs and
-$61$--$66\%$ in two (Section~\ref{sec:anatomy}); at lower rates the cap-hit share
-changes by $-3.3$ to $+1.1$ points. The untrained model already hits the cap in $43\%$
-of MATH-500 generations, so the cap limits every round.
+but the intervals include zero (both GSM8K figures are single runs). More
+generations run into the token cap only at $5\times10^{-4}$: by $2$--$14$ points in
+the four verifier-filtered runs and two no-filter controls on MATH-500, with
+intervals excluding zero at seed~2 and for one run at seed~1, and not in a
+replicate; the change in cap-hit share accounts for $12$--$30\%$ of the decline
+at seed~1 and $52$--$72\%$ at seed~2 (Table~\ref{tab:decomp}). At lower rates
+the cap-hit share changes by $-3.3$ to $+1.1$ points. The untrained model already
+hits the cap in $41$--$48\%$ of MATH-500 generations, so the cap limits every
+round.
 
 \emph{What happened to the pooled collapse?} It does not reproduce when each
 dataset gets its own adapter and is scored on held-out problems. Because the
 pooled design also trained on about $4.5\times$ more examples per round, and our
 higher-rate runs suggest (on one seed) that stronger training produces larger
-declines,
+declines, which are at least compatible with a dose effect (we did not apply
+the measures of Section~\ref{sec:anatomy} to Design~P, and its acceleration
+under shrinking pools is not explained by dose, Section~\ref{sec:pooled}),
 we cannot say whether pooling, selection-set scoring or training dose produced
 it. We no longer claim that pooling and selection-set scoring ``manufactured''
 the collapse.
@@ -1168,7 +1345,8 @@ more style-skewed set each round and the skew compounds. The data give it no
 support, but they do not rule it out either. The patch removes a severe but rare
 bias and changes the pool by a handful of examples, so it tests how strong the
 bias is per answer, not whether a frequent bias compounds; the no-filter control
-declines about as much without any verifier, but it also trains on $3$--$4\times$
+declines without any verifier, as much as Run~A at seed~1 and more at seed~2
+(sample accuracy $-10.2$ against $-4.7$), but it also trains on $3$--$4\times$
 more examples, so its decline is confounded with dose; and the training-dose
 difference between the designs offers a simpler account that we have not tested
 directly either. Pool size is also partly
@@ -1228,8 +1406,10 @@ whatever the truth, and we report no equivalence bound. The no-filter and
 train-on-gold controls have two seeds each.
 \item \emph{Intervals cover only part of the uncertainty.} The bootstrap
 intervals cover problem draw and generation sampling, not training-seed
-variance; most conditions have two or three seeds, Run~C at the higher rate and
-the token-cap re-scorings one. pass@1 is a single draw per problem.
+variance. Most conditions have two or three seeds; the following have one:
+Run~C at both rates, the truncation check (one replicate pair at
+$5\times10^{-4}$ and one run with a $1024$-token training limit), and each
+token-cap re-scoring. pass@1 is a single draw per problem.
 \item \emph{Learning rate.} The original $10^{-5}$ was an untuned default; the
 evidence that it changes outputs little is behavioural (unchanged length and
 cap-hit share), since its loss does fall. The higher-rate grid is coarse and
@@ -1242,11 +1422,14 @@ show undercounts cap hits.
 \item \emph{Verifier measurements.} The false-negative audit used other models'
 solutions and a scripted correctness check, inspected only rejections (so no
 false-positive rate). The gold-storage defect was measured afterwards on the
-loop's own outputs by re-scoring (Section~\ref{sec:verifier}); it lowers all our
-absolute pass rates by about $5$--$8$ points for self-training, was present in
-every run including both arms of the patch control, and was never varied in a
-training run. The re-scored false-negative share assumes the re-scored verifier
-makes no false accepts.
+loop's own outputs by re-scoring (Section~\ref{sec:verifier}); it lowers
+absolute pass@1 by $4.7$--$8.0$ points in the three self-training runs we
+re-scored (other runs are extrapolation), was present in every run including
+both arms of the patch control, and was never varied in a training run. It
+overlaps with the unparseable-gold correction ($46$ of the $51$ unparseable
+golds become parseable once boxed), so the two corrections must not be added.
+The re-scored false-negative share assumes the re-scored verifier makes no
+false accepts.
 \item \emph{Restart-from-base design and scope.} A fresh adapter on the base
 model each round leaves compounding little room, so the absence of compounding
 is partly a property of the design. One model size in Design~I, one verifier,
@@ -1258,22 +1441,30 @@ verifier error enters both selection and measurement. The gold-storage re-score
 (Section~\ref{sec:verifier}) and the string audit of the train-on-gold runs
 bound part of this, but only for five runs and one defect class.
 \item \emph{A binding token cap.} At $512$ tokens the untrained model already
-fails to finish $43\%$ of MATH-500 generations, so every measure is taken in a
+fails to finish $41$--$48\%$ of MATH-500 generations (depending on the seed's
+exam split), so every measure is taken in a
 regime where length and accuracy are entangled, and the $512$-token training
 limit truncates about a quarter of the kept pool. Our conclusions are about this
 regime; a larger cap during the loop is untested.
 \item \emph{No equivalence margin and many intervals.} We did not fix in advance
 how small a gain would count as ``no gain'', so the $2.2$-point bound is read off
-the observed intervals. We report $76$ intervals without a multiplicity
-correction; at the $95\%$ level about four would exclude zero by chance alone,
-so single intervals that only just exclude zero should be read cautiously.
+the observed intervals. Table~\ref{tab:ci} alone holds $76$ intervals and the
+text reports about ten more, none with a multiplicity correction. They are not
+independent (they share runs and problems), so ``about four would exclude zero
+by chance'' is only a rough guide, but single intervals that only just exclude
+zero should be read cautiously.
 \item \emph{Possible test-set contamination.} MATH-500 and GSM8K are public and
-may be in Qwen2.5's training data. This would raise absolute accuracy but should
-affect all arms alike; we did not test it.
+may be in Qwen2.5's training data. This would raise absolute accuracy, and it
+need not affect all arms or rounds alike: if training on self-generated
+solutions makes the model forget memorised items, part of a within-run decline
+could be loss of memorisation rather than of skill. We did not test it.
 \item \emph{Training recipe.} The loss covers the prompt as well as the response,
 and we tried one LoRA configuration (rank $16$ on query and value projections).
 Both could matter, most plausibly for the train-on-gold collapse, and neither
-was varied.
+was varied. No arm in any design improves detectably on its round~0, including training on
+reference solutions, so we have no positive reference showing that this recipe
+can help a 1.5B model at all; the declines may partly reflect the recipe rather
+than self-training.
 \end{enumerate}
 
 \section{Conclusion}
@@ -1290,9 +1481,10 @@ only fire if accuracy rose, and the post hoc \verb|\boxed| share falls in a way
 that imitation of the less-boxed training pool and drift would both produce. In
 a post hoc description, most clearly at the highest rate, the model becomes less
 accurate on the solutions it does finish; more generations
-hit the token cap only at the highest rate, where termination accounts for a
-quarter to two thirds of the decline depending on the run, and a
-character-length heuristic we first used overstated that part.
+hit the token cap only at the highest rate, and clearly only at one of its two
+seeds, where the change in cap-hit share accounts for $12$--$30\%$ of the
+decline at seed~1 and $52$--$72\%$ at seed~2; a character-length heuristic we
+first used overstated that part.
 Reference-solution training degrades the model more, with much shorter answers.
 Patching a rare verifier defect and removing the filter made no difference of
 consistent sign across measures and seeds (pass@1 flips sign between seeds;
@@ -1307,9 +1499,10 @@ up because the designs that produced them are common.
 
 \paragraph{Future work.}
 Separate the explanations of the pooled decline with a pooled run scored on a
-held-out split and an isolated run matched in optimizer steps; save token
+held-out split and an isolated run matched in optimizer steps (by fixing the
+step count per round rather than the number of epochs); save token
 counts at generation time and test a larger generation cap during the loop, since
-the untrained model already hits $512$ tokens in $43\%$ of MATH-500 generations;
+the untrained model already hits $512$ tokens in $41$--$48\%$ of MATH-500 generations;
 refine the learning-rate grid and replicate Run~C;
 and run a positive control (a verifier biased against a frequent format) to show
 what effect size this design can detect.
@@ -1317,11 +1510,14 @@ what effect size this design can detect.
 The gold-storage defect (Section~\ref{sec:verifier}) is the natural next
 verifier control. We implemented and unit-tested a patch that wraps the gold in
 \verb|\boxed{}| whenever the prediction contains one and the gold does not;
-re-scoring shows that in a training run it would add about $17$--$23\%$ to the
-kept pool (measured against the size of the round-0 kept pool), roughly $35$--$50$ times the change made by the \verb|\dfrac| patch,
-so unlike Run~B such a run would actually perturb the training data. Given that
-same-configuration runs end several points apart, a single seed per arm would
-still detect only a large effect.
+re-scoring shows that in a training run it would enlarge the round-0 kept pool
+by about a fifth ($440\to542$ and $872\to1{,}066$), roughly $35$--$50$ times the
+change made by the \verb|\dfrac| patch, so unlike Run~B such a run would
+actually perturb the training data. Because a larger pool also means more
+optimizer steps, the comparison should hold dose fixed, either by subsampling
+the patched pool to the unpatched size or by fixing the step count. Given that
+same-configuration runs end several points apart, it needs several seeds per
+arm; a single seed would detect only a large effect.
 
 \begin{credits}
 \subsubsection{\ackname}
