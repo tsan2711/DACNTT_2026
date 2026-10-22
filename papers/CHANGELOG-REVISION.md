@@ -515,7 +515,7 @@ Tra cứu trực tiếp (theo CLAUDE.md của repo):
 
 ### 8.8 Biên dịch
 
-`tectonic -X compile paper_revised.tex` → `papers/latex/paper_revised.pdf`, **21 trang**. Không có overfull box,
+`tectonic -X compile paper_revised.tex` → `papers/latex/paper_revised.pdf`, **25 trang** (ghi "21" trước đây là sai; bản commit `8902360` cũng 25 trang). Không có overfull box,
 không có reference undefined; chỉ còn các underfull vbox ở trang float (vô hại).
 
 ### 8.9 Câu giáo sư có thể hỏi thêm (đợt 3)
@@ -536,3 +536,79 @@ không có reference undefined; chỉ còn các underfull vbox ở trang float (
 18. **"Train-on-gold giảm 20 điểm, có phải do verifier chấm sai format mới không?"** Bọn em kiểm hai cách trên CPU:
     câu bị loại mà `\boxed{}` trùng gold chỉ 14/600 và 11/600 (~2 điểm); chấm lại với bản sửa gold-storage thì vẫn
     giảm 24.7 và 22.0 điểm. Cả hai đều nhỏ hơn rất nhiều so với mức giảm, dù không phải audit tay.
+
+> **Sửa Q16 (đợt 4):** câu trả lời trên ("không giống học theo verifier") sai hướng. Pool 89–91% `\boxed` nhưng
+> các lời giải *viết xong* ở vòng 0 còn boxed hơn (95.6/98.5%), rồi giảm xuống 69.7/82.9% trong khi pool cũng giảm
+> (73–77% ở vòng 2). Tức là giảm *về phía* pool — học theo pool hay trôi đều cho ra như vậy. Trả lời đúng: "tỉ lệ
+> `\boxed` không phân biệt được hai giả thuyết". Ngoài ra pass@1 có tăng một lần (+0.7 ở 1e-4 seed 1, CI chứa 0),
+> nên nói "không bao giờ tăng *có ý nghĩa*".
+>
+> **Sửa Q17 (đợt 4):** "ở lr thấp hơn thì toàn bộ là phần làm sai" không chính xác. Ở 1e-4/2e-4 phần finished là
+> 93–169% của mức giảm (4/5 run vượt 100%, run 1e-4 seed 2 là 93%). Ở 1e-5 seed 1, termination chiếm 63% của mức giảm
+> 1.4 điểm, nhưng mức giảm này nằm trong nhiễu. Ngay cả ở 5e-4, replicate và msl1024 không tăng cap-hit (phần
+> finished 89%/85%).
+
+## 9. Đợt sửa thứ tư (2026-10-21): sửa theo re-review `/openaireview` của bản round 3
+
+Review: `~/Documents/GitHub/paper-review-tools/review_results/paper-revised-r3_review/` (52 issue: 6 major, 27
+moderate, 19 minor; trạng thái 47 issue cũ ở `comments/prior_issue_status.md`: 35 resolved, 11 partial, 1 unresolved).
+Đợt này chỉ sửa **6 major + các lỗi số rõ ràng**; các moderate/minor còn lại để Bi xem và quyết.
+
+### 9.0 Số liệu kiểm lại trước khi sửa (CPU, chỉ đọc)
+
+| Script | Kết quả dùng |
+|---|---|
+| `dot3/rescored_ci.py` | train-on-gold seed 2 re-score: **38.0→13.3** (không phải 40.0) — cùng partition với Run A seed 2 |
+| `dot3/extra.py` | proxy&cap/proxy vòng 2 = 80–98% (vòng 0 = 100%); tỉ số proxy ở 1e-4/2e-4 = 1.99–2.55×; ngưỡng ≥512 giảm tối đa **4.0** (B seed 2, 54.0→50.0); ≥500 tăng tối đa 1.6 |
+| `dot3/decomp.py` (chạy bằng `.venv/bin/python`) | 1e-4 seed 2: phần finished = **93%** (không "vượt toàn bộ"); replicate 5e-4 s1: cap 43.2→43.0, finished 89%; msl1024: 43.8, 85%; 1e-5 s1: termination 63% của mức giảm 1.4 |
+| `results/viec3/ci/ci.md` | replicate − A (5e-4 s1) sample acc **+3.2**; cận trên lớn nhất pass@1 **+8.0** (1e-4 s1), pass@k **+7.3** (1e-4 s3); C 1e-5: −12.7 pass@1 tới vòng 4, −13.1 sample acc |
+
+### 9.1 Sáu lỗi major
+
+| # | Lỗi | Sửa ở đâu | Sửa thành |
+|---|---|---|---|
+| M1 | Abstract "at lower rates the cap-hit share moves by at most about one point" — sai (2e-4: −2.4/−3.3; 1e-4 s3: −2.5). Do mình viết ở đợt 3 | Abstract, contributions, §5.1 | "does not rise (changes of −3.3 to +1.1 points)"; thêm "2–14 points in six runs (not in a replicate)" |
+| M2 | "Stronger training lowers accuracy" nói như sự thật, trong khi §4.5 tự gọi là "suggestive, not established" | Abstract, intro, contributions, §4.1, §4.5 (controls), §4.6 tiêu đề đoạn, §5.1, Conclusion | "Accuracy falls in every run at the highest rate; that the decline grows with the rate rests on one seed"; "most clearly at the highest rate"; §4.1 "suggests, on the evidence of one seed"; bỏ chữ ký "pass@1 falls faster than pass@k" (chỉ đúng 2/4 run ở 5e-4) |
+| M3 | Cận 2.2 điểm dùng CI không tính seed variance, và hedge mất dần từ abstract → contributions → conclusion | Abstract, contributions, §5.1, Conclusion | Mọi chỗ nhắc 2.2 đều kèm: CI bỏ seed variance (replicate lệch 3.2 điểm), không phải equivalence test → "loose bound" |
+| M4 | Lập luận `\boxed` so pool với *toàn bộ* generation; so với generation viết xong thì giảm về phía pool → "runs against the training data" không đứng | §4.5 (đoạn 5e-4), §5.1, contributions, abstract, Conclusion | "The style shift does not separate imitation from drift"; bỏ "does not converge on the form it is trained on", bỏ "verifier's preferred \boxed form" |
+| M5 | Cận 2.2 dựa trên sample accuracy — không nằm trong 4 measure đặt trước, được chọn làm primary sau khi chạy | §3.4, abstract, §5.1, contributions, Conclusion | §3.4 nói rõ "after the runs we chose it… post hoc in the choice of measure"; báo kèm cận trên của pass@1/pass@k đặt trước (+8.0/+7.3) |
+| M6 | Mức giảm ở 1e-5 dựa trên CI vừa sát 0 từ A/B seed 0 (gần như một replicate) | §4.2, §5.1 | "possible small decline at this rate, not an established one"; nêu cận trên (−0.6, 0.0; −0.5, −0.9), A/B seed 0 gần một replicate, seed 1 không CI nào loại 0, ~4/76 CI loại 0 do ngẫu nhiên |
+
+### 9.2 Lỗi số
+
+| Chỗ | Cũ | Mới | Nguồn |
+|---|---|---|---|
+| §3.2 re-score train-on-gold seed 2 | "from 40.0% to 16.0% and 13.3%" | "…and from 38.0% to 13.3%" | `rescored_ci.py` |
+| §4.5 B seed 1 Δpass@1 | 4.6 | 4.7 | 50/150→43/150; Table 7 |
+| §4.5 Run C 1e-5 vòng 2 | −1.4 | −1.3 (thêm: −12.7 tới vòng 4) | ci.json 100→98/150 |
+| §4.5 boxed của generation vòng 0 | 50–52% | 52–54% (Table 5) | Table 5 |
+| §4.5 gate retention | 31% | 30–31% | 440/1400, 424/1400 |
+| §4.6 ngưỡng 512 | "at most about 4.7" | 4.0 | `extra.py` |
+| §4.6 proxy | "Every proxy-flagged generation is a cap-hit"; 2.0–2.9× | "At round 0 every…(at round 2, 80–98% are)"; 2.0–2.6× | `extra.py` |
+| §4.6 decomposition 1e-4/2e-4 | "finished part exceeds the whole change" | "in four of the five runs and is 93% in the fifth" | `decomp.py` |
+| §4.6 | "Termination contributes only at the highest rate" | "contributes materially only at the highest rate… about a tenth to two thirds" + replicate/msl1024 + 1e-5 s1 63% | `decomp.py` |
+| §5.1 churn | "about 5 to 18" | "about 2 to 20" | table.md (agent kiểm) |
+| §5.1 | "pass@1 never rises" | "never rises detectably (largest +0.7 [−6.7, +8.0])" | Table 7 |
+| Conclusion | "the sign flips between seeds" | "pass@1 flips sign between seeds; removing the filter lowers pass@4 at both seeds, within noise" | Table 8 / ci.md |
+| §4.2 | "no evidence of compounding at this rate" | "…on MATH-500 at this rate (Run C… loses most of its pass@1 in its last round)" | Table 4 |
+| §4.5 controls | "Since stronger training produces more decline, dose and data differ at once in both" | train-on-gold gần khớp step với Run A (175 vs 163–220) → chủ yếu khác data; no-filter 3–4× step | Table 8 |
+
+### 9.3 Chưa sửa (moderate/minor còn lại trong `final_issues.json`)
+
+Ví dụ đáng cân nhắc: decomposition không có CI; "termination" gồm cả phần cap-accuracy; B−A lẫn offset chấm điểm;
+gold-storage suy rộng sang run không re-score; Table 10 (1536) chỉ về non-termination hơn là "what adapters write";
+Xu et al./Egashira et al. mô tả thiếu; contamination không "affects all arms alike". Abstract giờ khá dài — Bi nên
+cắt khi polish.
+
+### 9.4 Biên dịch
+
+`tectonic paper_revised.tex` → 25 trang, không lỗi.
+
+### 9.5 Câu giáo sư có thể hỏi thêm (đợt 4)
+
+19. **"Cận 2.2 điểm có tin được không?"** Chỉ là cận lỏng: (a) đọc từ CI sau khi chạy, không có margin đặt trước;
+    (b) dùng sample accuracy, chọn làm primary sau khi chạy (trên pass@1/pass@k đặt trước, cận trên tới +8.0/+7.3);
+    (c) CI không tính seed variance — một replicate cùng cấu hình đã lệch 3.2 điểm.
+
+20. **"Lr cao hơn thì giảm nhiều hơn — chắc không?"** Không chắc. Seed 1 giảm đều (−1.5/−3.5/−8.3), seed 2 gần phẳng
+    (−3.7/−3.8/−4.7). Chỉ chắc là ở 5e-4 mọi run đều giảm.
