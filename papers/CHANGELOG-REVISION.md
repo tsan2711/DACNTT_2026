@@ -678,3 +678,40 @@ giải thích), không có reference hay citation bị undefined.
 
 25. **"Có nhánh nào làm model tốt lên không?"** Không, kể cả train trên lời giải tham chiếu. Vì vậy không loại được
     khả năng chính recipe (loss tính cả prompt, LoRA r16 q/v) đã gây hại. Cái này nằm ở Limitation 12.
+
+## Soát số lần 3 (2026-10-24)
+
+Soát từng con số trong `papers/latex/paper_revised.tex` với dữ liệu thô (không chạy thí nghiệm mới, không đổi lập luận).
+Chỉ sửa chỗ sai số hoặc hai phần mâu thuẫn nhau, sửa ít nhất có thể. `paper.tex`/`paper.pdf` không động tới.
+Biên dịch lại bằng `tectonic paper_revised.tex`: 29 trang, không có tham chiếu nào chưa định nghĩa.
+
+| # | Chỗ | Cũ → Mới | Bằng chứng |
+|---|-----|----------|------------|
+| 1 | Bảng `tab:decomp`, dòng "B, 1", cột Δcap-hit | `+4.6` → `+4.7` (chưa làm tròn: 43.17→47.83) | `experiments/viec3/review_cpu/dot4/boot.txt` dòng `b-math500-lr-fixed` |
+| 2 | §4.6, độ nhạy ngưỡng 500 | "at most about 1.6 points" → "about 2 points" (lớn nhất 2.0 ở 1e-4 seed 1 và 2, vòng 2: 44.7 với 42.7, 44.8 với 42.8) | chạy lại `experiments/viec3/review_cpu/dot3/extra.py` |
+| 3 | §4.6, số mẫu gần ngưỡng | "22–37 of 600 ... have 480–507 tokens" → "at most 37 of 600" (msl1024 chỉ có 15–18, gold chỉ có 1–11) | `extra.py` / `capanat.py` (scratch `anat_check.py`) |
+| 4 | §4.6, proxy bắt cap-hit ở vòng 2 tại 5e-4 | "65–75%" → "58–75%" (replicate `a-lr5e4-keep` là 58%) | `capanat.py` trên `a-lr5e4-keep` |
+| 5 | §4.1, selection-set và exam | "falls as much as or more ... not checked at 10^-5" → giới hạn câu này cho Run A ở hai learning rate cao hơn; thêm số ở 1e-5: A −1.0/−1.1 trên selection, −2.4/−1.4 trên exam; Run C 5e-4 −11.3 với −15.4; Run C 1e-5 −13.8 với −13.0 | `experiments/viec3/review_cpu/analysis.md` §9 |
+| 6 | §4.4, tỉ lệ đáp án khác nhau | "0.542→0.554 for Run A, seed 0, the only run for which we computed it" → gần như đứng yên ở các run MATH-500 (thêm B seed 1: 0.528→0.543), nhưng tăng ở Run C (0.359→0.500) và Design P (0.443→0.712) | `results/viec3/mechanism-ABC.md`, `results/viec3/mechanism.md` |
+| 7 | Contributions | "a second, untested defect ... affects about one in six" → "measured post hoc but never varied in a training run, rejects about one in six (15.5–18.6%)". Đây là chỗ còn sót của câu chuyện cũ. | §3.2 cùng file; `REVIEW-VERIFIED.md` |
+| 8 | §3.2, tỉ lệ lỗi gold trên tập selection | "where the share is slightly higher" → "about the same (17.8–18.8% at round 0)". So với cả 500 đề: 18.4/17.9/18.3% | dữ liệu `patched/`, scratch `fn.py` |
+| 9 | §4.6, đoạn sau bảng `tab:reeval` | mức tăng sample accuracy "+6.9 ... +5.9" → "+6.8 ... +5.8". Tính từ số chưa làm tròn, giống cách tính các deficit −8.0/−8.8/… ngay sau đó | `results/viec3/base-reeval/reeval_0.json`, `a-lr5e4-keep/reeval_2.json` |
+
+**Đã kiểm, khớp:**
+- Các bảng isolated, lrcheck, lrseries, controls, passk, bydataset, `tab:ci` (với `results/viec3/ci/ci.md`), anatomy.
+- Bảng `tab:reeval`, cả 8 dòng (với các file `reeval_*.json`). Mức dao động khi re-score là 2.7–6.7.
+- Re-score gold-boxed, pool +22/23%, 51 gold không parse được, các số Design P.
+- Steps, loss, phần trăm boxed, số dfrac, số mẫu dropped/fallback.
+- Câu "manufactured" (dòng ~1336) đang phủ nhận claim cũ, giữ nguyên.
+- "degenerate" chỉ còn dùng cho proxy ký tự, đã giải thích. Không còn "4.4%", "driver", hay "finished accuracy holds".
+
+**Không kiểm được:**
+- Giá trị matched của B ở 1e-5 (−4.2 [−7.8,−0.9] và −1.1 [−4.6,2.6]) và số ký tự/token (3.3; 4.9–5.0; 2.7–3.0). Máy không có tokenizer Qwen, và không có tokcache cho `qwen15b-math500-b`/`b-seed1`.
+- Cận trên 18.6%. Dữ liệu `patched/` lưu được chỉ cho 15.5–18.4% trên 500 đề (A seed 1 R0 là 642/787). `REVIEW-VERIFIED.md` ghi 642/789 (18.6%), và tập exam lên tới 18.6%. Giữ nguyên, ghi lại để Bi xem.
+- "about 2 to 20" (churn) và "35–50 times" là số xấp xỉ. Thực tế lost tối đa 25 ở NF seed 2; 102/3≈34, 194/4≈48.5. Không sửa.
+
+**Đã sửa sau đó (2026-10-24, trước buổi báo cáo):**
+- `15.5–18.6%` → `15.5–18.4%` ở cả 7 chỗ (abstract, contributions, §3.2 ×2, §4, discussion, conclusion). Tính lại từ `scored/` (verifier gốc) và `patched/` (bản vá boxed): A s1 18.4/16.9/15.7; A s2 17.9/17.9/15.5; A 1e-5 s0 18.3/17.9/17.5/16.7/16.8. Mẫu số chốt là cả 500 đề; 18.6% chỉ có ở tập exam nên không dùng. Ô `18.6%` trong bảng ở dòng ~556 là số khác, không đụng.
+- "about 2 to 20" → "about 2 to 25".
+- "roughly 35–50 times" → "roughly 34–49 times".
+- PDF biên dịch lại bằng `tectonic`, vẫn 29 trang.
