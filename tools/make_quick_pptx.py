@@ -357,13 +357,13 @@ notes(s, "Bỏ lọc train gấp 3–4 lần số bước nên cũng không ph�
 # =========================================================== 6 finding
 s = new()
 header(s, num(), "PHÁT HIỆN", "Máy chấm loại nhầm khoảng 1/6 lời giải đúng",
-       sub="Nguyên nhân: đáp án gốc lưu không có \\boxed{}, model lại viết \\boxed{}.")
+       sub="Nguyên nhân: đáp án trong sách và đáp án model viết khác cách trình bày, dù cùng một số.")
 s.shapes.add_picture(f"{FIG}/final_verifier.png", Emu(L - 100000), Emu(2000000), width=Emu(6300000))
 x = L + 6500000
 tb(s, x, 2100000, 4000000, 700000, "15,5–18,4%", size=34, font=DISPLAY, bold=True, color=CRIMSON)
 tb(s, x, 2800000, 4000000, 400000, "lời giải đúng bị chấm sai, ở mọi vòng", size=13, color=BODY)
 tb(s, x, 3450000, 4000000, 1500000,
-   "Ví dụ: gold \\frac43,\nmodel viết \\boxed{\\frac{4}{3}} → SAI.\n\n"
+   "Ví dụ: sách ghi 4/3, model cũng ra 4/3\nnhưng viết khác kiểu → máy chấm: SAI.\n\n"
    "Chấm lại không có lỗi này:\nmodel vẫn tụt, kết luận giữ nguyên.",
    size=13.5, color=BODY, line_spacing=1.4)
 pill(s, x, 5500000, "XEM DEMO →", fill=CRIMSON, width=2200000)
@@ -469,101 +469,70 @@ tb(s, L, 4500000, W, 300000,
 # Each entry: (paper reference shown on the slide, script, extra notes if asked).
 SCRIPT = {
     1: (None,
-        "Dạ em chào thầy. Nhóm em gồm Nguyễn Tấn Sang và Trần Duy Anh. Đề tài như trên slide: tự học có làm "
-        "model nhỏ giỏi toán hơn không?\n"
-        "Lần báo cáo trước (13/9), nhóm em đã thấy giả thuyết ban đầu không đứng, nhưng mới thử ở một learning "
-        "rate. Hôm nay em trình bày phần làm tiếp, và toàn bộ đã được viết thành paper.\n"
-        "Câu trả lời ngắn, như dòng dưới tiêu đề: không thấy tiến bộ nào đo được. Thí nghiệm dùng model "
-        "Qwen2.5 1,5B, fine-tune LoRA, máy chấm math-verify, trên hai bộ đề MATH-500 và GSM8K.",
+        "Em chào thầy. Nhóm em gồm Sang và Duy Anh. Đề tài: tự học có làm model nhỏ giỏi toán hơn không?\n"
+        "Lần trước nhóm đã báo cáo phần đầu. Hôm nay em trình bày phần làm tiếp, đã viết thành paper.\n"
+        "Nói trước câu trả lời: không thấy model giỏi lên.",
         None),
     2: ("Trong paper: §1 Introduction (tr. 1) · §3.4 các thước đo (tr. 4)",
-        "Đầu tiên em nhắc lại câu hỏi. Ba ô trên slide là vòng lặp: (1) model làm mỗi đề nhiều lần, "
-        "(2) máy chấm chỉ so đáp án cuối, không đọc lời giải, (3) model học lại trên các lời giải được nhận. "
-        "Lặp 3 đến 5 vòng; đây là vòng lặp của STaR, ReST, RFT.\n"
-        "Vì máy chấm chỉ nhìn đáp án cuối nên mới có câu hỏi trong khung: sau nhiều vòng, model giỏi toán thật, "
-        "hay chỉ học cách viết mà máy chấm chịu nhận?\n"
-        "Dòng cuối là cách đo: chấm trên 150 đề thi riêng model không được học, với 4 thước đo chốt trước khi "
-        "chạy: pass@1, pass@k, kiểu chữ \\boxed, và số đề thêm/mất. Phần này là mục 1 và 3.4 của paper.",
-        "4 thước đo được chốt TRƯỚC khi chạy. pass@k: làm k lần, ít nhất 1 lần đúng; k là số lần làm lại, "
-        "không phải số cách giải."),
+        "Nhắc lại ý tưởng: model tự làm bài, máy tự chấm, bài nào đúng thì giữ lại cho model học. Lặp vài vòng.\n"
+        "Nhưng máy chấm chỉ nhìn đáp số cuối, không đọc lời giải. Nên câu hỏi là: model giỏi toán thật, hay chỉ "
+        "học cách ghi đáp số cho vừa ý máy chấm?\n"
+        "Nhóm chấm trên 150 đề mà model chưa từng học (mục 1 của paper).",
+        "4 thước đo chốt TRƯỚC khi chạy: pass@1, pass@k, kiểu chữ, số đề thêm/mất. pass@k: làm k lần, ít nhất "
+        "1 lần đúng; k là số lần làm lại, không phải số cách giải."),
     3: ("Trong paper: §3.3 + Bảng 1 (tr. 4–5) · §4.1–4.2, Bảng 2–3 (tr. 6–8)",
-        "Để không bỏ sót tiến bộ nếu có, nhóm thử đủ nhiều cấu hình, là bốn con số trên slide: 4 learning rate "
-        "từ 1e-5 đến 5e-4; 2 đến 3 seed mỗi cấu hình; 3 đối chứng là vá máy chấm, bỏ lọc, và học lời giải gốc; "
-        "và 150 đề thi tách riêng có khoảng tin cậy bootstrap. Danh sách các lần chạy là Bảng 1 của paper.\n"
-        "Khung dưới là phần thầy đã nghe lần trước: thiết kế đầu tiên trộn 2 bộ dữ liệu và chấm trên chính tập "
-        "train thì model tụt từ 50 xuống 18,6%. Làm lại cho sạch thì cú sụp đó không lặp lại. Đây là mục 4.1 "
-        "và 4.2 của paper.",
+        "Để chắc không bỏ sót, nhóm thử nhiều cách: 4 tốc độ học, mỗi cách chạy 2–3 lần, thêm 3 phép đối chứng.\n"
+        "Khung dưới là chuyện lần trước: cách làm đầu tiên cho thấy model tụt mạnh, nhưng làm lại cẩn thận thì "
+        "không tụt như vậy nữa (Bảng 1 và mục 4 của paper).",
         "Thiết kế gộp P khác thiết kế cô lập I ở nhiều điểm cùng lúc, trong đó P train nhiều bước hơn khoảng "
         "4,5 lần mỗi vòng. Nên nhóm không kết luận nguyên nhân cú sụp."),
     4: ("Trong paper: §4.4, Bảng 4–5 (tr. 7–9) · §4.5, Bảng 7 (tr. 9–11)",
-        "Kết quả thứ nhất, như tiêu đề: không learning rate nào làm model giỏi lên. Biểu đồ là thay đổi độ chính "
-        "xác sau 2 vòng trên MATH-500; mọi cột đều âm.\n"
-        "Ba con số bên phải: 0 lần chạy nào tăng pass@1 hay pass@k một cách chắc chắn; mức tăng lớn nhất mà dữ "
-        "liệu còn cho phép chỉ khoảng 2,2 điểm; và ở learning rate cao, model tụt rõ, vì lời giải viết xong kém "
-        "chính xác hơn.\n"
-        "Số chi tiết ở Bảng 4 và khoảng tin cậy ở Bảng 5; phân tích vì sao tụt ở mục 4.5, Bảng 7.",
+        "Kết quả 1: không tốc độ học nào làm model giỏi lên. Trên biểu đồ, mọi cột đều đi xuống.\n"
+        "Học chậm thì gần như không đổi, học nhanh thì còn tệ đi. Mức tăng lớn nhất có thể chỉ khoảng 2 điểm "
+        "(Bảng 4 của paper).",
         "Cận 2,2 điểm là cận lỏng: tính trên độ chính xác mẫu (chọn sau khi chạy) và không tính nhiễu giữa các "
-        "lần train (chạy lặp cùng cấu hình lệch 3,2 điểm). 'lr càng cao càng tụt' mới rõ ở 1 seed."),
+        "lần train (chạy lặp cùng cấu hình lệch 3,2 điểm). 'lr càng cao càng tụt' mới rõ ở 1 seed. "
+        "Lý do tụt (mục 4.5): lời giải viết xong sai nhiều hơn, và viết dài hơn nên bị cắt ở 512 token."),
     5: ("Trong paper: Bảng 6 (tr. 10) · §4.3 (tr. 7)",
-        "Kết quả thứ hai: sửa máy chấm hay bỏ máy chấm đều không tạo khác biệt rõ. Bảng là pass@1 ở vòng 2, "
-        "learning rate 5e-4; model gốc là 33,3 ở seed 1 và 31,3 ở seed 2.\n"
-        "Dòng đầu, máy chấm gốc, là mốc. Vá \\dfrac và không lọc đều đổi chiều theo seed: seed này cao hơn mốc, "
-        "seed kia thấp hơn. Học lời giải mẫu của người thì tụt mạnh nhất.\n"
-        "Vì sao bản vá vô tác dụng: nó chỉ đổi 0 đến 4 bài trong tập học, quá nhỏ để đo ra. Bài học là đếm tần "
-        "suất lỗi trước khi xây thí nghiệm. Bảng này là Bảng 6 của paper.",
-        "Bỏ lọc train gấp 3–4 lần số bước nên cũng không phải đối chứng sạch. Học lời giải mẫu: model chuyển "
-        "hẳn sang kiểu viết của lời giải mẫu và tụt mạnh."),
+        "Kết quả 2: nhóm thử sửa máy chấm, và thử bỏ hẳn máy chấm. Cả hai đều không tạo khác biệt rõ: lần chạy "
+        "này tốt hơn, lần khác lại kém hơn.\n"
+        "Lý do: lỗi được sửa quá hiếm, chỉ ảnh hưởng vài bài (Bảng 6 của paper).",
+        "Bản vá \\dfrac chỉ đổi 0–4 bài trong tập học. Bỏ lọc train gấp 3–4 lần số bước nên cũng không phải "
+        "đối chứng sạch. Học lời giải mẫu của người thì tụt mạnh nhất."),
     6: ("Trong paper: §3.2 (tr. 3) · Phụ lục B (tr. 15)",
-        "Phát hiện quan trọng nhất: máy chấm loại nhầm khoảng 1/6 lời giải đúng. Nguyên nhân như dòng dưới tiêu "
-        "đề: đáp án gốc lưu không có \\boxed, còn model lại viết \\boxed.\n"
-        "Biểu đồ bên trái: ở mỗi vòng 0, 1, 2, cột xanh là số lời giải bản vá nhận, cột đỏ là số máy chấm gốc "
-        "nhận; khoảng chênh là 15,5 đến 18,4%, con số lớn bên phải, ở mọi vòng.\n"
-        "Ví dụ ngay dưới: đáp án gốc là \\frac43, model viết \\boxed{\\frac{4}{3}}. Cùng là 4/3 nhưng bị chấm "
-        "sai.\n"
-        "Nhóm chấm lại khi không còn lỗi này: model vẫn tụt, kết luận giữ nguyên. Lỗi này ở mục 3.2, phần kiểm "
-        "tra đầy đủ ở phụ lục B. Em xin demo ngay.",
-        "Lỗi có trong mọi thí nghiệm, cả hai nhánh, nên không làm sai phép so sánh, nhưng kéo pass@1 tuyệt đối "
-        "thấp 4,7–8,0 điểm. Sửa lỗi này làm tập học lớn thêm ~1/5 (440 → 542). Nếu hỏi lệch do đâu: do cách "
-        "lưu đáp án gốc trong pipeline, nhóm tự kiểm lại thì phát hiện, đã chấm lại toàn bộ; paper có ghi."),
+        "Phát hiện quan trọng: máy chấm gạch nhầm khoảng 1/6 số bài làm đúng.\n"
+        "Lý do đơn giản: đáp án trong sách và đáp án model viết khác cách trình bày, dù cùng một số. Ví dụ cùng "
+        "là bốn phần ba, nhưng viết khác kiểu là máy chấm sai.\n"
+        "Nhóm sửa lỗi này rồi chấm lại: model vẫn không giỏi lên. Kết luận giữ nguyên (mục 3.2 của paper).",
+        "Cụ thể: đáp án gốc lưu trơn (\\frac43), model bọc trong \\boxed{}. Loại nhầm 15,5–18,4% bài đúng; kéo "
+        "pass@1 tuyệt đối thấp 4,7–8,0 điểm. Nếu hỏi lệch do đâu: do cách lưu đáp án gốc trong pipeline, nhóm "
+        "tự kiểm lại thì phát hiện, đã chấm lại toàn bộ; paper có ghi."),
     7: ("Tái hiện số trong §3.2 và Phụ lục B của paper",
-        "Chạy lệnh ở cuối slide trong terminal, Enter để qua từng phần.\n"
-        "Phần 1, ví dụ tay: cùng đáp án 4/3, máy chấm gốc SAI, bản vá ĐÚNG.\n"
-        "Phần 2, ví dụ thật: 3 lời giải thật của model bị loại nhầm, đọc đề và đáp án.\n"
-        "Phần 3, bảng tổng: 15,5 đến 18,4% trên 500 đề, mọi vòng, đúng con số trong paper.\n"
-        "Phần 4, chấm trực tiếp lời giải ngẫu nhiên ngay trên máy.",
-        "Chạy ở thư mục gốc repo, chỉ cần CPU. Nếu lỗi: mở 25-10-2026/demo_output.txt. Phần 4 dao động theo cỡ "
-        "mẫu; số để trích là bảng phần 3."),
+        "Em xin chạy demo. Phần 1: cùng một đáp số, máy chấm gốc nói SAI, sửa rồi thì nói ĐÚNG.\n"
+        "Phần 2: vài bài thật của model bị chấm nhầm.\n"
+        "Phần 3: tính trên toàn bộ, khoảng 1/6 bài đúng bị gạch, đúng như trong paper.",
+        "Chạy ở thư mục gốc repo, chỉ cần CPU. Nếu lỗi: mở 25-10-2026/demo_output.txt. Phần 4 (--live) dao "
+        "động theo cỡ mẫu; số để trích là bảng phần 3."),
     8: ("Trong paper: §5.1 (tr. 10)",
-        "Trả lời câu hỏi đề tài, hai ô trên slide.\n"
-        "Model có giỏi toán hơn không? Không thấy. Ở cả 4 learning rate, không lần chạy nào tăng chắc chắn; "
-        "learning rate cao thì còn tụt.\n"
-        "Có học cách viết của máy chấm không? Chưa rõ. Dấu hiệu nhóm chốt trước cần pass@1 tăng, mà pass@1 "
-        "không tăng, nên không kết luận được.\n"
-        "Tóm lại, như dòng cuối: ở quy mô 1,5B, LoRA, một máy chấm theo luật, vòng lặp tự học không cho thấy "
-        "tiến bộ. Đây là mục 5.1 của paper.",
-        "Điểm yếu tự nhận: luật đọc kết quả chỉ một chiều, nhóm nhận ra sau khi chạy."),
+        "Trả lời câu hỏi đề tài.\n"
+        "Model có giỏi toán hơn không? Không thấy.\n"
+        "Có học cách ghi đáp số cho vừa ý máy chấm không? Chưa đủ dữ liệu để kết luận.\n"
+        "Tóm lại: với model nhỏ, vòng tự học này không làm model giỏi lên (mục 5.1 của paper).",
+        "Dấu hiệu chốt trước cần pass@1 tăng, mà pass@1 không tăng, nên không kết luận được. Điểm yếu tự "
+        "nhận: luật đọc kết quả chỉ một chiều."),
     9: ("Trong paper: §2 Related Work (tr. 2)",
-        "Kết quả này có lạc lõng không? Bảng so với 5 bài, đều trích ở mục 2 của paper.\n"
-        "Hai dòng KHÁC: STaR đề xuất vòng lặp này; ReST-EM có tiến bộ nhưng giảm dần sau vòng đầu, và dùng model "
-        "lớn.\n"
-        "Hai dòng GIỐNG: Yue và cộng sự ở NeurIPS 2025 thấy RL tăng pass@1 nhưng ở pass@k lớn thì model gốc "
-        "thắng; Phantom Gains 2026 thấy khi có đối chứng, nhiều tiến bộ hoá ra là ảo. Đây là bài gần nhóm nhất.\n"
-        "Dòng cuối, TinyV, ghi nhận cùng hiện tượng máy chấm loại nhầm lời giải đúng.\n"
-        "Kết luận ở khung dưới: bài báo cáo tiến bộ dùng model lớn; ở 1,5B nhóm thấy như các bài kiểm chứng.",
-        "Tra arXiv 24/10/2026: STaR 2203.14465, ReST-EM 2312.06585, Yue 2504.13837, Phantom Gains 2608.20290, "
-        "TinyV 2505.14625. Chỉ trích số TinyV: >38% false negative, tăng tới 10%."),
+        "Kết quả này có khác người khác không? Các bài báo cáo tiến bộ đều dùng model lớn. Các nghiên cứu kiểm "
+        "chứng gần đây thì thấy giống nhóm: vòng tự học không làm model giỏi hơn thật.\n"
+        "Các bài này đều trích trong mục 2 của paper.",
+        "Tra arXiv 24/10/2026: STaR 2203.14465, ReST-EM 2312.06585, Yue 2504.13837, Phantom Gains 2608.20290 "
+        "(gần nhóm nhất), TinyV 2505.14625. Chỉ trích số TinyV: >38% false negative, tăng tới 10%."),
     10: ("Trong paper: §6 Limitations (tr. 11) · Phụ lục J (tr. 31), K",
-         "Cột trái là giới hạn: ít seed, 2–3 mỗi cấu hình; một model, một máy chấm, không phải RL; một số thước đo "
-         "thêm sau khi chạy; và lỗi \\boxed chưa được vá khi train.\n"
-         "Cột phải là việc tiếp theo: train lại với bản vá \\boxed và nhiều "
-         "seed; tách nguyên nhân cú sụp của thiết kế gộp; làm đối chứng dương để biết thiết kế đo được hiệu ứng cỡ "
-         "nào; và thử giới hạn token lớn hơn 512.\n"
-         "Mục 6 của paper tóm tắt, phụ lục J liệt kê đầy đủ, phụ lục K là hướng tiếp theo.",
-         "Bản vá \\boxed là thí nghiệm máy chấm có tác động thật: đổi ~1/5 tập học, gấp 34–49 lần bản vá "
-         "\\dfrac. Cần cố định số bước train khi so sánh."),
+         "Giới hạn: chạy ít lần, chỉ một model và một máy chấm.\n"
+         "Việc tiếp theo quan trọng nhất: train lại với máy chấm đã sửa lỗi (mục 6 của paper).",
+         "Bên phải còn: tách nguyên nhân cú sụp thiết kế gộp, đối chứng dương, giới hạn token lớn hơn 512. "
+         "Bản vá \\boxed đổi ~1/5 tập học, gấp 34–49 lần bản vá \\dfrac."),
     11: (None,
-         "Kết quả đầy đủ nằm trong paper, đường dẫn ở cuối slide; chi tiết ở phụ lục A đến K. Nhóm em xin cảm ơn "
-         "thầy đã lắng nghe, mời thầy đặt câu hỏi.",
+         "Chi tiết đầy đủ nằm trong paper. Em cảm ơn thầy đã lắng nghe, mời thầy đặt câu hỏi.",
          None),
 }
 DARK_SLIDES = {7, 11}
