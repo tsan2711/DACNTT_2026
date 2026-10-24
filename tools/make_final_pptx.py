@@ -21,7 +21,7 @@ from pptx.enum.text import PP_ALIGN, MSO_ANCHOR  # noqa: E402
 from pptx.enum.shapes import MSO_CONNECTOR, MSO_SHAPE  # noqa: E402
 
 REPO = "/Users/tsangcuteso1/Documents/GitHub/DACNTT_2026"
-OUT = f"{REPO}/BaoCaoCuoiKy_25-10_52300057_52300006.pptx"
+OUT = f"{REPO}/BaoCaoCuoiKy_25-10_52300057_52300006_v2.pptx"
 FIG = f"{REPO}/papers/figures"
 CPU = f"{REPO}/experiments/viec3/review_cpu"
 
@@ -495,6 +495,28 @@ tb(s, L, 5650000, W, 600000,
    "và ở một seed có nhiều lời giải chạm giới hạn 512 token hơn.",
    size=12.5, color=MUTED, line_spacing=1.35)
 notes(s, "Điểm yếu tự nhận: luật đọc kết quả là một chiều. Nhóm nhận ra điều này sau khi chạy.")
+
+# =========================================================== related work
+s = new()
+header(s, num(), "SO SÁNH", "Kết quả khớp với các nghiên cứu kiểm chứng gần đây")
+cols = [(L, 3300000, "BÀI"), (L + 3400000, 4600000, "HỌ TÌM THẤY"),
+        (L + 8100000, W - 8100000, "SO VỚI NHÓM")]
+rows = [
+    ("STaR (NeurIPS 2022)", "Tự sinh lời giải rồi học lại: có tiến bộ", "Khác"),
+    ("ReST-EM (DeepMind, 2023)", "Self-training trên MATH tốt lên, theo cỡ model", "Khác"),
+    ("Yue và cs. (NeurIPS 2025)", "RL không tạo năng lực mới; pass@k lớn không hơn", "Giống"),
+    ("Phantom Gains (2026)", "Tiến bộ ảo khi có đối chứng; làm hỏng đề đã giải được", "Giống"),
+    ("TinyV (ICML 2025)", ">38% bài đúng bị verifier chấm nhầm là sai", "Cùng hiện tượng"),
+]
+bottom = table(s, 1700000, cols, rows, rowh=480000, rsize=12.5,
+               pills={(0, 2): (GREY, "KHÁC"), (1, 2): (GREY, "KHÁC"),
+                      (2, 2): (CRIMSON, "GIỐNG"), (3, 2): (CRIMSON, "GIỐNG"),
+                      (4, 2): (CRIMSON, "CÙNG HIỆN TƯỢNG")})
+takeaway(s, bottom + 250000,
+         "Bài báo cáo cải thiện dùng model lớn (STaR nói cần model đủ mạnh). Ở model 1,5B, "
+         "nhóm thấy như các bài kiểm chứng: vòng tự học không mở rộng năng lực thật.", height=760000)
+notes(s, "Tra arXiv ngày 24/10/2026: 2203.14465, 2312.06585, 2504.13837, 2608.20290, 2505.14625. "
+         "Chỉ trích số 38% và 10% của TinyV; chưa mở bảng đầy đủ các bài khác.")
 
 # =========================================================== limitations
 s = new()

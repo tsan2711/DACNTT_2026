@@ -410,7 +410,31 @@ tb(s, L, 5400000, W, 600000,
    size=14, font=DISPLAY, color=INK)
 notes(s, "Điểm yếu tự nhận: luật đọc kết quả chỉ một chiều, nhóm nhận ra sau khi chạy.")
 
-# =========================================================== 9 limits + next
+# =========================================================== 9 related work
+s = new()
+header(s, num(), "SO SÁNH", "Kết quả khớp với các nghiên cứu kiểm chứng gần đây",
+       sub="Mục 2 (Related Work) của paper.")
+cols = [(L, 3300000, "BÀI"), (L + 3400000, 4600000, "HỌ TÌM THẤY"),
+        (L + 8100000, W - 8100000, "SO VỚI NHÓM")]
+rows = [
+    ("STaR (NeurIPS 2022)", "Đề xuất vòng sinh – lọc – học lại", "Khác"),
+    ("ReST-EM (DeepMind)", "Có tiến bộ, nhưng giảm dần sau vòng đầu; model lớn", "Khác"),
+    ("Yue và cs. (NeurIPS 2025)", "RL tăng pass@1; pass@k lớn thì model gốc thắng", "Giống"),
+    ("Phantom Gains (2026)", "Có đối chứng thì nhiều tiến bộ hoá ra là ảo", "Giống"),
+    ("TinyV (ICML 2025)", "Máy chấm luật loại nhầm nhiều lời giải đúng", "Cùng hiện tượng"),
+]
+bottom = table(s, 1950000, cols, rows, rowh=470000, rsize=12.5,
+               pills={(0, 2): (GREY, "KHÁC"), (1, 2): (GREY, "KHÁC"),
+                      (2, 2): (CRIMSON, "GIỐNG"), (3, 2): (CRIMSON, "GIỐNG"),
+                      (4, 2): (CRIMSON, "CÙNG HIỆN TƯỢNG")})
+takeaway(s, bottom + 220000,
+         "Bài báo cáo tiến bộ dùng model lớn. Ở 1.5B, nhóm thấy như các bài kiểm chứng: "
+         "vòng tự học không mở rộng năng lực thật.", height=700000)
+notes(s, "Tra arXiv 24/10/2026: STaR 2203.14465, ReST-EM 2312.06585, Yue 2504.13837, Phantom Gains 2608.20290, "
+         "TinyV 2505.14625. Phantom Gains là bài gần nhóm nhất (paper mục 2). "
+         "Chỉ trích số TinyV: >38% false negative, tăng tới 10%.")
+
+# =========================================================== 10 limits + next
 s = new()
 header(s, num(), "GIỚI HẠN & TIẾP THEO", "Chưa nói được gì, và nên làm gì tiếp")
 tb(s, L, 1650000, 5000000, 300000, "GIỚI HẠN", size=11, bold=True, color=MUTED)
@@ -428,7 +452,7 @@ for i, (a, b) in enumerate(zip(lims, nxt)):
 notes(s, "Bản vá \\boxed là thí nghiệm máy chấm có tác động thật: đổi ~1/5 tập học, gấp 34–49 lần bản vá "
          "\\dfrac. Cần cố định số bước train khi so sánh.")
 
-# =========================================================== 10 thanks
+# =========================================================== 11 thanks
 s = new()
 bg(s, DARK)
 tb(s, L, 2300000, W, 900000, "Cảm ơn thầy đã lắng nghe", size=38, font=DISPLAY,
