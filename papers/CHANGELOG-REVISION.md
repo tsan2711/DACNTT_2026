@@ -715,3 +715,34 @@ Biên dịch lại bằng `tectonic paper_revised.tex`: 29 trang, không có tha
 - "about 2 to 20" → "about 2 to 25".
 - "roughly 35–50 times" → "roughly 34–49 times".
 - PDF biên dịch lại bằng `tectonic`, vẫn 29 trang.
+
+## Rút gọn 16 trang (2026-10-24, trước buổi báo cáo 25/10)
+
+Mục tiêu: thân bài + tài liệu tham khảo ≤ 16 trang LNCS, phụ lục không giới hạn, không mất nội dung.
+Kết quả: 29 → 33 trang tổng; thân bài + references = **12 trang** (references kết thúc trang 12, phụ lục
+từ trang 13). Abstract 468 → ~240 từ.
+
+Cách làm: thân bài viết lại dạng tóm tắt (giữ nguyên các label `sec:*` để ref cũ vẫn trỏ đúng);
+**mọi đoạn và bảng gốc chép nguyên văn** xuống phụ lục sau bibliography. Trong bản chép, ref tới
+`sec:verifier/pooled/isolated/control/lrcheck/anatomy/answer/limitations` đổi sang `app:*` tương ứng.
+
+Bản đồ chuyển:
+| Phụ lục | Nội dung gốc (dòng trong bản trước khi cắt) |
+|---|---|
+| A Related Work in Full | 163–258 (cả Positioning) |
+| B The Verifier in Full | 280–383 |
+| C Uncertainty in Full | 487–520 |
+| D Design P in Full | tab:designs, 528–618 (tab:bydataset) |
+| E Design I at 1e-5 in Full | 623–652, 689–718 |
+| F Patch Control and Answer Diversity | 724–749, 754–769 |
+| G Higher Learning Rates in Full | 774–858 (tab:lrcheck), 935–947, 973–1028 |
+| H Anatomy in Full | 1033–1269 (tab:anatomy, tab:reeval) |
+| I Discussion in Full | 1277–1395 (gồm Practical Suggestions) |
+| J Limitations in Full | 1400–1472 |
+| K Future Work | 1505–1524 |
+
+Ở lại thân bài: tab:inventory, tab:passk, fig:isolated, tab:isolated, tab:lrseries, tab:ci,
+tab:controls, tab:decomp; Conclusion giữ nguyên văn.
+
+Kiểm tra: tập số trong .tex trước/sau giống hệt (491 số khác nhau, không số nào mất); không ref `??`;
+không label trùng; 33 label cũ còn đủ, thêm 11 label `app:*`. Không chạy thêm thí nghiệm nào.
