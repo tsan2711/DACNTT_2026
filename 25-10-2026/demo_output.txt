@@ -1,0 +1,50 @@
+
+=== 1. Ví dụ tay: cùng một đáp án 4/3 ===
+  gold lưu trong dataset : \frac43
+  model viết             : ... Vậy đáp số là \boxed{\frac{4}{3}}.
+  verifier gốc           : SAI
+  verifier đã vá         : ĐÚNG   (vá = bọc gold vào \boxed{} trước khi so)
+
+=== 2. Ví dụ thật: lời giải của model ở vòng 0 (a-math500-lr-fixed) ===
+
+  đề test/prealgebra/1742.json: A number is selected at random from 1 through 100, inclusive.  What is the probability that the number is a multiple of 3?
+    gold      : \dfrac{33}{100}
+    model ghi : \boxed{\frac{33}{100}}
+    verifier gốc SAI  /  đã vá ĐÚNG
+
+  đề test/algebra/2486.json: Find all $p$ which satisfy both the inequalities $0\ge 54p-144$ and $0>12-20p$. Express your answer in interval notation, reducing any fractions in your answer.
+    gold      : \left(\frac{3}{5},\frac{8}{3}\right]
+    model ghi : \boxed{\left( \frac{3}{5}, \frac{8}{3} \right]}
+    verifier gốc SAI  /  đã vá ĐÚNG
+
+  đề test/precalculus/1303.json: Suppose $\sin D = 0.7$ in the diagram below. What is $DE$? [asy]
+pair D,E,F;
+F = (0,0);
+D = (sqrt(51),7);
+E = (0,7);
+draw(D--E--F--D);
+draw(rightanglemark(D,E,F...
+    gold      : \sqrt{51}
+    model ghi : \boxed{\sqrt{51}}
+    verifier gốc SAI  /  đã vá ĐÚNG
+
+=== 3. Trên toàn bộ 500 đề, mỗi đề 4 lời giải (số đã chấm sẵn) ===
+  run                     vòng   gốc nhận / vá nhận   bị loại nhầm
+  a-math500-lr-fixed         0      642 / 787          18.4%
+  a-math500-lr-fixed         1      588 / 708          16.9%
+  a-math500-lr-fixed         2      477 / 566          15.7%
+  a-math500-lr-fixed-seed2   0      609 / 742          17.9%
+  a-math500-lr-fixed-seed2   1      582 / 709          17.9%
+  a-math500-lr-fixed-seed2   2      507 / 600          15.5%
+  qwen15b-math500-a          0     1261 / 1543         18.3%
+  qwen15b-math500-a          1     1236 / 1505         17.9%
+  qwen15b-math500-a          2     1242 / 1505         17.5%
+  qwen15b-math500-a          3     1224 / 1470         16.7%
+  qwen15b-math500-a          4     1203 / 1446         16.8%
+
+  → khoảng 15.5–18.4%: cứ ~6 lời giải đúng thì verifier gốc vứt 1 khỏi tập train.
+
+=== 4. Chấm lại trực tiếp 200 lời giải ngẫu nhiên ===
+
+  200/200  gốc nhận 64, vá nhận 80
+  bị loại nhầm: 20.0% số lời giải đúng
