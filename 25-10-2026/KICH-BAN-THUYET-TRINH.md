@@ -188,6 +188,105 @@ Lời nói dưới đây sinh từ `tools/make_quick_pptx.py`, giống hệt ph�
 
 **Không biết thì nói thật:** "Dạ nhóm chưa đo điều đó, đây là một giới hạn." Tốt hơn đoán.
 
+### Slide 8: "Tại sao lại *chưa rõ*?"
+
+Luật chốt **trước khi chạy**: chỉ kết luận "model học cách ghi đáp số cho vừa ý máy chấm" khi đủ 3 dấu hiệu:
+(1) pass@1 **tăng**, (2) pass@k **đứng yên**, (3) kiểu viết **tụ về một khuôn**. pass@1 không tăng mà còn giảm → dấu
+hiệu 1 không xuất hiện → luật không "bật" được, nên không kết luận có hay không.
+
+*Ví dụ:* muốn biết học sinh có chép bài không, thầy nhìn dấu hiệu "điểm tăng vọt mà hỏi miệng không hiểu". Học kỳ này
+điểm em đó **giảm** — thầy không kết luận được gì về chuyện chép bài.
+
+> Dạ, nhóm em chốt từ trước: chỉ kết luận khi điểm làm 1 lần **tăng** mà năng lực thật không đổi. Điểm không tăng mà
+> còn giảm, nên dấu hiệu đó không xuất hiện. Không thấy dấu hiệu không có nghĩa là không có, nên nhóm ghi "chưa rõ".
+
+| Hỏi tiếp | Trả lời |
+|---|---|
+| Sao không nhìn kiểu viết là biết? | Tỉ lệ đáp án đóng khung có đổi, nhưng giải thích được theo cả hai cách: bắt chước máy chấm, hoặc chỉ trôi dần khi học. |
+| Vậy luật có vấn đề? | Dạ đúng, luật chỉ đo được một chiều (khi điểm tăng). Nhóm nhận ra sau khi chạy và đã ghi trong paper. |
+| Muốn trả lời thì làm gì? | Cần thí nghiệm có điểm tăng (model lớn hơn), hoặc đối chứng dương: cố tình làm máy chấm ưu ái một kiểu viết rồi xem có đo ra không. |
+
+---
+
+## Demo: đọc kết quả thế nào
+
+Lệnh: `.venv/bin/python 25-10-2026/demo_verifier.py --live 200`
+
+**Ý nghĩa chung:** máy chấm **đã vá** làm y hệt máy gốc, chỉ thêm một bước: đưa đáp án sách về **cùng cách trình
+bày** với đáp án model trước khi so. Bài nào máy vá nhận mà máy gốc gạch = bài **đúng nhưng bị chấm oan**.
+
+**Phần 1 — ví dụ tay.** Sách ghi 4/3 trơn, model ghi 4/3 trong "hộp đáp án". Máy gốc SAI, máy vá ĐÚNG.
+> Cùng là 4/3, chỉ khác cách trình bày mà bị chấm sai.
+
+**Phần 2 — ví dụ thật.** 3 bài thật model làm ở vòng 0 (chưa học gì): xác suất 33/100, khoảng (3/5; 8/3], căn 51.
+Model làm đúng cả ba, máy gốc gạch cả ba.
+> Đây không phải ví dụ em tự đặt ra, mà là bài thật model làm đúng nhưng bị gạch.
+
+**Phần 3 — bảng tổng** ⭐ số để trích dẫn.
+
+| Cột | Nghĩa |
+|---|---|
+| `run` | Lần chạy (bảng dưới) |
+| `vòng` | Vòng tự học; vòng 0 = model gốc chưa học |
+| `gốc nhận` | Số bài máy gốc chấm đúng |
+| `vá nhận` | Số bài máy vá chấm đúng (gần với số bài đúng thật) |
+| `bị loại nhầm` | (vá − gốc) / vá = tỉ lệ bài đúng bị gạch oan |
+
+| Tên run | Là gì | Lời giải mỗi vòng |
+|---|---|---|
+| `a-math500-lr-fixed` | MATH-500, tốc độ học 5e-4, lần chạy 1, 3 vòng | 500 đề × 4 = 2.000 |
+| `a-math500-lr-fixed-seed2` | Cùng cấu hình, lần chạy 2 | 2.000 |
+| `qwen15b-math500-a` | Run A gốc, tốc độ học 1e-5, 5 vòng | 500 đề × **8** = 4.000 |
+
+- Dòng đầu: vòng 0 có **787** bài đúng thật, máy gốc chỉ nhận **642** → **145 bài đúng bị vứt** (18,4%).
+- **15,5–18,4% ở mọi run, mọi vòng** → lỗi có mặt suốt quá trình, không phải tình cờ. Model mất ~1/6 dữ liệu tốt
+  mỗi vòng.
+- Cột "vá nhận" giảm qua các vòng (787 → 708 → 566) → model làm đúng ít đi, khớp kết luận "học nhanh thì tệ đi".
+- Tiêu đề phần 3 in "mỗi đề 4 lời giải", nhưng `qwen15b-math500-a` là 8 lời giải mỗi đề (nên số gấp đôi). "500 đề"
+  là toàn bộ MATH-500, gồm cả phần để học và 150 đề thi.
+
+**Phần 4 — chấm trực tiếp 200 bài ngẫu nhiên.** Ví dụ `gốc nhận 64, vá nhận 80` → 16/80 = 20%. Lệch so với
+15,5–18,4% là bình thường: mẫu nhỏ (chỉ 80 bài đúng), chạy lại có thể ra ~13–20%.
+> Chấm ngay tại chỗ trên mẫu nhỏ ra khoảng 20%, cùng mức với bảng tổng. Số chính thức là 15,5–18,4%.
+
+**Câu chốt demo:**
+> Máy chấm gạch oan khoảng 1/6 số bài đúng, ở mọi lần chạy, mọi vòng. Nhóm đã chấm lại không có lỗi này, và model
+> vẫn không giỏi lên.
+
+---
+
+## Hỏi về fine-tuning model
+
+**Cấu hình (paper §3.4, tr. 4) — thuộc để trả lời nhanh:**
+
+| Thông số | Giá trị | Nói đơn giản |
+|---|---|---|
+| Model | Qwen2.5-1.5B-Instruct | Model nhỏ 1,5 tỷ tham số, đã được dạy làm theo lệnh |
+| Cách train | LoRA SFT (TRL `SFTTrainer`) | Học có giám sát, chỉ chỉnh thêm một phần nhỏ |
+| LoRA | rank 16, alpha 32, trên `q_proj` và `v_proj` | Gắn "miếng vá" nhỏ vào 2 ma trận của lớp attention |
+| Mỗi vòng | adapter **mới**, train lại **từ model gốc** | Không cộng dồn qua các vòng (giống ReST-EM) |
+| Dữ liệu học | mọi lời giải được máy chấm nhận | Không tự chọn tay |
+| Epoch / batch | 1 epoch, batch 2 | Số bước train = nửa số bài được giữ |
+| Optimizer | AdamW, giảm tốc độ học tuyến tính, không warmup | Mặc định phổ biến |
+| Tốc độ học | 1e-5 (mặc định ban đầu), sau thử 1e-4, 2e-4, 5e-4 | |
+| Độ dài | tối đa 512 token cả khi sinh lẫn khi train | |
+| Sinh lời giải | nhiệt độ 0,8, top-p 0,8, top-k 20; k = 4 hoặc 8 lần mỗi đề | |
+| Máy | 1 GPU T4 trên Kaggle, fp16 | Miễn phí, giới hạn 12 giờ/phiên |
+
+| Thầy hỏi | Trả lời |
+|---|---|
+| LoRA là gì, sao không fine-tune toàn bộ? | LoRA giữ nguyên model gốc, chỉ học thêm hai ma trận nhỏ gắn vào. Số tham số học ít hơn rất nhiều nên vừa GPU T4 miễn phí. Fine-tune toàn bộ 1,5B không vừa bộ nhớ và dễ làm hỏng model hơn. |
+| Có thể LoRA quá yếu nên model mới không học được? | Dạ, ở tốc độ học 1e-5 model gần như không đổi, nên nhóm tăng lên tới 5e-4. Ở đó model **thay đổi rõ** (tụt), tức là LoRA đủ mạnh để làm thay đổi model; chỉ là thay đổi theo chiều xấu. Đây cũng là một giới hạn nhóm ghi lại: chưa thử rank lớn hơn hay full fine-tune. |
+| Sao mỗi vòng train lại từ model gốc mà không train tiếp? | Để mỗi vòng chỉ khác nhau ở **dữ liệu được chọn**, không cộng dồn lỗi qua các vòng. ReST-EM cũng làm vậy. Đổi lại, kết quả chưa nói gì về kiểu train cộng dồn. |
+| Tốc độ học 1e-5 có phải quá nhỏ? | Dạ, đó là mặc định chưa tinh chỉnh. Nhóm nhận ra nên đã thử thêm 3 mức lớn hơn; không mức nào làm model giỏi lên (Bảng 4). |
+| Sao chỉ 1 epoch? | Để không học thuộc tập nhỏ. Hệ quả: lần chạy nào giữ được nhiều bài thì train nhiều bước hơn, nên các đối chứng có lượng train khác nhau. Paper ghi là giới hạn. |
+| Sao loss tính cả phần đề bài? | Đó là mặc định của thư viện lúc chạy. Ảnh hưởng chưa đo; nếu làm lại sẽ chỉ tính loss trên lời giải. |
+| 512 token có đủ không? | Không hoàn toàn: model gốc đã có 41–48% lời giải chạm giới hạn ở lr 5e-4. Nhóm kiểm thêm với giới hạn dài hơn: khoảng cách giữa model đã học và model gốc **không thu hẹp**, nên giới hạn token không giải thích hết việc tụt (Phụ lục H). |
+| Khác gì RL (như GRPO, PPO)? | RL học từ điểm thưởng ngay trong lúc sinh. Nhóm dùng cách đơn giản hơn: lọc bài đúng rồi học có giám sát (SFT). Kết quả chỉ nói về cách này, không về RL. |
+| Model tụt vì sao? | Hai phần (mục 4.5): (1) lời giải viết xong sai nhiều hơn, tụt 5,5–10,6 điểm so với model gốc trên cùng đề; (2) bị cắt ở 512 token nhiều hơn. Phần bị cắt chiếm 12–30% mức tụt ở lần chạy 1, 52–72% ở lần chạy 2. Ở tốc độ học 1e-4 và 2e-4 thì toàn bộ là do (1). |
+| Có overfitting không? | Chấm trên 150 đề model chưa từng học nên đo được khả năng tổng quát. Ở đề chưa học, điểm không tăng; với lr cao thì giảm. |
+| Train trên lời giải gold của người sao lại tụt mạnh nhất? | Lời giải model viết ngắn đi hơn một nửa, và độ đúng của các bài viết xong cũng tụt mạnh (mục 4.5). Lời giải mẫu của người viết ngắn, bỏ bước, khác kiểu model tự viết. Kim và cộng sự thấy hiện tượng gần giống (ngắn đi, kém đi), nhưng họ làm self-distillation, không phải SFT thường, nên chỉ là tương tự lỏng (§2). |
+
 ## Số cần thuộc
 1,5B · 150 đề thi · 4 learning rate · 2–3 seed · 3 đối chứng · tăng tối đa ≤ 2,2 điểm ·
 loại nhầm 15,5–18,4% (~1/6) · thiết kế gộp 50 → 18,6% · paper 12 trang thân bài + phụ lục A–K.
