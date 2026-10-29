@@ -746,3 +746,29 @@ tab:controls, tab:decomp; Conclusion giữ nguyên văn.
 
 Kiểm tra: tập số trong .tex trước/sau giống hệt (491 số khác nhau, không số nào mất); không ref `??`;
 không label trùng; 33 label cũ còn đủ, thêm 11 label `app:*`. Không chạy thêm thí nghiệm nào.
+
+## Thêm đề xuất kiểm toán (2026-10-29)
+
+Lý do: Bi yêu cầu paper "phải đề xuất một cái gì đó mới hơn" so với các bài khác. Không chạy thí nghiệm mới;
+mọi số lấy từ phần chấm lại đã có ở phụ lục B và bảng phân rã (`tab:decomp`).
+
+- **Mục mới §5.3 "A Proposed Audit for GVT with a Biased Verifier"** (`sec:audit`), bốn kiểm tra, ghi rõ post hoc:
+  1. Kiểm định thích nghi verifier không phụ thuộc chiều của accuracy: $r_t$ = tỉ lệ lời giải được verifier đã sửa
+     chấp nhận nhưng verifier gốc từ chối, trên chính mẫu của vòng lặp, theo từng vòng. Số: 15,5–18,4% ở mọi vòng
+     của 3 run (phụ lục B, dòng "Over all 500 problems…"); tính theo pass@1 chấm lại là 17% (seed 1) và 20% (1e-5).
+     Giới hạn ghi trong mục: 1 loại lỗi, 3 run, 3–5 vòng, không có khoảng tin cậy cho $r_t$.
+  2. Phân rã độ giảm dưới cap token cố định (12–30% / 52–72%, `tab:decomp`).
+  3. Kiểm tra liều của đối chứng trước khi chạy (patch đổi 0–4 ví dụ; lỗi gold-storage đổi 440→542).
+  4. Ghép liều giữa thiết kế gộp và tách (khoảng 4,5×).
+- **Contributions:** thêm gạch đầu dòng cho (1); viết lại gạch đầu dòng về learning rate cao thành "phân rã" (2).
+- **Related Work (thân bài) và Positioning (phụ lục A):** thêm câu định vị. Câu so với TinyV/Huang được viết
+  hẹp ("dùng tỉ lệ từ chối sai để sửa hoặc so verifier") vì abstract TinyV không nói rõ có theo dõi theo bước train
+  hay không. Phantom Gains (arXiv 2608.20290) theo abstract: kiểm định từng bài so với null đo riêng, FDR.
+- **§5.1, abstract, kết luận:** mỗi chỗ thêm một câu nhắc tới kiểm định (1).
+- Biên dịch: 34 trang, thân bài + references hết trang 14 (≤ 16). Không có ref undefined. Một overfull ở bảng
+  `tab:inventory` có từ trước (bản HEAD cũng có).
+- `25-10-2026/paper_revised.pdf` giữ nguyên bản đã báo cáo 25/10.
+
+Bi cần tự bảo vệ được: vì sao $r_t$ không giảm thì nói "không thích nghi". Trả lời: nếu model học viết theo cái
+verifier chấp nhận, nó sẽ ít viết dạng bị lỗi này từ chối hơn, nên $r_t$ phải giảm. $r_t$ phẳng chỉ loại được
+thích nghi mạnh với lỗi này, không loại được thích nghi yếu hay với lỗi khác.

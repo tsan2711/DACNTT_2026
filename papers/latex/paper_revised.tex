@@ -10,6 +10,9 @@
 % New numbers come only from CPU re-analysis of saved generations; see
 % CHANGELOG-REVISION.md, section 8.
 %
+% 2026-10-29: proposed audit (Section sec:audit) added from existing re-scoring;
+% no new runs. See CHANGELOG-REVISION.md, last section.
+%
 % CONDENSED 2026-10-24: main text and references cut to 16 pages for the
 % report. Every original paragraph and table is kept verbatim in the
 % appendices after the bibliography; the move map is in CHANGELOG-REVISION.md.
@@ -53,7 +56,10 @@ and the intervals for sample accuracy (chosen as primary after the runs)
 exclude gains above $2.2$ points in every run; they omit training-seed
 variance, so the bound is loose. Whether the model learns the verifier's style
 stays open: our pre-set rule cannot fire while accuracy falls, and the
-\verb|\boxed| share does not discriminate. Accuracy falls in every run at the
+\verb|\boxed| share does not discriminate. We propose a test that works in
+either direction, the per-round share of the loop's own correct solutions that
+a known verifier defect rejects; for the one frequent defect we measured it
+stays near one in six, so the model does not adapt to it. Accuracy falls in every run at the
 highest rate, where finished generations become $5$--$11$ points less accurate
 and the share hitting the $512$-token cap rises, clearly only at one seed. A
 storage defect in our pipeline makes the verifier reject $15.5$--$18.4\%$ of
@@ -107,13 +113,22 @@ a learning rate that changed the outputs little (Section~\ref{sec:isolated}).
 \item For a 1.5B model, LoRA SFT and one rule-based verifier, no gain is
 detectable on a held-out exam at four learning rates on MATH-500 or two on
 GSM8K, with problem-level bootstrap intervals for every comparison.
+\item A test of verifier adaptation that does not depend on the direction of
+accuracy (defined post hoc, Section~\ref{sec:audit}): per round, the share of
+the loop's own correct solutions that a known verifier defect rejects. A model
+that learns to write what the verifier accepts should drive this share down,
+whether accuracy rises or falls. For the one frequent defect we measured it
+stays at about one in six in every round of three runs, so for that defect the
+model does not adapt.
 \item An observation on style with its limits: the \verb|\boxed| share falls
 under self-training in a way that cannot tell imitation of the pool from drift;
 the one strong style convergence occurs when training on reference solutions,
 with no verifier in the loop.
-\item A post hoc description of what training at the highest rate changes:
-finished generations lose $5.5$--$10.6$ points against the untrained model on
-the same problems, and the cap-hit share rises only at that rate.
+\item A decomposition of an accuracy decline under a fixed token cap into a
+finished-accuracy part and a cap-share part, applied post hoc to what training
+at the highest rate changes: finished generations lose $5.5$--$10.6$ points
+against the untrained model on the same problems, and the cap-hit share rises
+only at that rate.
 \item Design lessons: a verifier-patch control whose treatment changes $0$--$4$
 training examples cannot detect an effect, while a second, unvaried defect
 rejects about one in six correct solutions; and pooled and isolated designs
@@ -157,8 +172,10 @@ can cut accuracy while shortening responses; our train-on-gold control shows a
 similar surface signature. We found no multi-round study combining a measured
 format-biased rule-based verifier with a patched-verifier control, but since our
 patch proved too weak (Section~\ref{sec:control}) we do not claim this
-combination as the contribution. Appendix~\ref{app:related} gives the full
-comparison.
+combination as the contribution. Nor did we find, in the studies above, a
+per-round measurement of the verifier's false-reject rate on the loop's own
+outputs, which is the test we propose in Section~\ref{sec:audit}.
+Appendix~\ref{app:related} gives the full comparison.
 
 \section{Setup}
 \label{sec:setup}
@@ -234,7 +251,7 @@ Section~\ref{sec:lrcheck}; Table~\ref{tab:inventory} lists every run. A
 ``seed'' sets the exam partition, the selection set and the training randomness
 at once; runs with the same seed share the partition.
 
-\begin{table}[t]
+\begin{table}[!htb]
 \caption{All runs (Qwen2.5-1.5B-Instruct unless stated). Design~P was run once
 per model. ``Pool'' is the round-0 kept pool (training examples; optimizer
 steps are half of it).}
@@ -324,7 +341,7 @@ much as the exam), and dose explains at most the level of the decline, not its
 acceleration under shrinking pools. No run separates these explanations
 (Appendix~\ref{app:pooled}).
 
-\begin{table}[t]
+\begin{table}[!htb]
 \caption{Design~P: pass@1 and pass@8 over five GVT rounds, pooled
 GSM8K + MATH-500, scored on the selection set. Round 0 is the untrained
 base model. Section~\ref{sec:pooled} explains why these numbers cannot
@@ -360,7 +377,7 @@ on MATH-500 the adapter barely changes the outputs (length and cap-hit share
 are essentially unchanged), so a flat curve there shows that this training step
 did little, not that GVT is stable (Appendix~\ref{app:isolated}).
 
-\begin{figure}[t]
+\begin{figure}[!htb]
 \centering
 \includegraphics[width=\textwidth]{isolated_by_round.png}
 \caption{Design~I at $10^{-5}$: pass@1 (left) and pass@8 (right) on the held-out
@@ -371,7 +388,7 @@ The one large visible movement is Run~C's pass@1 in the final round.}
 \label{fig:isolated}
 \end{figure}
 
-\begin{table}[t]
+\begin{table}[!htb]
 \caption{Design~I: pass@1 and pass@8 on the held-out exam set (150
 problems), Qwen2.5-1.5B, learning rate $10^{-5}$. Runs A and B differ only in the
 \texttt{\textbackslash dfrac}/\texttt{\textbackslash tfrac} patch. Each seed draws its own exam partition, so
@@ -431,7 +448,7 @@ that differ by $0$--$3$ examples, which illustrates trajectory noise.
 start more boxed than the verifier-accepted pool and fall below it as the pool
 falls too, which imitation of the pool and drift would both produce.
 
-\begin{table}[t]
+\begin{table}[!htb]
 \caption{Run~A (MATH-500, original verifier, $k=4$, three rounds) across learning
 rates and seeds: pass@1, pass@4 and sample accuracy (600 exam generations) at
 round~0 $\to$ round~2, the share of round-2 generations that hit the
@@ -457,7 +474,7 @@ $5\times10^{-4}$ & 2 & $31.3\to27.3$ & $51.3\to44.7$ & $30.8\to26.2$ & $51.2\%$ 
 \end{tabular}
 \end{table}
 
-\begin{table}[t]
+\begin{table}[!htb]
 \caption{Change from round~0 to the last round (percentage points) with 95\%
 paired problem-level bootstrap intervals over the 150 exam problems
 ($10{,}000$ resamples; \texttt{experiments/viec3/bootstrap\_ci.py}). Last round
@@ -523,7 +540,7 @@ suggest this fall is mostly real rather than verifier error. Run~C at
 $5\times10^{-4}$ (GSM8K, one run) falls $22.0$ points of pass@1, from both less
 accurate and more unfinished solutions (Appendix~\ref{app:lrcheck}).
 
-\begin{table}[t]
+\begin{table}[!htb]
 \caption{Controls at $5\times10^{-4}$ (MATH-500, $k=4$, three rounds), on the
 exam partition of Run~A at the same seed. Pool is the number of training
 examples per round; optimizer steps are half of it.}
@@ -570,7 +587,7 @@ truncated examples and re-scoring adapters at a $1{,}536$-token cap leave the
 picture unchanged, within the noise of single runs
 (Appendix~\ref{app:anatomy}).
 
-\begin{table}[t]
+\begin{table}[!htb]
 \caption{Decomposition of the change in sample accuracy (points, round~0 $\to$
 last round, MATH-500 exam unless stated) into finished-accuracy, cap-share and
 cap-accuracy parts, with the change in cap-hit share. Intervals: paired
@@ -622,9 +639,10 @@ every MATH-500 run but one, the problems lost equal or outnumber those gained.
 this. The pre-set pattern requires pass@1 to rise, which never happens
 detectably (the largest rise is $+0.7$ [$-6.7$, $+8.0$]), so the rule's silence
 is not evidence against verifier-style learning. The \verb|\boxed| share falls
-in a way imitation and drift would both produce. The one direct test points away
-from adaptation for one defect class: the share of correct answers the
-gold-storage defect rejects does not fall over rounds.
+in a way imitation and drift would both produce. The one direct test, the
+direction-free test of Section~\ref{sec:audit}, points away from adaptation for
+one defect class: the share of correct answers the gold-storage defect rejects
+does not fall over rounds.
 
 \emph{What happened to the pooled collapse?} It does not reproduce when each
 dataset has its own adapter and is scored on held-out problems. Because the
@@ -644,6 +662,47 @@ consistent difference at the resolution of this setup}. The frequent gold-storag
 defect was never varied, so whether systematic false negatives are harmless in
 general, as Egashira et al.\ find for RLVR, our data cannot say. Practical
 suggestions are listed in Appendix~\ref{app:discussion}.
+
+\subsection{A Proposed Audit for GVT with a Biased Verifier}
+\label{sec:audit}
+
+Our pre-set reading rule failed in a predictable way: it tied ``learning the
+verifier's style'' to rising accuracy, so it could not speak once accuracy fell.
+From the analyses we added after the runs we propose four checks for
+self-training with a rule-based verifier. All four were defined post hoc here;
+we offer them as a protocol for future studies, not as tested methods.
+
+\emph{(i) A direction-free adaptation test.} Fix a repaired verifier $V'$ that
+corrects a known defect class of the training verifier $V$. At each round $t$,
+on the loop's own generations, compute
+\[
+r_t = \frac{\#\{\text{accepted by } V' \text{ but rejected by } V\}}{\#\{\text{accepted by } V'\}} .
+\]
+If the model learns to write what $V$ accepts, $r_t$ should fall over rounds,
+whatever happens to accuracy. For the gold-storage defect
+(Section~\ref{sec:verifier}) $r_t$ is $15.5$--$18.4\%$ in every round of the
+three runs we re-scored (Run~A at $5\times10^{-4}$, two seeds, and at $10^{-5}$),
+with no downward trend; as a share of re-scored pass@1 it is $17\%$ at round~0
+and round~2 at seed~1 and $20\%$ throughout at $10^{-5}$
+(Appendix~\ref{app:verifier}). This covers one defect class, three runs and
+three to five rounds, with no interval on $r_t$; it rules out strong adaptation to this
+defect, not weak adaptation or adaptation to others.
+
+\emph{(ii) Decompose declines under a fixed cap.} Report the change in sample
+accuracy split into a finished-accuracy part and a cap-share part
+(Table~\ref{tab:decomp}). Here the split moves the reading: at
+$5\times10^{-4}$ the cap share accounts for $12$--$30\%$ of the decline at one
+seed and $52$--$72\%$ at the other.
+
+\emph{(iii) Check the dose of a control before running it.} Count how many
+training examples the treatment changes. Our \verb|\dfrac| patch changed $0$--$4$
+examples, while the unvaried gold-storage defect would have changed about a
+fifth of the pool ($440\to542$ at round~0); the first number alone shows the
+patch control could not detect an effect.
+
+\emph{(iv) Match training dose across designs.} Our pooled design trained on
+about $4.5\times$ more examples per round than the isolated one, so its sharp
+decline cannot be attributed to pooling.
 
 \section{Limitations}
 \label{sec:limitations}
@@ -675,7 +734,10 @@ primary measure chosen after the runs) exclude gains above about $2.2$ points,
 a loose bound because they omit training-seed variance and are not an
 equivalence test. The second stays open, because our pre-set rule for it could
 only fire if accuracy rose, and the post hoc \verb|\boxed| share falls in a way
-that imitation of the less-boxed training pool and drift would both produce. In
+that imitation of the less-boxed training pool and drift would both produce.
+The direction-free test we propose, the per-round share of the loop's own
+correct solutions that a verifier defect rejects, answers it for one defect:
+that share does not fall, so the model does not learn to avoid it. In
 a post hoc description, most clearly at the highest rate, the model becomes less
 accurate on the solutions it does finish; more generations
 hit the token cap only at the highest rate, and clearly only at one of its two
@@ -888,6 +950,15 @@ too weak to test anything (Section~\ref{app:control}), we do not present this
 combination as the contribution. The contribution is the absence of a
 detectable gain under four pre-set measures with intervals, the
 description of what training at higher rates changes, and the design lessons.
+Among these, what we did not find in the surveyed studies is a test of
+verifier adaptation that does not depend on the direction of accuracy: Xu et
+al.\ calibrate per-problem transition statistics against a measured null,
+TinyV and Huang et al.\ measure false-reject rates to repair or compare
+verifiers, and Egashira et al.\ inject hand-designed error patterns; none of
+them, as far as we read, uses the verifier's false-reject rate on the loop's
+own outputs, round by round, as a test of whether the model adapts to the
+verifier. Section~\ref{sec:audit} proposes this test, with a decomposition of
+declines under a fixed cap and two dose checks, as an audit protocol.
 \section{The Verifier in Full}
 \label{app:verifier}
 
