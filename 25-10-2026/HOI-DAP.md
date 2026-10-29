@@ -29,8 +29,10 @@ Nguồn: §3.4 "Uncertainty", phụ lục C (trang 18), `experiments/viec3/boots
 Nguồn: §1 "Contributions", §2, phụ lục A mục "Positioning". Số liệu bài RL đối chiếu với abstract và bản HTML
 trên arXiv ngày 29/10/2026.
 
-**Câu trả lời ngắn:** Bài em không đề xuất phương pháp tốt hơn RL. Em kiểm tra công thức self-training bằng SFT
-(kiểu STaR/RFT), loại rẻ và hay dùng nhất, với cách đo chặt. Ở 1.5B nó không cho cải thiện đo được.
+**Câu trả lời ngắn:** Bài em không so độ chính xác với RL. Bài em hỏi điểm tăng có phải học thật không. Các bài RL
+cho thấy điểm tăng, nhưng *Spurious Rewards* cho thấy RL tăng điểm cả khi reward ngẫu nhiên, nên câu hỏi đó vẫn
+mở. Bài em đề xuất một phép kiểm cho câu hỏi này (§5.3), áp được cho cả SFT lẫn RL vì không cần train lại, và
+chạy nó trên SFT. Áp lên checkpoint RL là bước tiếp theo, paper ghi rõ là chưa làm.
 
 **Đóng góp, so với hai bài gần nhất** (Xu et al. *Phantom Gains*, Qwen3-8B; Egashira et al., lỗi verifier
 trong RLVR, bài toán số học tổng hợp):

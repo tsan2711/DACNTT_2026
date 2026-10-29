@@ -772,3 +772,29 @@ mọi số lấy từ phần chấm lại đã có ở phụ lục B và bảng 
 Bi cần tự bảo vệ được: vì sao $r_t$ không giảm thì nói "không thích nghi". Trả lời: nếu model học viết theo cái
 verifier chấp nhận, nó sẽ ít viết dạng bị lỗi này từ chối hơn, nên $r_t$ phải giảm. $r_t$ phẳng chỉ loại được
 thích nghi mạnh với lỗi này, không loại được thích nghi yếu hay với lỗi khác.
+
+## Xoay khung bài quanh "điểm tăng chưa phải học thật" (2026-10-29, đợt 2)
+
+Lý do: Bi hỏi "đã có bài RL chính xác hơn thì bài mình đóng góp gì". Trả lời: bài không cạnh tranh độ chính xác;
+bài hỏi điểm tăng có phải học thật không, và đề xuất phép kiểm §5.3 áp được cho cả SFT lẫn RL.
+
+- **Abstract viết lại** (348 → khoảng 245 từ): mở bằng vấn đề (RL/self-training báo gain lớn, nhưng RL với reward
+  ngẫu nhiên cũng tăng điểm), rồi phép kiểm, rồi kết quả. Bỏ khỏi abstract câu về thiết kế gộp (vẫn ở thân bài).
+- **Mở đầu:** thêm đoạn thứ hai về RLVR ở cỡ 1.5B và *Spurious Rewards*; câu "open on the second" đổi thành
+  "phép kiểm trả lời cho một loại lỗi".
+- **Contributions:** phép kiểm lên đầu, thêm ý "chỉ cần generation của checkpoint + verifier đã sửa nên áp được cho RLVR".
+- **Related Work:** đoạn mới "RL with verifiable rewards at small scale".
+- **§5.3:** đoạn mới "Applying check (i) to RLVR"; ghi rõ **chưa chạy** trên checkpoint RL.
+- **Kết luận:** thêm 2 câu đóng khung; bước tiếp là áp phép kiểm cho checkpoint RLVR công khai.
+- **Trích dẫn mới (4), đã tra arXiv 29/10:** Shao et al. 2506.10947 (random reward +21,4 vs ground truth +29,1 trên
+  Qwen2.5-Math-7B, MATH-500); Wang et al. 2504.20571, NeurIPS 2025 (Qwen2.5-Math-1.5B, 36,0% → 73,6%);
+  Dang & Ngo 2503.16219 (R1-Distill-1.5B, AMC23 63% → 80%, khoảng 7.000 mẫu); Zeng et al. 2503.18892 (10 base
+  model, gồm Qwen2.5 từ 0.5B).
+- Build: 35 trang; thân bài + references kết thúc trước trang 16; không có ref undefined.
+
+Bi cần tự bảo vệ được: "Sao không tự chạy phép kiểm trên RL?" → cần GPU để sinh lời giải từ checkpoint RL; quota
+hết và đợt chạy vừa rồi đã chốt là cuối. Paper ghi rõ là chưa làm, coi là bước tiếp theo.
+
+- **Tiêu đề đổi** (29/10): "No Detectable Self-Improvement from Generate–Verify–Train Iterations: A Negative
+  Result with Qwen2.5-1.5B, LoRA SFT and a Rule-Based Verifier" → "Mathematics or the Verifier? A Direction-Free
+  Test of Verifier Adaptation, Applied to Self-Training of Qwen2.5-1.5B". Tiêu đề chạy: "Mathematics or the Verifier?".

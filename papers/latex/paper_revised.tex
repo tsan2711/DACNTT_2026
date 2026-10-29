@@ -30,11 +30,10 @@
 
 \begin{document}
 
-\title{No Detectable Self-Improvement from Generate--Verify--Train
-Iterations: A Negative Result with Qwen2.5-1.5B, LoRA SFT and a Rule-Based
-Verifier}
+\title{Mathematics or the Verifier? A Direction-Free Test of Verifier
+Adaptation, Applied to Self-Training of Qwen2.5-1.5B}
 
-\titlerunning{No Detectable GVT Self-Improvement at 1.5B}
+\titlerunning{Mathematics or the Verifier?}
 
 \author{Tan Sang Nguyen\inst{1} \and Duy Anh Tran\inst{1}}
 \authorrunning{T. S. Nguyen and D. A. Tran}
@@ -44,33 +43,31 @@ Verifier}
 \maketitle
 
 \begin{abstract}
-Generate $\rightarrow$ verify $\rightarrow$ select $\rightarrow$ train (GVT)
-self-training is said to let a small language model improve its own reasoning
-without new labels. We test this on Qwen2.5-1.5B-Instruct with LoRA SFT and the
-rule-based verifier \texttt{math-verify}, which rejects some correct answers
-because of how they are written, asking whether the model gets better at
-mathematics or only learns to write what the verifier accepts. On a held-out
-exam of 150 problems, at four learning rates on MATH-500 and two on GSM8K, no
-pass@1 or pass@$k$ gain has a problem-level bootstrap interval excluding zero,
-and the intervals for sample accuracy (chosen as primary after the runs)
-exclude gains above $2.2$ points in every run; they omit training-seed
-variance, so the bound is loose. Whether the model learns the verifier's style
-stays open: our pre-set rule cannot fire while accuracy falls, and the
-\verb|\boxed| share does not discriminate. We propose a test that works in
-either direction, the per-round share of the loop's own correct solutions that
-a known verifier defect rejects; for the one frequent defect we measured it
-stays near one in six, so the model does not adapt to it. Accuracy falls in every run at the
-highest rate, where finished generations become $5$--$11$ points less accurate
-and the share hitting the $512$-token cap rises, clearly only at one seed. A
-storage defect in our pipeline makes the verifier reject $15.5$--$18.4\%$ of
-correct solutions; re-scored without it, the declines remain. Patching a rarer
-defect and removing the filter make no consistent difference, but both
-controls are underpowered and differ in training dose. A sharp decline in an
-earlier pooled design does not reproduce under isolation and held-out scoring,
-and its cause is not identified. Full analyses are in the appendices.
+Self-training and reinforcement learning with verifiable rewards report large
+gains for small language models, but a rising score does not show that a
+model learned mathematics rather than what its verifier accepts; RL with
+random rewards has been shown to raise accuracy too. We propose a test that
+separates the two without assuming accuracy rises: per checkpoint, the share
+of the model's own correct solutions that a known verifier defect rejects,
+which should fall if the model adapts to the verifier. It needs no
+retraining, so it applies to RL checkpoints as well. We apply it, post hoc,
+to generate--verify--select--train self-training of Qwen2.5-1.5B-Instruct
+with LoRA SFT and the rule-based verifier \texttt{math-verify}. A storage
+defect makes the verifier reject $15.5$--$18.4\%$ of correct solutions, and
+that share does not fall over rounds: the model does not adapt to this
+defect. Nor does it improve. On a held-out exam of 150 problems, at four
+learning rates on MATH-500 and two on GSM8K, no pass@1 or pass@$k$ gain has a
+problem-level bootstrap interval excluding zero, and sample-accuracy intervals
+exclude gains above $2.2$ points, a loose bound that omits training-seed
+variance. At the highest rate accuracy falls in every run, and finished
+solutions become $5$--$11$ points less accurate. Our pre-set rule for verifier-style learning could fire only if
+accuracy rose, which motivates the new test. Controls that patch a rarer
+defect or remove the filter are underpowered and show no consistent
+difference.
 
 \keywords{self-training \and self-improvement \and verifier bias \and
-mathematical reasoning \and small language models \and negative result.}
+mathematical reasoning \and small language models \and verifiable rewards
+\and negative result.}
 \end{abstract}
 
 \section{Introduction}
@@ -89,6 +86,22 @@ compares it with the gold, and it rejects some correct answers written in forms
 it does not parse (Section~\ref{sec:verifier}). The training signal is ``was the
 final string accepted'', not ``were the steps right''.
 
+The same gap runs through reinforcement learning with verifiable rewards
+(RLVR), which reports large gains at this scale: GRPO on a single training
+example lifts Qwen2.5-Math-1.5B from $36.0\%$ to $73.6\%$ on
+MATH-500~\cite{ref_oneshot}, and similar recipes improve
+DeepSeek-R1-Distill-Qwen-1.5B~\cite{ref_openrs} and open base models from
+$0.5$B up~\cite{ref_simplerl}. Yet Shao et al.~\cite{ref_spurious} find that
+GRPO with \emph{random} rewards raises Qwen2.5-Math-7B by $21.4$ points on
+MATH-500, against $29.1$ with ground-truth rewards. A rising score therefore
+does not by itself show that a model has learned to solve more problems,
+rather than to surface behaviour it already had or to produce what its reward
+accepts. What is missing is a test that separates ``better at mathematics''
+from ``better at what the verifier accepts'' and that does not presuppose that
+accuracy rises. This paper studies that question in the cheapest and most
+widely used form of the loop, offline rejection-sampling SFT, and proposes such
+a test.
+
 We ask: \emph{after several GVT rounds, is the model better at mathematics, or
 has it only learned to write what the verifier accepts?} We fixed four measures
 in advance: (i)~pass@1; (ii)~pass@$k$; (iii)~output style, chiefly the share of
@@ -100,8 +113,10 @@ can only fire when accuracy rises (Section~\ref{sec:answer}). Measures of
 termination and the re-scoring for a second verifier defect were added after
 the runs; we mark them as post hoc.
 
-Our answer is negative on the first branch and open on the second. We detect no
-improvement on held-out problems at any learning rate we tried. What appears,
+Our answer is negative on the first branch. On the second, the pre-set rule
+is silent, and the test we propose in its place (Section~\ref{sec:audit})
+answers it for one verifier defect: the model does not learn to avoid it. We
+detect no improvement on held-out problems at any learning rate we tried. What appears,
 most clearly at the highest rate, is lower accuracy on the solutions the model
 does finish and more generations that run out of tokens. Two earlier readings
 did not hold up, and we report why: a pooled design whose sharp decline did not
@@ -110,16 +125,17 @@ a learning rate that changed the outputs little (Section~\ref{sec:isolated}).
 
 \paragraph{Contributions.}
 \begin{itemize}
-\item For a 1.5B model, LoRA SFT and one rule-based verifier, no gain is
-detectable on a held-out exam at four learning rates on MATH-500 or two on
-GSM8K, with problem-level bootstrap intervals for every comparison.
 \item A test of verifier adaptation that does not depend on the direction of
 accuracy (defined post hoc, Section~\ref{sec:audit}): per round, the share of
 the loop's own correct solutions that a known verifier defect rejects. A model
 that learns to write what the verifier accepts should drive this share down,
-whether accuracy rises or falls. For the one frequent defect we measured it
-stays at about one in six in every round of three runs, so for that defect the
-model does not adapt.
+whether accuracy rises or falls. The test needs only each checkpoint's
+generations and a repaired verifier, so it applies to RLVR as well as to SFT.
+For the one frequent defect we measured it stays at about one in six in every
+round of three runs, so for that defect the model does not adapt.
+\item For a 1.5B model, LoRA SFT and one rule-based verifier, no gain is
+detectable on a held-out exam at four learning rates on MATH-500 or two on
+GSM8K, with problem-level bootstrap intervals for every comparison.
 \item An observation on style with its limits: the \verb|\boxed| share falls
 under self-training in a way that cannot tell imitation of the pool from drift;
 the one strong style convergence occurs when training on reference solutions,
@@ -149,6 +165,20 @@ Self-Training~\cite{ref_teacherfree} concludes that self-training ``amplifies bu
 does not compound''. Training repeatedly on model-generated data erodes
 distribution tails~\cite{ref_collapse}, and a narrow selector can accelerate
 collapse~\cite{ref_selectionbias}.
+
+\paragraph{RL with verifiable rewards at small scale.}
+RLVR with GRPO reports large gains near our model size: one training example
+lifts Qwen2.5-Math-1.5B on MATH-500 from $36.0\%$ to $73.6\%$~\cite{ref_oneshot},
+about $7{,}000$ examples lift DeepSeek-R1-Distill-Qwen-1.5B on AMC23 from $63\%$
+to $80\%$~\cite{ref_openrs}, and zero-RL works across ten open base models
+including Qwen2.5 from $0.5$B~\cite{ref_simplerl}. These studies improve
+accuracy, which our SFT loop does not, but they do not ask what the gain
+consists of. Shao et al.~\cite{ref_spurious} show that it need not be reward
+learning: random rewards raise Qwen2.5-Math-7B by $21.4$ points on MATH-500,
+which they trace to amplified pre-existing behaviour, and the effect varies by
+model family. We do not compete with RLVR on accuracy; the test we propose
+(Section~\ref{sec:audit}) is meant to ask of such gains whether the model has
+adapted to its verifier, and we apply it only to SFT.
 
 \paragraph{Verifier error.}
 TinyV~\cite{ref_tinyv} finds that rule-based verifiers reject many correct
@@ -704,6 +734,17 @@ patch control could not detect an effect.
 about $4.5\times$ more examples per round than the isolated one, so its sharp
 decline cannot be attributed to pooling.
 
+\emph{Applying check (i) to RLVR.} The test needs no training: only a set of
+checkpoints, their generations on fixed problems, and a repaired verifier
+$V'$. In RLVR a false reject gives the correct answer zero reward, so a policy
+that adapts to $V$ should write the rejected form less often and $r_t$ should
+fall over training steps. Given the gains of
+Section~\ref{sec:related}, and Shao et al.'s finding that even random
+rewards raise accuracy~\cite{ref_spurious}, this is where the test would be
+most informative: a gain with flat $r_t$ is evidence against adaptation to
+that defect, a gain with falling $r_t$ is evidence for it. We have not run
+it on RL checkpoints.
+
 \section{Limitations}
 \label{sec:limitations}
 
@@ -756,6 +797,10 @@ held-out scoring, and because that design also trained several times longer per
 round, we leave its cause open. We report the earlier readings that did not hold
 up because the designs that produced them are common.
 
+A rising score, in self-training or in RLVR, does not by itself show that a
+model learned mathematics rather than its verifier. The per-round false-reject
+test we propose asks that question directly and works whether accuracy rises
+or falls; the natural next step is to apply it to public RLVR checkpoints.
 Future work, including a dose-matched control for the gold-storage defect,
 is outlined in Appendix~\ref{app:future}.
 
@@ -780,6 +825,10 @@ Verifiers. arXiv:2510.00915 (2025)
 Cobbe, K., Kosaraju, V., Bavarian, M., Chen, M., Jun, H., Kaiser, L.,
 Plappert, M., Tworek, J., Hilton, J., Nakano, R., Hesse, C., Schulman, J.:
 Training Verifiers to Solve Math Word Problems. arXiv:2110.14168 (2021)
+
+\bibitem{ref_openrs}
+Dang, Q.-A., Ngo, C.: Reinforcement Learning for Reasoning in Small LLMs: What
+Works and What Doesn't. arXiv:2503.16219 (2025)
 
 \bibitem{ref_delayplateau}
 Egashira, K., Vero, M., Dekoninck, J., D\"orner, F.E., Staab, R., Vechev,
@@ -806,6 +855,12 @@ Qiao, X., Du, X., Liu, W., Zhang, J., Mai, P., Zhang, M., Pang, Y.:
 When Sample Selection Bias Precipitates Model Collapse. arXiv:2606.13732
 (2026)
 
+\bibitem{ref_spurious}
+Shao, R., Li, S.S., Xin, R., Geng, S., Wang, Y., Oh, S., Du, S.S., Lambert,
+N., Min, S., Krishna, R., Tsvetkov, Y., Hajishirzi, H., Koh, P.W.,
+Zettlemoyer, L.: Spurious Rewards: Rethinking Training Signals in RLVR.
+arXiv:2506.10947 (2025)
+
 \bibitem{ref_collapse}
 Shumailov, I., Shumaylov, Z., Zhao, Y., Papernot, N., Anderson, R., Gal,
 Y.: AI models collapse when trained on recursively generated data. Nature
@@ -823,6 +878,12 @@ Self-Training (ReST) for Language Modeling. arXiv:2308.08998 (2023)
 \bibitem{ref_teacherfree}
 Strozzi, I.L.: Teacher-Free Self-Training Amplifies but Does Not Compound:
 A Pass@k Crossover on a Free-Verifier Domain. arXiv:2606.07856 (2026)
+
+\bibitem{ref_oneshot}
+Wang, Y., Yang, Q., Zeng, Z., Ren, L., Liu, L., Peng, B., Cheng, H., He, X.,
+Wang, K., Gao, J., Chen, W., Wang, S., Du, S.S., Shen, Y.: Reinforcement
+Learning for Reasoning in Large Language Models with One Training Example.
+In: NeurIPS (2025). arXiv:2504.20571
 
 \bibitem{ref_phantom}
 Xu, C., Yan, N., Chen, L., Kechadi, M.-T.: Phantom Gains: Auditing
@@ -846,6 +907,11 @@ LLMs Beyond the Base Model? arXiv:2504.13837 (2025)
 \bibitem{ref_star}
 Zelikman, E., Wu, Y., Mu, J., Goodman, N.D.: STaR: Bootstrapping Reasoning
 With Reasoning. arXiv:2203.14465 (2022)
+
+\bibitem{ref_simplerl}
+Zeng, W., Huang, Y., Liu, Q., Liu, W., He, K., Ma, Z., He, J.: SimpleRL-Zoo:
+Investigating and Taming Zero Reinforcement Learning for Open Base Models in
+the Wild. arXiv:2503.18892 (2025)
 
 \end{thebibliography}
 
