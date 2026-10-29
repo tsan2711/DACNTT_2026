@@ -7,6 +7,7 @@ Phần 1 và 2 chấm trực tiếp bằng math-verify. Phần 3 đọc kết qu
 experiments/viec3/review_cpu/{scored,patched}/ (chấm lại cả 2000 lời giải mất vài phút).
 """
 import argparse
+import csv
 import json
 import random
 import sys
@@ -87,7 +88,8 @@ def part2(args):
 
 
 def part3(args):
-    print("\n=== 3. Trên toàn bộ 500 đề, mỗi đề 4 lời giải (số đã chấm sẵn) ===")
+    print("\n=== 3. Trên toàn bộ 500 đề MATH-500, mọi lời giải của mọi vòng (số đã chấm sẵn) ===")
+    print("  (2 run đầu: mỗi đề 4 lời giải; qwen15b-math500-a: mỗi đề 8 lời giải)")
     print("  run                     vòng   gốc nhận / vá nhận   bị loại nhầm")
     for run in ["a-math500-lr-fixed", "a-math500-lr-fixed-seed2", "qwen15b-math500-a"]:
         orig, fixed = Counter(), Counter()
@@ -99,10 +101,78 @@ def part3(args):
             print(f"  {run:24s} {k:>3}    {orig[k]:>5} / {fixed[k]:<5}       "
                   f"{(fixed[k] - orig[k]) / fixed[k] * 100:5.1f}%")
     print("\n  → khoảng 15.5–18.4%: cứ ~6 lời giải đúng thì verifier gốc vứt 1 khỏi tập train.")
+    pause(args)
+
+
+# (tên hiển thị, run, nhóm) — lần chạy 1 của mỗi cấu hình, cùng 150 đề thi; khớp Bảng 3, 4, 6 của paper
+SCORE_RUNS = [
+    ("tốc độ học 1e-5 (Run A, 5 vòng)", "qwen15b-math500-a", "lr"),
+    ("tốc độ học 1e-4", "a-math500-lr1e4", "lr"),
+    ("tốc độ học 2e-4", "a-lr2e4-seed1", "lr"),
+    ("tốc độ học 5e-4", "a-math500-lr-fixed", "lr"),
+    ("không lọc (học cả bài sai)", "nofilter-math500-lr-fixed", "ctl"),
+    ("học lời giải mẫu của sách", "gold-math500-lr-fixed", "ctl"),
+]
+
+
+def bar(p, width=40):
+    return "█" * round(p * width)
+
+
+def part4(args):
+    print("\n=== 4. Kết quả chính: model có giỏi lên qua các vòng tự học không? ===")
+    print("  Điểm pass@1 trên 150 đề thi model không được học (lần chạy 1).")
+    print("  Vòng 0 = model gốc chưa học. Mỗi █ = 2,5 điểm.\n")
+    for name, run, group in SCORE_RUNS:
+        if group == "ctl" and name == SCORE_RUNS[4][0]:
+            print("  -- đối chứng ở tốc độ học 5e-4 --")
+        rows = [r for r in csv.DictReader(open(GEN / run / "metrics.csv")) if r["preset"] == "reward"]
+        print(f"  {name}")
+        for r in rows:
+            p = float(r["pass_at_1"])
+            print(f"    vòng {r['round']}  {p * 100:5.1f}%  {bar(p)}")
+        d = (float(rows[-1]["pass_at_1"]) - float(rows[0]["pass_at_1"])) * 100
+        print(f"    → vòng cuối so với vòng 0: {d:+.1f} điểm\n")
+    print("  → Không cấu hình nào giỏi lên rõ ràng. Học nhanh (5e-4) thì tụt.")
+    print("    Lệch dưới ~7 điểm nằm trong sai số của 150 đề (khoảng tin cậy ở Bảng 5 paper).")
+    pause(args)
+
+
+# Hai đề MATH-500 model gốc làm đúng cả 4 lần, model vòng 2 (lr 5e-4) sai cả 4 lần
+BEFORE_AFTER = [
+    ("test/prealgebra/572.json", "viết dài lan man, hết 512 token chưa ra đáp số"),
+    ("test/algebra/858.json", "viết xong hẳn nhưng ra đáp số sai"),
+]
+
+
+def part5(args):
+    print("\n=== 5. Cùng một đề: model gốc so với model sau 2 vòng học (lr 5e-4) ===")
+    print("  Hai lý do model tụt (paper mục 4.5): bị cắt vì viết quá dài, và làm xong mà sai.")
+    problems, gold = {}, {}
+    for line in open(REPO / "data/gold/math500_test.jsonl"):
+        r = json.loads(line)
+        problems[r.get("unique_id") or r.get("item_id")] = r["problem"]
+    texts = {}
+    for line in open(GEN / RUN / "generations.jsonl"):
+        r = json.loads(line)
+        if r["item_id"] in dict(BEFORE_AFTER) and r["round"] in (0, 2):
+            texts[r["item_id"], r["round"]] = r["texts"][0]
+            gold[r["item_id"]] = r["gold"]
+    for item, why in BEFORE_AFTER:
+        print(f"\n  đề: {problems[item]}   (đáp án sách: {gold[item]})")
+        for rd, label in ((0, "model gốc"), (2, "sau 2 vòng")):
+            t = texts[item, rd]
+            box = last_box(t)
+            tail = " ".join(t[-260:].split())
+            print(f"\n   [{label}] dài {len(t)} ký tự, đáp số: {box if box else '(không có, bị cắt)'}"
+                  f"  {mark(rd == 0)}")
+            print(f"     ...{tail}")
+        print(f"\n   → lý do: {why}")
+        pause(args)
 
 
 def live(args):
-    print(f"\n=== 4. Chấm lại trực tiếp {args.live} lời giải ngẫu nhiên ===")
+    print(f"\n=== 6. Chấm lại trực tiếp {args.live} lời giải ngẫu nhiên (máy gốc so với máy vá) ===")
     pairs = []
     for line in open(GEN / RUN / "generations.jsonl"):
         r = json.loads(line)
@@ -126,5 +196,7 @@ if __name__ == "__main__":
     part1(a)
     part2(a)
     part3(a)
+    part4(a)
+    part5(a)
     if a.live:
         live(a)

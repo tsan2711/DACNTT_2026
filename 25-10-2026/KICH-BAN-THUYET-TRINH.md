@@ -242,16 +242,49 @@ Model làm đúng cả ba, máy gốc gạch cả ba.
 - **15,5–18,4% ở mọi run, mọi vòng** → lỗi có mặt suốt quá trình, không phải tình cờ. Model mất ~1/6 dữ liệu tốt
   mỗi vòng.
 - Cột "vá nhận" giảm qua các vòng (787 → 708 → 566) → model làm đúng ít đi, khớp kết luận "học nhanh thì tệ đi".
-- Tiêu đề phần 3 in "mỗi đề 4 lời giải", nhưng `qwen15b-math500-a` là 8 lời giải mỗi đề (nên số gấp đôi). "500 đề"
-  là toàn bộ MATH-500, gồm cả phần để học và 150 đề thi.
+- 2 run đầu mỗi đề 4 lời giải, `qwen15b-math500-a` mỗi đề 8 lời giải (nên số gấp đôi). "500 đề" là toàn bộ
+  MATH-500, gồm cả phần để học và 150 đề thi.
 
-**Phần 4 — chấm trực tiếp 200 bài ngẫu nhiên.** Ví dụ `gốc nhận 64, vá nhận 80` → 16/80 = 20%. Lệch so với
-15,5–18,4% là bình thường: mẫu nhỏ (chỉ 80 bài đúng), chạy lại có thể ra ~13–20%.
+**Phần 4 — kết quả chính: model có giỏi lên không** ⭐ phần quan trọng nhất của demo.
+Thanh dài = điểm pass@1 trên 150 đề thi model không được học, mỗi █ = 2,5 điểm, lần chạy 1 (khớp Bảng 3, 4, 6).
+
+| Cấu hình | Vòng 0 → vòng cuối | Đọc là |
+|---|---|---|
+| tốc độ học 1e-5 (Run A, 5 vòng) | 32,0 → 29,3 (−2,7) | gần như đứng yên |
+| 1e-4 | 33,3 → 34,0 (+0,7) | đứng yên |
+| 2e-4 | 33,3 → 31,3 (−2,0) | đứng yên |
+| 5e-4 | 33,3 → 23,3 (−10,0) | **tụt rõ** |
+| không lọc, 5e-4 | 33,3 → 27,3 (−6,0) | tụt |
+| học lời giải mẫu, 5e-4 | 33,3 → 15,3 (−18,0) | tụt mạnh nhất |
+
+> Đây là kết quả chính. Không cấu hình nào giỏi lên. Học chậm thì đứng yên, học nhanh thì tụt. Thanh nào lệch dưới
+> khoảng 7 điểm là nằm trong sai số của 150 đề.
+
+Nếu hỏi "+0,7 là có tăng?": 0,7 điểm trên 150 đề là chưa tới 1 đề, khoảng tin cậy từ −6,7 tới +8,0 (Bảng 5).
+
+**Phần 5 — cùng một đề, trước và sau khi học** (lần chạy lr 5e-4, model gốc so với vòng 2). Hai đề model gốc làm
+đúng cả 4 lần, model sau 2 vòng sai cả 4 lần. Mỗi đề minh họa một lý do tụt (mục 4.5):
+
+| Đề | Model gốc | Sau 2 vòng | Lý do |
+|---|---|---|---|
+| Viết 3/20 dưới dạng số thập phân | chia gọn, ra 0,15 | viết một dãy số nhân đôi vô nghĩa (20,48; 40,96; 81,92...) tới hết giới hạn, **không có đáp số** | viết lan man, bị cắt |
+| Số nhỏ nhất bằng 2 lần nghịch đảo của nó trừ 1 | giải phương trình, ra −2 | viết xong, lập luận lan man "chỉ số nguyên dương mới hợp", ra **1** | làm xong mà sai |
+
+> Đây là cùng một đề. Model gốc làm gọn và đúng. Sau 2 vòng tự học: đề thứ nhất nó viết lan man đến hết giấy, đề
+> thứ hai nó viết xong nhưng lập luận sai. Đó chính là hai lý do model tụt điểm.
+
+Lưu ý: đây là 2 ví dụ được **chọn** để minh họa (trong 6 đề có kiểu "đúng 4/4 → sai 4/4"), không phải mẫu ngẫu
+nhiên; số chung là ở phần 4. Hai đề thuộc MATH-500, chưa kiểm là thuộc phần học hay phần thi.
+
+**Phần 6 — chấm trực tiếp 200 bài ngẫu nhiên** (khi chạy `--live 200`). Ví dụ `gốc nhận 64, vá nhận 80` → 16/80 =
+20%. Lệch so với 15,5–18,4% là bình thường: mẫu nhỏ (chỉ 80 bài đúng), chạy lại có thể ra ~13–20%.
 > Chấm ngay tại chỗ trên mẫu nhỏ ra khoảng 20%, cùng mức với bảng tổng. Số chính thức là 15,5–18,4%.
 
 **Câu chốt demo:**
-> Máy chấm gạch oan khoảng 1/6 số bài đúng, ở mọi lần chạy, mọi vòng. Nhóm đã chấm lại không có lỗi này, và model
-> vẫn không giỏi lên.
+> Máy chấm gạch oan khoảng 1/6 số bài đúng, ở mọi lần chạy, mọi vòng. Nhưng kể cả bỏ qua lỗi đó, model vẫn không
+> giỏi lên: học chậm thì đứng yên, học nhanh thì viết lan man và giải sai.
+
+**Thời gian:** phần 1–3 khoảng 1 phút, phần 4–5 khoảng 2 phút. Gấp thì bỏ phần 2 và phần 6.
 
 ---
 
