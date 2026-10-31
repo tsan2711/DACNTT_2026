@@ -838,20 +838,33 @@ defect ever fires and $V$ can parse the gold. Pool: examples per round from
 affected problems that $V$ accepts (and so avoid the defect).}
 \label{tab:rt}
 \centering
-\scriptsize
-\setlength{\tabcolsep}{2pt}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{lllll}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrrrc}
 \toprule
-Run & $r_t$, all & $r_t$, boxed only & $r_t$, affected, parseable & Pool \\
+Run & $r_t$ subset & R0 & Last & $\Delta$ & 95\% interval & Pool \\
 \midrule
-A, $5\times10^{-4}$, 1 & $18.3\to15.7$; $-2.6$ [$-5.3,0.3$] & $20.0\to20.7$; $+0.7$ [$-2.9,4.3$] & $92.8\to87.2$; $-5.5$ [$-20.1,6.3$] & $3$--$5$ \\
-A, $5\times10^{-4}$, 2 & $18.1\to15.5$; $-2.6$ [$-5.2,0.1$] & $19.4\to19.8$; $+0.4$ [$-2.8,3.4$] & $95.1\to93.5$; $-1.6$ [$-14.7,9.5$] & $2$--$3$ \\
-A, $10^{-5}$, 0 & $18.3\to16.8$; $-1.5$ [$-2.9,0.0$] & $19.9\to19.5$; $-0.4$ [$-2.0,1.2$] & $92.3\to92.0$; $-0.2$ [$-4.9,4.6$] & $9$--$12$ \\
-Gold, 1 & $18.2\to21.5$; $+3.3$ [$-1.2,8.1$] & $20.0\to22.8$; $+2.8$ [$-2.0,7.7$] & $95.5\to94.7$; $-0.7$ [$-9.1,6.2$] & --- \\
-Gold, 2 & $18.0\to20.2$; $+2.1$ [$-2.2,6.7$] & $19.4\to21.1$; $+1.7$ [$-3.3,6.5$] & $95.1\to97.6$; $+2.5$ [$-4.8,11.9$] & --- \\
+A, $5\times10^{-4}$, seed 1 & all & $18.3$ & $15.7$ & $-2.6$ & $[-5.3, 0.3]$ & $3$--$5$ \\
+ & boxed only & $20.0$ & $20.7$ & $+0.7$ & $[-2.9, 4.3]$ & \\
+ & affected, parseable & $92.8$ & $87.2$ & $-5.5$ & $[-20.1, 6.3]$ & \\
+\addlinespace
+A, $5\times10^{-4}$, seed 2 & all & $18.1$ & $15.5$ & $-2.6$ & $[-5.2, 0.1]$ & $2$--$3$ \\
+ & boxed only & $19.4$ & $19.8$ & $+0.4$ & $[-2.8, 3.4]$ & \\
+ & affected, parseable & $95.1$ & $93.5$ & $-1.6$ & $[-14.7, 9.5]$ & \\
+\addlinespace
+A, $10^{-5}$, seed 0 & all & $18.3$ & $16.8$ & $-1.5$ & $[-2.9, 0.0]$ & $9$--$12$ \\
+ & boxed only & $19.9$ & $19.5$ & $-0.4$ & $[-2.0, 1.2]$ & \\
+ & affected, parseable & $92.3$ & $92.0$ & $-0.2$ & $[-4.9, 4.6]$ & \\
+\addlinespace
+Gold, seed 1 & all & $18.2$ & $21.5$ & $+3.3$ & $[-1.2, 8.1]$ & --- \\
+ & boxed only & $20.0$ & $22.8$ & $+2.8$ & $[-2.0, 7.7]$ & \\
+ & affected, parseable & $95.5$ & $94.7$ & $-0.7$ & $[-9.1, 6.2]$ & \\
+\addlinespace
+Gold, seed 2 & all & $18.0$ & $20.2$ & $+2.1$ & $[-2.2, 6.7]$ & --- \\
+ & boxed only & $19.4$ & $21.1$ & $+1.7$ & $[-3.3, 6.5]$ & \\
+ & affected, parseable & $95.1$ & $97.6$ & $+2.5$ & $[-4.8, 11.9]$ & \\
 \bottomrule
-\end{tabular}}
+\end{tabular}
 \end{table}
 
 \emph{(ii) Decompose declines under a fixed cap.} Report the change in sample
