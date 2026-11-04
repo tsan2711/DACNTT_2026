@@ -798,3 +798,13 @@ hết và đợt chạy vừa rồi đã chốt là cuối. Paper ghi rõ là ch
 - **Tiêu đề đổi** (29/10): "No Detectable Self-Improvement from Generate–Verify–Train Iterations: A Negative
   Result with Qwen2.5-1.5B, LoRA SFT and a Rule-Based Verifier" → "Mathematics or the Verifier? A Direction-Free
   Test of Verifier Adaptation, Applied to Self-Training of Qwen2.5-1.5B". Tiêu đề chạy: "Mathematics or the Verifier?".
+
+## Cắt thân bài + references về 16 trang (2026-11-04)
+
+Trước: thân bài hết trang 16, references trang 17–18 (tổng 39 trang). Sau: references hết trang 16, tổng vẫn 39 trang.
+
+- Chuyển sang phụ lục (nội dung giữ nguyên): `tab:passk` (→ App. Design P), `tab:inventory`, `fig:isolated`,
+  `tab:isolated` (→ App. Design I/Patch), `tab:decomp` (→ cuối App. Anatomy). Thân bài thêm "Appendix~\ref{...}" ở chỗ dẫn.
+- Bỏ khỏi thân bài (vẫn nằm ở App. Design P in Full): 2 câu về selection-set scoring và dose trong §4.1.
+- Contributions: gộp gạch "Design lessons" vào gạch decomposition (ý đó đã có ở §5.3 (iii)–(iv)).
+- Build bằng tectonic, không ref undefined.
