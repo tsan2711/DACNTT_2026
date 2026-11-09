@@ -17,8 +17,7 @@
 \begin{document}
 
 \title{Mathematics or the Verifier? No Detectable Gain from
-Verifier-Filtered Self-Training of Qwen2.5-1.5B, and a Per-Round Audit of
-One Verifier Defect}
+Verifier-Filtered Self-Training of a 1.5B Model}
 
 \titlerunning{Mathematics or the Verifier?}
 
@@ -127,29 +126,19 @@ a learning rate that changed the outputs little (Section~\ref{sec:isolated}).
 \paragraph{Contributions.}
 \begin{itemize}
 \item For a 1.5B model, LoRA SFT and one rule-based verifier, no gain is
-detectable on a held-out exam at four learning rates on MATH-500 or two on
-GSM8K, with problem-level bootstrap intervals for every comparison and the
-smallest effects the design could have detected. Because no arm improves,
-not even training on reference solutions, this is a null for the recipe.
-\item A per-round false-reject audit carried over from RLVR, where such rates
-are tracked per step~\cite{ref_delayplateau,ref_tinyv}, to offline SFT
-self-training (post hoc, Section~\ref{sec:audit}), with the conditions it
-needs there. Overall, the share of correct solutions a gold-storage defect
-rejects falls by $1.5$--$2.6$ points over rounds, which a falling
-\verb|\boxed| share accounts for. Restricted to boxed answers or to the
-problems the defect affects, it is flat. The test is weak here: only $24$--$28$
-affected problems can be answered in an accepted form, the pool holds $2$--$12$
-examples per round that avoid the defect, and we have no positive control.
-\item An observation on style with its limits: the \verb|\boxed| share falls
-under self-training in a way that cannot tell imitation of the pool from drift;
-the one strong style convergence occurs when training on reference solutions,
-with no verifier in the loop.
-\item Design lessons (Section~\ref{sec:audit}, checks iii--iv) and a decomposition of an accuracy decline under a fixed token cap into a
-finished-accuracy part and a cap-share part, applied post hoc to what training
-at the highest rate changes: finished generations lose $5.5$--$10.6$ points
-against the untrained model on the same problem mix (a descriptive measure
-that conditions on which problems finish), and the cap-hit share rises only
-at that rate, clearly at one of its two seeds.
+detectable on a held-out exam at any learning rate we tried, with
+problem-level bootstrap intervals and the smallest effects the design could
+detect. No arm improves, not even training on reference solutions, so this is a
+null for the recipe, not for self-training.
+\item A post hoc per-round false-reject audit of one verifier defect, carried
+over from RLVR~\cite{ref_delayplateau,ref_tinyv} to offline SFT
+self-training. The rejected share falls by $1.5$--$2.6$ points, which a falling
+\verb|\boxed| share accounts for, and is flat on the affected problems; the test
+has little power and no positive control (Section~\ref{sec:audit}).
+\item A decomposition of an accuracy decline under a fixed token cap into a
+finished-accuracy part and a cap-share part: at the highest rate, finished
+generations lose $5.5$--$10.6$ points against the untrained model on the same
+problem mix, and the cap-hit share rises only at that rate.
 \end{itemize}
 
 \section{Related Work}
