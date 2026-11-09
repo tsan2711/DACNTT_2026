@@ -101,8 +101,8 @@ final string accepted'', not ``were the steps right''.
 The same gap runs through reinforcement learning with verifiable rewards
 (RLVR), which reports large gains at this scale: GRPO on a single training
 example lifts Qwen2.5-Math-1.5B from $36.0\%$ to $73.6\%$ on
-MATH-500~\cite{ref_oneshot}, a gain its authors partly trace to corrected
-output format, and similar recipes improve
+MATH-500~\cite{ref_oneshot}, a gain whose authors report only $8.6$ points
+beyond format correction, and similar recipes improve
 DeepSeek-R1-Distill-Qwen-1.5B~\cite{ref_openrs} and open base models from
 $0.5$B up~\cite{ref_simplerl}. Yet Shao et al.~\cite{ref_spurious} find that
 GRPO with \emph{random} rewards raises Qwen2.5-Math-7B by $21.4$ points on
@@ -193,9 +193,9 @@ lifts Qwen2.5-Math-1.5B on MATH-500 from $36.0\%$ to $73.6\%$~\cite{ref_oneshot}
 about $7{,}000$ examples lift DeepSeek-R1-Distill-Qwen-1.5B on AMC23 from $63\%$
 to $80\%$~\cite{ref_openrs}, and zero-RL works across ten open base models
 including Qwen2.5 from $0.5$B~\cite{ref_simplerl}. These studies improve
-accuracy, which our SFT loop does not; Wang et al.\ separate out the part of
-their gain that is format correction, but the studies mostly do not ask what
-the rest consists of. Shao et al.~\cite{ref_spurious} show that it need not be
+accuracy, which our SFT loop does not; Wang et al.\ separate out format correction and report
+only $8.6$ of their $37.6$ points as lying beyond it, but the studies mostly do
+not ask what the rest consists of. Shao et al.~\cite{ref_spurious} show that it need not be
 reward learning: random rewards raise Qwen2.5-Math-7B by $21.4$ points on
 MATH-500, which they trace to amplified pre-existing behaviour, and the effect
 varies by model family. We do not compete with RLVR on accuracy; the audit of
@@ -849,6 +849,12 @@ funding was received.
 \subsubsection{\discintname}
 The authors have no competing interests to declare that are relevant to the
 content of this article.
+
+\subsubsection{Use of AI tools}
+The authors used Claude (Anthropic), through Claude Code, to help write and
+revise the manuscript, to write analysis and training scripts, and to run
+automated paper reviews. The authors designed the study, ran the experiments
+and take responsibility for the content.
 \end{credits}
 
 \begin{thebibliography}{99}

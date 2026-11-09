@@ -808,3 +808,11 @@ Trước: thân bài hết trang 16, references trang 17–18 (tổng 39 trang).
 - Bỏ khỏi thân bài (vẫn nằm ở App. Design P in Full): 2 câu về selection-set scoring và dose trong §4.1.
 - Contributions: gộp gạch "Design lessons" vào gạch decomposition (ý đó đã có ở §5.3 (iii)–(iv)).
 - Build bằng tectonic, không ref undefined.
+
+## Sửa theo phản biện DA148 (2026-11-09)
+- Wang et al.: "8,6 trong 37,6 điểm tăng nằm ngoài sửa format" (Intro, Related Work).
+- Khai báo dùng AI (Claude Code) và mục Code availability (repo github.com/tsan2711/DACNTT_2026).
+- Tách phụ lục khỏi bài chính: `papers/latex/paper_main.tex` (thân bài + references) và `papers/latex/supplementary.tex` (toàn bộ phụ lục, bảng/hình đánh số S). Nối tham chiếu chéo bằng xr-hyper; build 2 lượt mỗi file. `paper_revised.tex` giữ nguyên làm bản đầy đủ cũ.
+- Bỏ ghi chú lịch sử phiên bản đầu file, thay đường dẫn nội bộ bằng tên script trong repo.
+- Related Work: nêu rõ khác biệt so với Xu et al. (quy mô, verifier rule-based có lỗi đo được, kiểm toán pool).
+- Còn lại (chờ số liệu mới): rút bài từ 17 xuống ≤15 trang, tiêu đề/abstract, thống nhất điểm các bảng bằng một pipeline.
