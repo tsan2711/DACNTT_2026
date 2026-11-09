@@ -255,13 +255,14 @@ class HfLoraSftTrain:
 
         try:
             row = dataset[0]
-            mask = row.get("completion_mask")
-            if mask is None:
-                print(f"[completion_only] no completion_mask column: {list(row)}", file=sys.stderr)
+            labels = row.get("labels")
+            if labels is None:
+                print(f"[completion_only] no labels column: {list(row)}", file=sys.stderr)
             else:
+                masked = sum(1 for x in labels if x == -100)
                 print(
-                    f"[completion_only] row0: {sum(mask)}/{len(mask)} tokens under loss "
-                    f"(prompt masked: {len(mask) - sum(mask)})",
+                    f"[completion_only] row0: {len(labels) - masked}/{len(labels)} tokens "
+                    f"under loss, {masked} masked (TRL sets labels=-100 outside the completion)",
                     file=sys.stderr,
                 )
         except Exception as exc:  # diagnostics must never break training
