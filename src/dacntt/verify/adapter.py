@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable, Sequence
+import zlib
 from dataclasses import dataclass
 from typing import Any
 
@@ -62,6 +63,7 @@ class MathVerifyAdapter:
         timeout_seconds: int = 5,
         normalize_frac_commands: bool = False,
         normalize_gold_boxed: bool = False,
+        inject_boxed_bias: float = 0.0,
     ) -> None:
         if preset not in PRESETS:
             raise ValueError(f"unknown preset {preset!r}; expected one of {PRESETS}")
@@ -69,11 +71,24 @@ class MathVerifyAdapter:
         self.timeout_seconds = timeout_seconds
         self.normalize_frac_commands = normalize_frac_commands
         self.normalize_gold_boxed = normalize_gold_boxed
+        # Positive control for the r_t audit (reviewer B1.3): a deliberate,
+        # avoidable verifier bias. A fixed ``inject_boxed_bias`` share of
+        # problems (chosen by a stable hash of the gold string) reject every
+        # \boxed{} answer, so a model that learns the verifier should stop
+        # boxing on exactly those problems. Use on the *select* adapter only.
+        self.inject_boxed_bias = inject_boxed_bias
         self._parse = parse_fn
         self._verify = verify_fn
         self._pred_config = None if parse_fn is not None else extraction_config(preset)
 
+    def _bias_rejects(self, gold: str, prediction: str) -> bool:
+        if self.inject_boxed_bias <= 0 or not _HAS_BOXED.search(prediction):
+            return False
+        return zlib.crc32(gold.strip().encode()) % 1000 < self.inject_boxed_bias * 1000
+
     def verify(self, gold: str, prediction: str) -> VerifyResult:
+        if self._bias_rejects(gold, prediction):
+            return VerifyResult(False, REASON_COMPARE_FALSE, False, False)
         if self.normalize_frac_commands:
             gold = _DFRAC_TFRAC.sub(r"\\frac", gold)
             prediction = _DFRAC_TFRAC.sub(r"\\frac", prediction)

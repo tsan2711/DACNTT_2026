@@ -22,6 +22,30 @@ def extract_math500_gold(answer: str) -> str:
     return answer.strip()
 
 
+# MATH golds sometimes use TeX shorthand (``\frac43``, ``\frac 59``,
+# ``11\sqrt2``) that math-verify parses to a truncated value even inside
+# ``\boxed{}``. Measured 2026-11-09: with the gold wrapped in ``\boxed{}``
+# only 8/500 MATH-500 golds fail to verify against themselves, all of this
+# kind (plus ``\text{ degrees}``). Rewriting them to braced form fixes that
+# without changing the value.
+_FRAC_SHORT = re.compile(r"\\([dt]?frac)\s*(\d)\s*(\d)(?!\d)")
+_FRAC_HALF1 = re.compile(r"\\([dt]?frac)\s*(\d)\s*\{")
+_FRAC_HALF2 = re.compile(r"\\([dt]?frac)\s*\{([^{}]*)\}\s*(\d)(?!\d)")
+_SQRT_SHORT = re.compile(r"\\sqrt\s*(\d)(?!\d)")
+_TEXT_UNIT = re.compile(r"\s*\\text\{\s*[A-Za-z ]+\}\s*$")
+
+
+def normalise_math_gold(gold: str) -> str:
+    """Rewrite TeX shorthand in a MATH gold to braced form (value unchanged)."""
+    out = gold.strip()
+    out = _FRAC_SHORT.sub(r"\\\1{\2}{\3}", out)
+    out = _FRAC_HALF1.sub(r"\\\1{\2}{", out)
+    out = _FRAC_HALF2.sub(r"\\\1{\2}{\3}", out)
+    out = _SQRT_SHORT.sub(r"\\sqrt{\1}", out)
+    stripped = _TEXT_UNIT.sub("", out)
+    return stripped if stripped else out
+
+
 _GSM8K_CALC = re.compile(r"<<[^>]*>>")
 
 

@@ -133,8 +133,12 @@ class HfLoraSftTrain:
         batch_size: int = 2,
         lora_r: int = 16,
         lora_alpha: int = 32,
-        target_modules: Sequence[str] = ("q_proj", "v_proj"),
+        target_modules: Sequence[str] | str = ("q_proj", "v_proj"),
         max_seq_length: int = 512,
+        # Reviewer fix (2026-11): when True, SFT rows are prompt/completion so
+        # TRL masks the prompt and the loss covers the response only. Default
+        # False keeps the loss over the whole chat sequence (all earlier runs).
+        completion_only: bool = False,
         # 1e-5 (old default) barely moves LoRA r=16 on this model/task —
         # confirmed via experiments/viec3/diagnose_lr.py 2026-09-17: loss
         # stayed flat/noisy (0.84->0.72) at 1e-5 over 1 epoch/120 examples,
@@ -154,8 +158,11 @@ class HfLoraSftTrain:
         self.batch_size = batch_size
         self.lora_r = lora_r
         self.lora_alpha = lora_alpha
-        self.target_modules = tuple(target_modules)
+        self.target_modules = (
+            target_modules if isinstance(target_modules, str) else tuple(target_modules)
+        )
         self.max_seq_length = max_seq_length
+        self.completion_only = completion_only
         self.learning_rate = learning_rate
         # Giai đoạn 5: per-round trainer.state.log_history (loss/epoch/step),
         # so a later pass can compare how fast 0.5B vs 1.5B fit each round's
@@ -168,7 +175,7 @@ class HfLoraSftTrain:
         if not examples:
             return
         data_dir = self.adapter_path.parent / "sft_data"
-        _write_sft_jsonl(data_dir, examples)
+        _write_sft_jsonl(data_dir, examples, completion_only=self.completion_only)
         self.adapter_path.mkdir(parents=True, exist_ok=True)
         self._train_lora(data_dir / "train.jsonl", round=round)
 
@@ -205,7 +212,11 @@ class HfLoraSftTrain:
         peft_config = LoraConfig(
             r=self.lora_r,
             lora_alpha=self.lora_alpha,
-            target_modules=list(self.target_modules),
+            target_modules=(
+                self.target_modules
+                if isinstance(self.target_modules, str)
+                else list(self.target_modules)
+            ),
             task_type="CAUSAL_LM",
         )
         train_dataset = load_dataset("json", data_files=str(train_jsonl), split="train")
@@ -215,6 +226,7 @@ class HfLoraSftTrain:
             num_train_epochs=self.epochs,
             learning_rate=self.learning_rate,
             max_length=self.max_seq_length,
+            **({"completion_only_loss": True} if self.completion_only else {}),
             fp16=torch.cuda.is_available(),
             report_to=[],
             save_strategy="no",
@@ -227,11 +239,33 @@ class HfLoraSftTrain:
             peft_config=peft_config,
             processing_class=tokenizer,
         )
+        if self.completion_only:
+            self._log_completion_mask(trainer.train_dataset)
         trainer.train()
         trainer.model.save_pretrained(str(self.adapter_path))
         tokenizer.save_pretrained(str(self.adapter_path))
         if round is not None:
             self._save_train_log(trainer.state.log_history, round)
+
+    @staticmethod
+    def _log_completion_mask(dataset) -> None:
+        """Print how much of a tokenised row is under the loss (evidence for the
+        reviewer's prompt-masking fix; TRL stores it as ``completion_mask``)."""
+        import sys
+
+        try:
+            row = dataset[0]
+            mask = row.get("completion_mask")
+            if mask is None:
+                print(f"[completion_only] no completion_mask column: {list(row)}", file=sys.stderr)
+            else:
+                print(
+                    f"[completion_only] row0: {sum(mask)}/{len(mask)} tokens under loss "
+                    f"(prompt masked: {len(mask) - sum(mask)})",
+                    file=sys.stderr,
+                )
+        except Exception as exc:  # diagnostics must never break training
+            print(f"[completion_only] mask check failed: {exc!r}", file=sys.stderr)
 
     def _save_train_log(self, log_history: list[dict], round: int) -> None:
         self.log_dir.mkdir(parents=True, exist_ok=True)
@@ -239,21 +273,23 @@ class HfLoraSftTrain:
         path.write_text(json.dumps(log_history, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def _write_sft_jsonl(data_dir: Path, examples: Sequence[TrainExample]) -> None:
+def _write_sft_jsonl(
+    data_dir: Path, examples: Sequence[TrainExample], *, completion_only: bool = False
+) -> None:
     data_dir.mkdir(parents=True, exist_ok=True)
-    rows = [
-        {
-            "messages": [
-                {"role": "user", "content": user_prompt(ex.problem)},
-                {"role": "assistant", "content": ex.solution},
-            ]
-        }
-        for ex in examples
-    ]
+    rows = [_sft_row(ex, completion_only) for ex in examples]
     train_path = data_dir / "train.jsonl"
     valid_path = data_dir / "valid.jsonl"
     _dump_jsonl(train_path, rows)
     _dump_jsonl(valid_path, rows[:1])
+
+
+def _sft_row(ex: TrainExample, completion_only: bool) -> dict:
+    user = {"role": "user", "content": user_prompt(ex.problem)}
+    assistant = {"role": "assistant", "content": ex.solution}
+    if completion_only:
+        return {"prompt": [user], "completion": [assistant]}
+    return {"messages": [user, assistant]}
 
 
 def _dump_jsonl(path: Path, rows: list[dict]) -> None:

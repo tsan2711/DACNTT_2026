@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import random
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 
@@ -45,6 +46,7 @@ def run_rounds(
     select_all: bool = False,
     train_on_gold: bool = False,
     resume_records: Sequence[RoundRecord] | None = None,
+    max_train_examples: int | None = None,
 ) -> list[RoundRecord]:
     """``resume_records``: rounds already finished by an earlier process; the
     loop continues at the next round index. The caller must have built
@@ -81,6 +83,10 @@ def run_rounds(
     training set is smaller than the GVT pool (one solution per problem rather
     than up to k), which is a difference the comparison has to carry.
 
+    ``max_train_examples`` (reviewer fix B2.2): cap the examples a round trains
+    on by a seeded subsample (seed = round index), so optimizer steps per round
+    are equal across arms. ``n_selected`` keeps the uncapped count.
+
     ``extra_exam_k`` (Giai đoạn 8): sample size for the ``extra_exam`` round
     only, when different from the training rounds' ``k``. Lets a run measure
     e.g. pass@32 at the final round (to see an amplify-vs-expand crossover
@@ -115,6 +121,8 @@ def run_rounds(
             train_on_gold=train_on_gold,
         )
         record.n_selected = len(examples)
+        if max_train_examples is not None and len(examples) > max_train_examples:
+            examples = random.Random(index).sample(examples, max_train_examples)
         if train:
             trainer.train(examples, round=index)
             record.n_examples_trained = len(examples)

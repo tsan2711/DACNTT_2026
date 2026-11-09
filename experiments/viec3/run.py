@@ -58,7 +58,7 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from dacntt.gold.load import load_gold
-from dacntt.gold.sources import DATASETS, GSM8K, MATH500, SOURCES
+from dacntt.gold.sources import DATASETS, GSM8K, MATH500, MATHTRAIN, SOURCES
 from dacntt.gvt.generate import HfGenerate, MlxGenerate, ScriptedGenerate
 from dacntt.gvt.loop import RoundRecord, run_rounds
 from dacntt.gvt.measure import STYLE_IDS
@@ -97,12 +97,34 @@ def main(argv: list[str] | None = None) -> int:
     if args.model is None:
         args.model = DEFAULT_HF_MODEL if mode == "hf" else DEFAULT_MLX_MODEL
 
+    if args.fixed_pipeline:
+        # Reviewer-driven pipeline (2026-11): V' gold-in-\boxed{} + \dfrac patch
+        # for selection AND scoring, and braced MATH golds.
+        args.patch_verifier = True
+        args.patch_verifier_boxed = True
+        args.fix_gold = True
+
     items = []
     for dataset in datasets:
-        items.extend(load_gold(dataset, args.n, cache_dir))
+        items.extend(load_gold(dataset, args.n, cache_dir, fix_gold=args.fix_gold))
         print(f"loaded {args.n} {dataset} problems", file=sys.stderr)
 
-    train_ids, test_ids = _split_train_test(items, args.holdout_frac, args.seed)
+    if args.train_pool_n:
+        # Selection pool drawn from MATH train; every problem in `items` (all
+        # of MATH-500 at --n 500) becomes exam-only. Exam never trains.
+        pool = load_gold(MATHTRAIN, 12000, cache_dir, fix_gold=args.fix_gold)
+        pool = random.Random(args.seed or 0).sample(pool, args.train_pool_n)
+        exam_ids = frozenset(f"{i.dataset}:{i.item_id}" for i in items)
+        items.extend(pool)
+        train_ids = frozenset(f"{i.dataset}:{i.item_id}" for i in pool)
+        test_ids = exam_ids
+        print(
+            f"train pool: {len(pool)} MATH-train problems; exam: {len(test_ids)} "
+            f"problems (disjoint)",
+            file=sys.stderr,
+        )
+    else:
+        train_ids, test_ids = _split_train_test(items, args.holdout_frac, args.seed)
     if train_ids is not None:
         print(
             f"holdout split: {len(train_ids)} select / {len(test_ids)} exam "
@@ -115,6 +137,7 @@ def main(argv: list[str] | None = None) -> int:
         timeout_seconds=args.verify_timeout,
         normalize_frac_commands=args.patch_verifier,
         normalize_gold_boxed=args.patch_verifier_boxed,
+        inject_boxed_bias=args.inject_boxed_bias,
     )
     exam_adapters = {
         name: MathVerifyAdapter(
@@ -229,6 +252,7 @@ def main(argv: list[str] | None = None) -> int:
         select_all=args.no_filter,
         train_on_gold=args.train_on_gold,
         resume_records=resume_records,
+        max_train_examples=args.max_train_examples,
     )
     write_reports(records, items, out_dir, args.k, args.select_preset)
     write_manifest(
@@ -405,6 +429,10 @@ def _backend(
             lora_r=args.lora_r,
             lora_alpha=args.lora_alpha,
             max_seq_length=args.max_seq_length,
+            completion_only=args.completion_only,
+            target_modules=(
+                "all-linear" if args.lora_targets == "all-linear" else ("q_proj", "v_proj")
+            ),
             **hf_train_kwargs,
         )
         note = (
@@ -594,6 +622,14 @@ def _manifest(
         "holdout_frac": args.holdout_frac,
         "n_select_items": len(train_ids) if train_ids is not None else len(items),
         "n_exam_items": len(test_ids) if test_ids is not None else len(items),
+        "completion_only": args.completion_only,
+        "lora_targets": args.lora_targets,
+        "fix_gold": args.fix_gold,
+        "train_pool_n": args.train_pool_n,
+        "max_train_examples": args.max_train_examples,
+        "inject_boxed_bias": args.inject_boxed_bias,
+        "max_seq_length": args.max_seq_length,
+        "max_tokens": args.max_tokens,
         "no_filter": args.no_filter,
         "train_on_gold": args.train_on_gold,
         "model": args.model if mode in ("mlx", "hf") else "scripted-from-gold",
@@ -729,6 +765,51 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         "already, isolating the boxed gold-truncation bug (measured "
         "2026-09-12: 8.5%% of MATH-500 gold) as the one changed variable, "
         "independent of --patch-verifier",
+    )
+    parser.add_argument(
+        "--completion-only",
+        action="store_true",
+        help="SFT loss on the response only (prompt masked); default keeps the "
+        "loss over the whole sequence as in all earlier runs",
+    )
+    parser.add_argument(
+        "--lora-targets",
+        choices=("qv", "all-linear"),
+        default="qv",
+        help="LoRA target modules: q_proj/v_proj (earlier runs) or all linear layers",
+    )
+    parser.add_argument(
+        "--inject-boxed-bias",
+        type=float,
+        default=0.0,
+        help="positive control for the r_t audit: the select verifier rejects "
+        "every \\boxed answer on this fraction of problems (hash of gold). "
+        "Exam verifiers stay clean.",
+    )
+    parser.add_argument(
+        "--max-train-examples",
+        type=int,
+        default=None,
+        help="cap training examples per round (seeded subsample) so every arm "
+        "takes the same number of optimizer steps (= cap / batch size)",
+    )
+    parser.add_argument(
+        "--fix-gold",
+        action="store_true",
+        help="rewrite TeX shorthand in MATH golds (\\frac43 -> \\frac{4}{3}, "
+        "11\\sqrt2 -> 11\\sqrt{2}); see dacntt.gold.extract.normalise_math_gold",
+    )
+    parser.add_argument(
+        "--fixed-pipeline",
+        action="store_true",
+        help="shorthand for --patch-verifier --patch-verifier-boxed --fix-gold",
+    )
+    parser.add_argument(
+        "--train-pool-n",
+        type=int,
+        default=0,
+        help="if >0, select/train on this many MATH-train problems (seeded "
+        "sample) and use every problem of --dataset/--n as exam only",
     )
     parser.add_argument(
         "--holdout-frac",

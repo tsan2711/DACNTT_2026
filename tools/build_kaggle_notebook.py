@@ -27,6 +27,11 @@ OVERLAY = [
     "experiments/viec3/run.py",
     "experiments/viec3/kaggle_driver.py",
     "experiments/viec3/reeval.py",
+    "src/dacntt/gvt/train.py",
+    "src/dacntt/gold/extract.py",
+    "src/dacntt/gold/load.py",
+    "src/dacntt/gold/sources.py",
+    "src/dacntt/verify/adapter.py",
 ]
 MODEL = "Qwen/Qwen2.5-1.5B-Instruct"
 
@@ -62,19 +67,23 @@ print("setup xong")
 '''
 
 
-def run_block(name: str, dataset: str, seed: int, lr: str, extra: list[str], rounds: int, k: int) -> str:
-    args = ["--n", "500", "--rounds", str(rounds), "--k", str(k), "--max-tokens", "512", "--seed", str(seed),
-            "--holdout-frac", "0.3", "--learning-rate", lr, *extra]
+def run_block(name: str, dataset: str, seed: int, lr: str, extra: list[str], rounds: int, k: int,
+              n: int = 500, max_tokens: int = 512, budget_hours: float = 4.0) -> str:
+    # With --train-pool-n the exam is every problem of --dataset/--n and the
+    # selection pool comes from MATH-train, so no holdout split.
+    holdout = [] if "--train-pool-n" in extra else ["--holdout-frac", "0.3"]
+    args = ["--n", str(n), "--rounds", str(rounds), "--k", str(k), "--max-tokens", str(max_tokens),
+            "--seed", str(seed), *holdout, "--learning-rate", lr, *extra]
     return f'''
 out = "/kaggle/working/results/viec3/{name}"
 cmd = ["python", "-u", "experiments/viec3/kaggle_driver.py", "--out", out, "--rounds", "{rounds}",
-       "--log", "/kaggle/working/run_{name}.log", "--idle-minutes", "20", "--budget-hours", "4", "--",
+       "--log", "/kaggle/working/run_{name}.log", "--idle-minutes", "20", "--budget-hours", "{budget_hours}", "--",
        "python", "-u", "-m", "experiments.viec3.run", "--mode", "hf",
        "--model", "{MODEL}", "--dataset", "{dataset}", {", ".join(json.dumps(a) for a in args)},
        "--out", out]
 p = subprocess.Popen(cmd, env=env, start_new_session=True)
 try:
-    code = p.wait(timeout=4.5*3600)
+    code = p.wait(timeout=({budget_hours}+0.5)*3600)
 except subprocess.TimeoutExpired:
     os.killpg(p.pid, signal.SIGKILL); code = "TIMEOUT"
 print("{name} driver exit:", code)'''
@@ -87,10 +96,14 @@ def main() -> None:
     ap.add_argument("--runs", required=True, help="JSON: [[name, dataset, seed, lr, [extra flags]], ...]")
     ap.add_argument("--rounds", type=int, default=3)
     ap.add_argument("--k", type=int, default=4)
+    ap.add_argument("--n", type=int, default=500, help="exam problems (MATH-500 prefix)")
+    ap.add_argument("--max-tokens", type=int, default=512)
+    ap.add_argument("--budget-hours", type=float, default=4.0, help="per run")
     args = ap.parse_args()
     runs = json.loads(args.runs)
     cell1 = "import subprocess, signal, os\n" + "\n".join(
-        run_block(n, d, s, lr, ex, args.rounds, args.k) for n, d, s, lr, ex in runs
+        run_block(nm, d, s, lr, ex, args.rounds, args.k, args.n, args.max_tokens, args.budget_hours)
+        for nm, d, s, lr, ex in runs
     )
     compile(cell1, "cell1", "exec")
     meta = json.loads(args.meta.read_text())

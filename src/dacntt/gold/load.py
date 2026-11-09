@@ -4,16 +4,17 @@ from __future__ import annotations
 
 import json
 import urllib.request
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from dacntt.gold.extract import (
     extract_gsm8k_gold,
     extract_math500_gold,
+    normalise_math_gold,
     normalise_gsm8k_solution,
     normalise_math500_solution,
 )
-from dacntt.gold.sources import DATASETS, GSM8K, MATH500, SOURCES, GoldSource
+from dacntt.gold.sources import DATASETS, GSM8K, MATH500, MATHTRAIN, SOURCES, GoldSource
 
 _USER_AGENT = "dacntt-viec1/0.1 (research; gold answers only)"
 
@@ -36,6 +37,7 @@ def load_gold(
     cache_dir: Path,
     *,
     fetch: bool = True,
+    fix_gold: bool = False,
 ) -> list[GoldItem]:
     """Return the first ``n`` gold answers for ``dataset`` (``gsm8k`` or ``math500``)."""
     if dataset not in SOURCES:
@@ -48,7 +50,10 @@ def load_gold(
         ensure_cached(source, path)
     elif not path.is_file():
         raise FileNotFoundError(f"gold cache missing: {path}")
-    return _parse_jsonl(dataset, path)[:n]
+    items = _parse_jsonl(dataset, path)[:n]
+    if fix_gold and dataset in (MATH500, MATHTRAIN):
+        items = [replace(item, gold=normalise_math_gold(item.gold)) for item in items]
+    return items
 
 
 def ensure_cached(source: GoldSource, dest: Path) -> Path:
@@ -86,7 +91,7 @@ def _row_to_item(dataset: str, index: int, row: dict) -> GoldItem:
             problem=str(row.get("question", "")),
             solution=normalise_gsm8k_solution(str(row.get("answer", "")), gold),
         )
-    if dataset == MATH500:
+    if dataset in (MATH500, MATHTRAIN):
         return GoldItem(
             dataset=dataset,
             item_id=str(row.get("unique_id", index)),
