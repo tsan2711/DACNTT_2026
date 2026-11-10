@@ -111,10 +111,10 @@ Section~\ref{sec:audit} finds no sign that the model learns to avoid one
 verifier defect, but it has little power to see such learning. What appears,
 most clearly at the highest rate, is lower accuracy on the solutions the model
 does finish and, clearly at only one of two seeds, more generations that run
-out of tokens. Two earlier readings
-did not hold up, and we report why: a pooled design whose sharp decline did not
-reproduce under isolation (Section~\ref{sec:pooled}), and an isolated design at
-a learning rate that changed the outputs little (Section~\ref{sec:isolated}).
+out of tokens. Two readings are not supported: a sharp decline in a pooled
+design does not reproduce under isolation (Section~\ref{sec:pooled}), and an
+isolated design at a learning rate of $10^{-5}$ changed the outputs little
+(Section~\ref{sec:isolated}).
 
 \paragraph{Contributions.}
 \begin{itemize}
@@ -141,8 +141,7 @@ problem mix, and the cap-hit share rises only at that rate.
 STaR~\cite{ref_star} introduced the generate--filter--retrain loop, and
 ReST~\cite{ref_rest}, ReST-EM~\cite{ref_restem} and RFT~\cite{ref_rft} formalise
 it; ReST-EM, which like us restarts from the base model each iteration, reports
-diminishing gains after the first round. None measures how the filter's errors
-depend on the form of the answer. Yue et al.~\cite{ref_rllimit} show that RL
+diminishing gains after the first round. Yue et al.~\cite{ref_rllimit} show that RL
 raises pass@1 while the base model wins at large pass@$k$, and Teacher-Free
 Self-Training~\cite{ref_teacherfree} concludes that self-training ``amplifies but
 does not compound''. Training repeatedly on model-generated data erodes
@@ -155,9 +154,7 @@ lifts Qwen2.5-Math-1.5B on MATH-500 from $36.0\%$ to $73.6\%$~\cite{ref_oneshot}
 about $7{,}000$ examples lift DeepSeek-R1-Distill-Qwen-1.5B on AMC23 from $63\%$
 to $80\%$~\cite{ref_openrs}, and zero-RL works across ten open base models
 including Qwen2.5 from $0.5$B~\cite{ref_simplerl}. These studies improve
-accuracy, which our SFT loop does not; Wang et al.\ separate out format correction and report
-only $8.6$ of their $37.6$ points as lying beyond it, but the studies mostly do
-not ask what the rest consists of. Shao et al.~\cite{ref_spurious} show that it need not be
+accuracy, which our SFT loop does not; of Wang et al.'s $37.6$ points only $8.6$ lie beyond format correction. Shao et al.~\cite{ref_spurious} show that it need not be
 reward learning: random rewards raise Qwen2.5-Math-7B by $21.4$ points on
 MATH-500, which they trace to amplified pre-existing behaviour, and the effect
 varies by model family. We do not compete with RLVR on accuracy; the audit of
@@ -172,9 +169,8 @@ Imperfect Verifiers~\cite{ref_imperfect} models fixed false-accept and
 false-reject rates. Egashira et al.~\cite{ref_delayplateau} find in RLVR that
 systematic false negatives behave like random noise whereas false positives can
 cause plateau or collapse. They also track the false-negative rate on the
-policy's own rollouts per training step and observe that the policy first
-unlearns the behaviour that triggers false negatives; TinyV likewise tracks
-the share of false negatives across GRPO steps. Our setting differs in
+policy's rollouts per step and see the policy first unlearn the behaviour that
+triggers it; TinyV tracks the same share across GRPO steps. Our setting differs in
 paradigm (offline SFT with a fresh adapter per round) and task, and our
 controls cannot test their findings (Section~\ref{sec:control}).
 
@@ -188,15 +184,16 @@ scale (a 1.5B model), in the verifier (a rule-based one whose rejection defect w
 measured) and in auditing what that verifier's filtering does to the training
 pool, not only whether accuracy moved. Kim et
 al.~\cite{ref_selfdistill} show that self-distillation on ground-truth solutions
-can cut accuracy while shortening responses; our train-on-gold control shows a
-similar surface signature. We found no multi-round study combining a measured
+can cut accuracy while shortening responses, as our train-on-gold control does. Unlike their distillation arm, our positive
+control fails (Section~\ref{sec:final}). We found no multi-round study combining a measured
 format-biased rule-based verifier with a patched-verifier control, but since our
 patch proved too weak (Section~\ref{sec:control}) we do not claim this
 combination as the contribution. The per-round false-reject measurement of
 Section~\ref{sec:audit} is not new either: it is the per-step tracking of
 Egashira et al.\ and TinyV, applied here to offline SFT self-training and to
-a defect of our own pipeline. Supplementary Appendix~\ref{app:related} gives the full
-comparison.
+a defect of our own pipeline. The PRM800K grader~\cite{ref_lightman} normalises \verb|\dfrac| and \verb|\frac43|
+and could serve as a second verifier; we did not run it.
+Supplementary Appendix~\ref{app:related} gives the full comparison.
 
 \section{Setup}
 \label{sec:setup}
@@ -339,10 +336,6 @@ level only if it exceeded about $2.8\,h/1.96$: about $10$ points of pass@1,
 $8$--$10$ of pass@$k$ and $3.5$--$5.5$ of sample accuracy on MATH-500. A null
 in this paper means no gain of roughly that size. Details are in
 Supplementary Appendix~\ref{app:uncertainty}.
-
-\paragraph{Reproducibility.} Analysis scripts and saved generations of every run
-are in our repository; token counts at generation time, Design~P's training
-logs and the $1{,}536$-token re-scoring outputs were not saved.
 
 \section{Results}
 \label{sec:results}
@@ -566,7 +559,7 @@ cap, leaves the deficit in place (Supplementary Appendix~\ref{app:anatomy}).
 \subsection{A Final Round with a Corrected Recipe}
 \label{sec:final}
 Because no earlier arm improved, we ran one last round with the recipe changes
-a reviewer asked for: loss on the completion only, LoRA on all linear layers,
+that remove the suspected causes: loss on the completion only, LoRA on all linear layers,
 a 1,024-token cap and training limit, normalised gold answers, and a pool of
 300 problems from the MATH training split, so that the exam is all 500
 MATH-500 problems. It is one seed at $10^{-4}$ with $k=2$ and two rounds. The
@@ -636,7 +629,7 @@ cannot say whether pooling, selection-set scoring or dose produced it.
 \subsection{Interpretation}
 \label{sec:threevars}
 
-An earlier version explained the Design~P curves by a self-reinforcing
+One explanation of the Design~P curves is a self-reinforcing
 shrinking pool shaped by the biased verifier. The data neither support nor rule
 it out: the patch tests a rare bias, not a frequent one, and the no-filter
 control declines without any verifier but with more dose. The defensible statement is narrow: \emph{removing a format defect present
@@ -649,11 +642,10 @@ al.\ find harmful, so neither tests their findings for RLVR.
 \subsection{A Proposed Audit for GVT with a Biased Verifier}
 \label{sec:audit}
 
-Our pre-set reading rule failed in a predictable way: it tied ``learning the
-verifier's style'' to rising accuracy, so it could not speak once accuracy fell.
-From the analyses we added after the runs we propose four checks for
-self-training with a rule-based verifier. All four were defined post hoc here;
-we offer them as a protocol for future studies, not as tested methods.
+Our pre-set rule tied ``learning the verifier's style'' to rising accuracy, so
+it could not speak once accuracy fell. From post hoc analyses we propose four
+checks for self-training with a rule-based verifier, as a protocol for future
+studies, not as tested methods.
 
 \emph{(i) A per-round false-reject audit.} Fix a repaired verifier $V'$ that
 corrects a known defect class of the training verifier $V$. At each round $t$,
@@ -769,8 +761,9 @@ rejections; the gold-storage defect was measured afterwards and ran unvaried
 through every run before the final round, which normalised the gold, and every headline number is graded by the biased verifier
 that also selects the data. \emph{Truncation:} the $512$-token cap binds from
 the start and truncates a quarter of the pool in the main runs. \emph{Scope:}
-one model family and size, one verifier, a restart-from-base design that leaves
-compounding little room, and possible test-set contamination. \emph{No arm
+one model family and size, all instruction-tuned (no base model), one verifier, a
+restart-from-base design that leaves compounding little room (no continued
+training), and possible test-set contamination. \emph{No arm
 improves on round~0, and the gate on reference solutions failed even with the
 corrected recipe,} so we have no positive reference showing that any recipe
 can help a 1.5B model here. The Supplement lists the rest.
@@ -799,9 +792,8 @@ generations hit the token cap, clearly at one of two seeds. Patching a rare
 verifier defect made no difference of consistent sign across seeds, removing the
 filter gave no gain, neither control could have detected a small effect, and a
 frequent defect in our gold storage, which rejects about one in six correct
-solutions, ran unvaried through every run before the final round. A sharp decline seen in an earlier pooled design does
-not reproduce under isolation, and because that design also trained several
-times longer per round we leave its cause open.
+solutions, ran unvaried through every run before the final round. The pooled design's sharp decline does not reproduce under isolation; it also
+trained several times longer per round, so its cause is open.
 
 A rising score, in self-training or in RLVR, does not by itself show that a
 model learned mathematics rather than its verifier. A per-round false-reject
@@ -823,12 +815,12 @@ content of this article.
 
 \subsubsection{Code availability}
 Code, saved generations and analysis scripts are at
-\url{https://github.com/tsan2711/DACNTT_2026}.
+\url{https://github.com/tsan2711/DACNTT_2026} (tag \texttt{paper-2026-11}). Generation-time token counts, Design~P's training logs and the
+$1{,}536$-token re-scoring outputs were not saved.
 
 \subsubsection{Use of AI tools}
-The authors used Claude (Anthropic), through Claude Code, to help write and
-revise the manuscript, to write analysis and training scripts, and to run
-automated paper reviews. The authors designed the study, ran the experiments
+The authors used Claude (Anthropic), through Claude Code, to help write the
+manuscript, the analysis and training scripts, and to run automated reviews. The authors designed the study, ran the experiments
 and take responsibility for the content.
 \end{credits}
 
@@ -862,6 +854,11 @@ MATH Dataset. arXiv:2103.03874 (2021)
 Huang, Y., Zeng, W., Zeng, X., Zhu, Q., He, J.: From Accuracy to
 Robustness: A Study of Rule- and Model-based Verifiers in Mathematical
 Reasoning. arXiv:2505.22203 (2025)
+
+\bibitem{ref_lightman}
+Lightman, H., Kosaraju, V., Burda, Y., Edwards, H., Baker, B., Lee, T., Leike, J.,
+Schulman, J., Sutskever, I., Cobbe, K.: Let's Verify Step by Step.
+arXiv:2305.20050 (2023)
 
 \bibitem{ref_selfdistill}
 Kim, J., Luo, X., Kim, M., Lee, S., Kim, D., Jeon, J., Li, D., Yang, Y.:
