@@ -1,0 +1,65 @@
+[
+  {
+    "title": "Seed-1 ranges for the cap-share and finished-share leave out two seed-1 runs that contradict them",
+    "quote": "62–74%, every seed-2 run 34–59%)",
+    "explanation": "Appendix H says the finished-accuracy shares 'split by seed (every seed-1 run 62–74%, every seed-2 run 34–59%)', and §4.5, §5.3(ii), the Conclusion and App I.1 say the cap-share part is '12–30% of the decline at seed 1 and 52–72% at seed 2'. I recomputed these from Table 7. A,1 / B,1 / No filter,1 give finished shares of 73/62/74% and cap-share fractions of 1.3/8.3=16%, 2.0/6.7=30% and 1.0/8.2=12%, which matches the stated ranges. Seed 2 also checks out (72%, 52%, 60%). But Table 7 lists two more seed-1 runs at 5×10−4: 'A replicate, 1' (Fin. share 89%, cap-share +0.1 of −5.2, i.e. about −2%) and 'A, 1024 limit, 1' (85%, cap-share −0.3 of −5.7, i.e. about 5%). Both fall outside the stated ranges. So 'every seed-1 run 62–74%' is wrong as written. The 12–30% figure holds only for the three original-configuration seed-1 runs and should say so. This matters because the text reads the split by seed as 'partition variation'. The two extra seed-1 runs show that same-partition runs also reach 85–89%, which weakens that reading and widens the seed-1 cap-share range to about −2% to 30%.",
+    "comment_type": "technical",
+    "confidence": "high",
+    "source_section": "H Anatomy of the Decline in Full",
+    "related_sections": ["4.5 Anatomy of the Decline", "5.3 A Proposed Audit for GVT with a Biased Verifier", "7 Conclusion", "I.1 Answer to the Research Question", "Table 7"]
+  },
+  {
+    "title": "A seed-0 sample-accuracy interval with upper end 0.0 is described as excluding zero",
+    "quote": "exclude zero (upper ends −0.6 and 0.0 for sample accuracy, −0.5 and −0.9",
+    "explanation": "In Table 5, the 10−5 sample-accuracy interval for A, seed 0 is −2.4 [−4.8, 0.0]. An interval that ends at 0.0 does not exclude zero. Appendix E contradicts itself here. It first says sample accuracy falls 'with one interval (B, seed 0) excluding zero', then says 'These seed-0 intervals only just exclude zero (upper ends −0.6 and 0.0 for sample accuracy ...)', which counts A's [−4.8, 0.0] as excluding zero. §4.2 likewise says 'sample accuracy falls 1.2–3.2 points and matched finished accuracy 1.1–4.2, with intervals that only just exclude zero for A and B at seed 0', which a reader will take to cover both measures. Only the matched intervals (upper ends −0.5 and −0.9) and B's sample-accuracy interval (−0.6) actually exclude zero. App G handles the same situation correctly, saying two pass@4 intervals 'reach zero at their upper end'.",
+    "comment_type": "technical",
+    "confidence": "high",
+    "source_section": "E Design I at 10−5 in Full",
+    "related_sections": ["4.2 Design I at 10−5", "Table 5"]
+  },
+  {
+    "title": "Understatement factor 0.73–0.78 does not fit all re-scored runs and does not rescale intervals",
+    "quote": "same factor shrinks every original-verifier difference and interval, including the",
+    "explanation": "The factor is defined as 'the ratios of original to re-scored sample-accuracy changes below'. For the three self-training runs the ratios are −8.3/−10.7=0.78, −4.7/−6.0=0.78 and −2.4/−3.3=0.73, so 0.73–0.78 is right for them. The same paragraph also gives the train-on-gold changes (−19.7 vs −24.7 and −18.7 vs −22.0, repeated in App G), and those ratios are 0.80 and 0.85, outside the range. The stronger claim, that 'the same factor shrinks every original-verifier difference and interval, including the 2.2-point bound on gains, which on the re-scored scale is nearer 3 points', does not match the re-scored intervals the paper reports. Interval widths change by ratios of 0.92–0.96, not 0.73–0.78 (A,1: 7.8 vs 8.1; A,2: 7.0 vs 7.5; A 10−5: 4.8 vs 5.2). The upper endpoints shift down rather than scale: [−4.8, 0.0] becomes [−5.9, −0.7], and [−8.2, −1.2] becomes [−9.7, −2.2]. Dividing +2.2 by about 0.75 to get 'nearer 3' therefore has no basis in these data. In addition, the 2.2 endpoint comes from the 10−4 runs (seeds 1 and 3), which were never re-scored.",
+    "comment_type": "technical",
+    "confidence": "medium",
+    "source_section": "B The Verifier in Full",
+    "related_sections": ["3.2 The Verifier and Its Directional Bias", "G Higher Learning Rates in Full", "Table 5"]
+  },
+  {
+    "title": "The r_t evidence reports pass@1-based shares selectively; the unreported seed-2 share falls",
+    "quote": "round 0 and round 2 at seed 1 and 20% throughout at 10−5 (Appendix B). This",
+    "explanation": "§5.3 gives r_t as 15.5–18.4% 'in every round of the three runs', then adds pass@1-based shares of 17% (seed 1) and 20% (10−5). The 20% lies outside the 15.5–18.4% range. The two figures use different denominators: re-scored exam pass@1 versus all V'-accepted generations on 500 problems. The text does not flag this, so a reader sees two contradictory numbers for the same quantity. The third run is also left out. From App B's figures, Run A at 5×10−4 seed 2 has re-scored pass@1 38.0→32.0 and original 31.3→27.3. Its offsets are 6.7 and 4.7, so the pass@1-based share moves from 6.7/38.0=17.6% to 4.7/32.0=14.7%. That is the one downward move in these data, the direction the test reads as adaptation, and it falls below the stated range. pass@1 is a noisy single draw, but quoting the share for seed 1 and 10−5 and omitting seed 2 makes the 'no downward trend' evidence look more uniform than the paper's own numbers show. The r_t values per run and round on the stated denominator should be given, ideally in a table.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "5.3 A Proposed Audit for GVT with a Biased Verifier",
+    "related_sections": ["B The Verifier in Full", "Abstract", "3.2 The Verifier and Its Directional Bias"]
+  },
+  {
+    "title": "§4.1 says selection problems fall as much as the exam; App D's numbers show they sometimes fall less",
+    "quote": "fall as much as the exam)",
+    "explanation": "§4.1 defends Design P's selection-set scoring by saying 'in Design I the selection problems fall as much as the exam'. Appendix D's own comparison is mixed. At 10−5, selection falls less (−1.0 and −1.1 against exam −2.4 and −1.4). Run C at 5×10−4 falls clearly less (−11.3 against −15.4). Run A at 5×10−4 seed 1 is −8.2 against −8.3, and only 10−4 seed 1 (−6.2 vs −1.5) and 5×10−4 seed 2 (−5.3 vs −4.7) fall more. App D's phrase 'as much as or more than ... at the two higher rates' is also loose: there are three higher rates, the examples are drawn from 5×10−4 and 10−4, and −8.2 vs −8.3 is slightly less. The main-text summary should match App D's mixed result. A smaller point: App D's exam values (−1.4, −15.4, −13.0) do not match Table 5 (A,1 −1.5; C,1 −15.3; C,0 −13.1). The differences are only rounding, but the paper should use one source.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "4.1 Design P: An Apparent Collapse",
+    "related_sections": ["D Design P in Full", "Table 5"]
+  },
+  {
+    "title": "Abstract's '5–11 points' covers only some of the runs that 'every run' refers to",
+    "quote": "come 5–11 points less accurate",
+    "explanation": "The abstract says 'At the highest rate accuracy falls in every run, and finished solutions become 5–11 points less accurate'. The 5–11 range (5.5–10.6 in Table 5) comes from the six MATH-500 verifier-filtered and no-filter runs. Other runs at 5×10−4 fall outside it. Train-on-gold loses 25.6 and 25.9 points of matched finished accuracy, and the GSM8K Run C at 5×10−4 loses 12.1. Read literally, 'every run' at the highest rate includes those three, so the range is too narrow. Saying 'the six MATH-500 self-training and no-filter runs' would fix it. The intro states its scope correctly ('what training at the highest rate changes ... 5.5–10.6'), but the abstract does not.",
+    "comment_type": "technical",
+    "confidence": "low",
+    "source_section": "Abstract",
+    "related_sections": ["Table 5", "Table 11", "4.5 Anatomy of the Decline"]
+  },
+  {
+    "title": "Table 11 gives the same round-0 length for two different exam partitions",
+    "quote": "1158 →1146",
+    "explanation": "In Table 11, both 10−5 rows (A, seed 0 and A, seed 1) have round-0 mean length 1158 characters (1158 →1147 and 1158 →1146). Seeds 0 and 1 draw different 150-problem exam partitions, and their round-0 cap-hit shares (46.9% vs 40.7%) and finished accuracies (54.8% vs 55.2%) differ. With cap-hit six points apart, an identical mean length to the character is unlikely. Elsewhere, different partitions give different round-0 lengths (1175, 1154, 1178). This may be a transcription error and should be checked.",
+    "comment_type": "technical",
+    "confidence": "low",
+    "source_section": "Table 11 (H Anatomy of the Decline in Full)",
+    "related_sections": ["E Design I at 10−5 in Full"]
+  }
+]

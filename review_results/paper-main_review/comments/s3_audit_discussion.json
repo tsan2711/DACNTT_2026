@@ -1,0 +1,102 @@
+[
+ {
+  "title": "Conditioning on boxed share removes the very channel through which adaptation to the gold-storage defect would occur",
+  "quote": "the falling \\boxed share is accounted for, but with about 25 aﬀected problems,",
+  "explanation": "The defect fires only on boxed predictions, so the only ways to escape it are to leave the answer unboxed or to change its form. The paper itself says \"A model adapting to the defect would have to write these answers unboxed\". A falling boxed share among correct answers is therefore the expected signature of adaptation, not an independent nuisance. Since r_all = (boxed share of V'-accepted) x r_boxed (my check: 15.7/20.7 = 0.76 and 18.3/20.0 = 0.92, matching the quoted 91 -> 76%), the 'all' fall is exactly the boxed-share fall, and the 'boxed only' row conditions on a post-treatment mediator. 'Flat once the boxed share is accounted for' then cannot distinguish 'no adaptation' from 'adaptation realised through dropping \\boxed'. The paper's alternatives (imitation of a less-boxed pool, drift) are also unresolved, and the defect itself mildly selects against boxed answers in the V-filtered pool (V rejects ~18% of correct boxed answers and 0% of unboxed). No run without a verifier in the loop (the no-filter arm, the natural negative control) is in Table 4, so there is no benchmark for how far boxed share falls from drift alone. The Conclusion's wording 'finds no sign ... once the falling \\boxed share is accounted for' presupposes the answer. The affected-problem subset is the only informative row, and its intervals (10-26 points wide) are uninformative. A difference-in-differences of boxed share on affected versus unaffected problems, plus a no-filter row, would address this.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "7 Conclusion / 5.3 (i)",
+  "related_sections": [
+   "5.3 A Proposed Audit",
+   "5.1 Answer to the Research Question",
+   "Table 4"
+  ]
+ },
+ {
+  "title": "Explanation of the train-on-gold rise in r_t (\"more boxed\") contradicts Table 4's own boxed-only rows",
+  "quote": "as its outputs become more boxed, a reminder that rt moves with format for",
+  "explanation": "The text attributes the +2.1 to +3.3 rise in r_t for train-on-gold to outputs becoming more boxed. But Table 4's 'boxed only' rows, which by construction remove the boxed-share effect, rise by nearly the same amount (+2.8 and +1.7). Recomputing the boxed share from r_all/r_boxed gives 18.2/20.0 = 0.91 -> 21.5/22.8 = 0.94 and 18.0/19.4 = 0.93 -> 20.2/21.1 = 0.96, a ~3-point change worth about 0.6 points of r_t, i.e. a small part of the rise. Most of the rise is thus a boxed-only effect that the 'boxed share' explanation does not cover (section 4.4 also reports that gold-trained outputs switch to $-delimited spans, 5% -> 98%, a different format change). This matters because the same device ('the fall is explained by boxed share') is used to dismiss the -1.5 to -2.6 point falls in the self-training rows. It also shows r_t moves by +/-3 points from format effects of unknown origin, which is the same size as the effects being interpreted, so the audit has no demonstrated noise floor.",
+  "comment_type": "technical",
+  "confidence": "high",
+  "source_section": "5.3 (i) / Table 4",
+  "related_sections": [
+   "4.4 Higher Learning Rates",
+   "Table 4"
+  ]
+ },
+ {
+  "title": "The audit as run is structurally unable to find adaptation, yet is presented as a general check that 'should fall'",
+  "quote": "If the model learns to write what V accepts, rt should fall over rounds, whatever",
+  "explanation": "The unconditional prediction is contradicted by the paper's own analysis. Under SFT, boxed correct answers on affected problems are rejected 94-98% of the time, so they never enter the pool and carry no negative gradient; the only 'teaching' signal is 2-12 accepted examples per round out of 330-440. Table 4 shows the pool is largest (9-12) in the 10^-5 run, where the adapter barely changes outputs (section 4.2), and smallest (2-5) at 5e-4 where the model changes most. Pressure and capacity to adapt are thus inversely arranged, and for 5e-4 the main analysis rests on a handful of examples. The audit's null therefore has near-zero evidential value here, as the authors partly concede ('no positive control'). The statement in the text also implicitly assumes that learning verifier style would manifest only in this one defect. Also, the text says adaptation requires writing answers 'unboxed' and that the pool holds examples 'that do so', while the Table 4 caption counts any V-accepted example from affected problems (which includes boxed answers in an escaping form), so the pool count is not the count the argument needs. Claims such as 'we see no adaptation' are better read as 'the design could not have seen it', which the Conclusion mostly but not consistently says.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "5.3 (i)",
+  "related_sections": [
+   "Limitations",
+   "7 Conclusion",
+   "4.2 Design I at 10^-5"
+  ]
+ },
+ {
+  "title": "'Flat' boxed-only r_t is not evidence of absence; intervals are as wide as the effects interpreted",
+  "quote": "On boxed answers alone rt is ﬂat (changes −0.4 to +0.7",
+  "explanation": "Table 4's boxed-only intervals are [-2.9, 4.3], [-2.8, 3.4] and [-2.0, 1.2], which contain the full 'all' decline of -2.6 and also -5 points. 'Flat' describes point estimates; with no equivalence margin, a true effect as large as the one being explained away is compatible with the data. Also, the three 'all' falls (-2.6, -2.6, -1.5) are all negative, with upper limits of 0.3, 0.1 and 0.0, i.e. consistent in sign across three runs, which the paper dismisses by the boxed-share argument only. Further, r_t is a ratio tied to the problem mix: because the defect is bound to 54-62 specific problems, r_t falls whenever accuracy falls disproportionately on those (typically compound-answer, harder) problems, with no change in anyone's behaviour. The paper notes the problem-bound nature of the defect but does not control the composition effect in the 'all' and 'boxed only' rows. Finally, the affected-problem subset is defined by 'the defect ever fires', a selection on outcomes across rounds; at 92-95% baseline it also sits near a ceiling.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "5.3 (i) / Table 4",
+  "related_sections": [
+   "3.2 Gold-storage defect"
+  ]
+ },
+ {
+  "title": "Inference that the null 'concerns the recipe' rests on a train-on-gold arm run only at the damaging learning rate",
+  "quote": "improves, including training on reference solutions, the null may be a property",
+  "explanation": "The argument that 'no arm improves, including training on reference solutions' shows the null may be a property of the recipe uses a gold arm that exists only at 5e-4, a rate at which every arm, including the filtered one, falls by 4-11 points and the gold arm by ~20 points while shifting style to $-delimited spans (5% -> 98%) and halving response length. Failing to improve at a destructive learning rate is weak evidence about whether the recipe can help at 1e-5 or 1e-4, where no gold arm was run. The gold arm also changes the format in ways the biased verifier may penalise, and the paper concedes the verifier error is bounded only from below for it. So 'no positive reference' is accurate, but the sentence reads as if a positive control was run and failed, which overstates what the evidence supports. The Limitations ('no positive reference showing this recipe can help') is more careful than the Discussion and the Conclusion ('this is a null for the recipe').",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "5.1 Answer to the Research Question",
+  "related_sections": [
+   "4.4 Higher Learning Rates",
+   "7 Conclusion",
+   "6 Limitations"
+  ]
+ },
+ {
+  "title": "Cap-share decomposition: formula unspecified, percentages are unstable ratios without intervals, and seed is confounded with exam partition",
+  "quote": "attributes 12–30% of the decline to the cap share in the three original seed-1 runs",
+  "explanation": "The 'three-part decomposition' is not defined in the main text (no formula, no statement of what accuracy is assigned to cap-hit generations, no order or interaction handling), so the 12-30% and 52-72% figures cannot be reproduced from Table 1/2. As a rough check, with Table 1 the cap-hit share rises ~3 points at seed 1 (decline 8.4) and ~8 points at seed 2 (decline 4.6); depending on the accuracy assigned to capped samples, the seed-2 share could be anywhere from ~50% to ~90%, so the result is sensitive to unstated choices. The figures are ratios whose denominators are themselves uncertain (A seed 2 sample-accuracy change [-8.2, -1.2]), reported without intervals, and some are negative or near zero (-2% and 5%). Seed and exam partition are not separable (each seed has its own partition), yet 5.3(ii) says 'its balance differs by partition' and the Conclusion draws a seed-level contrast ('clearly only at one of its two seeds') from two runs with a shared design. The Table 2 'finished, matched' column is on a different scale (conditional on finishing, ~half the samples) from 'sample acc.' and can exceed it (A seed 2: -5.5 vs -4.7), which is easy to misread as exceeding the total decline.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "4.5 Anatomy of the Decline",
+  "related_sections": [
+   "5.3 (ii)",
+   "7 Conclusion",
+   "Table 1",
+   "Table 2"
+  ]
+ },
+ {
+  "title": "1,536-token evidence relies on the character proxy that the same section calls unreliable, and sits uneasily with the cap-share attribution",
+  "quote": "the character proxy there points to generations that do not stop rather than to",
+  "explanation": "Section 4.5 states that the earlier character-length proxy 'overstated termination' because drifting prose crosses its threshold within the same token budget, and section 3.4 states the per-sample outputs of the 1,536-token re-scorings were not saved, so token-based cap-hit cannot be recomputed. The sentence nevertheless uses that proxy to conclude that the remaining deficit comes from generations that do not stop. Two problems follow: (a) the inference relies on the measure shown to be biased, and cannot be checked; (b) if raising the cap to 1,536 leaves the deficit in place while the cap share is said to explain 52-72% of the decline at seed 2, then these capped generations do not terminate even with triple the budget, so they are genuine degradation (non-termination) rather than a truncation artefact to be separated from 'finished accuracy'. The decomposition's framing (a cap-share part vs a quality part) then understates that the cap part is itself model degradation, and the two findings need reconciling.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "4.5 Anatomy of the Decline",
+  "related_sections": [
+   "3.4 Reproducibility",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "Table 4 omits the no-filter control that would calibrate r_t and boxed-share drift",
+  "quote": "Train-on-gold, with no veriﬁer in the loop, gives rt rises of 2.1–3.3 points",
+  "explanation": "The only 'negative' reference for r_t is train-on-gold, a run that changes style drastically (shorter responses, $-delimited spans) and collapses accuracy, hence poorly matched to the self-training arms. The no-filter arm (verifier removed, similar sampling distribution, same learning rate, two seeds) is the natural comparison: if r_t and boxed share fall as much there as in the filtered arms, the falls are drift. If they fall less, selection by V contributes. The paper has the generations (they are saved) and reports no-filter results elsewhere, yet Table 4 and the text do not include it, leaving the key attribution (selection by V vs drift vs imitation) untested even descriptively. This is also needed to interpret the Conclusion's statement that the boxed-share fall is consistent with both imitation and drift.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "5.3 (i) / Table 4",
+  "related_sections": [
+   "4.4 Higher Learning Rates",
+   "7 Conclusion"
+  ]
+ }
+]

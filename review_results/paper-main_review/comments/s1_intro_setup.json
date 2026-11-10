@@ -1,0 +1,184 @@
+[
+ {
+  "title": "Audit target cannot be adapted to by construction (problem-bound defect)",
+  "quote": "It is bound to the problem, not to the",
+  "explanation": "The gold-storage defect is described as bound to the problem and rejecting 94-98% of correct answers on the 54-62 problems where it fires, with 29-34 of them having a gold V cannot parse so that 'no answer form avoids it'. In offline SFT a problem whose correct answers are always rejected never contributes a training example, and the model cannot change any answer form that would escape the rejection. There is therefore no selection pressure or gradient that could teach the model to 'avoid' this defect, and a flat or slowly falling r_t is the expected outcome whether or not the model is verifier-sensitive. The audit thus has not just 'low power' (as the paper concedes) but no possible positive outcome on those problems; the 'no adaptation' conclusion in the abstract and contributions is nearly vacuous. Only the 24-28 problems with an escaping form can carry information, and the pool there is 2-12 examples per round. The paper should either drop the 'we find no adaptation' framing or build a positive control (e.g. inject a bias with an escaping form).",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "Setup",
+  "related_sections": [
+   "Abstract",
+   "Introduction",
+   "Section 5.3"
+  ]
+ },
+ {
+  "title": "Defect-induced pool bias is treated as a harmless constant offset",
+  "quote": "That is a constant oﬀset in counts within a partition, so it cancels in within-run",
+  "explanation": "The 51 unparsable golds (10.2%) and the 54-62 defect problems are said to cancel in within-run differences. That holds for the count of solved problems only if those problems are never solved by any arm. But they also never enter the training pool, so every pool is systematically restricted to problems with simple, parseable gold forms (the defect-free problems), and the V-vs-V' re-scoring shows the effect is not constant (original-verifier changes are 0.73-0.85 of re-scored ones). This is exactly the 'directional verifier bias' the paper's title is about, acting on the training distribution, yet the Setup reduces it to an additive offset. The text also does not say whether exam problems with unparsable gold are excluded from the denominator of pass rates, which determines whether the 'cancels' argument applies to levels and relative effects.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Setup",
+  "related_sections": [
+   "Section 3.2",
+   "Section 5.3"
+  ]
+ },
+ {
+  "title": "Null is uninformative about the verifier question because the recipe fails even with gold data",
+  "quote": "no arm of this recipe improves at all",
+  "explanation": "The paper's research question is 'Mathematics or the Verifier?', but it also reports that training on reference solutions does not improve the model and that accuracy falls at the highest rate in every run. A recipe that cannot improve with gold data is not a valid testbed for separating learning from verifier-fitting: the null is explained by the training setup (see the truncation/prompt-loss and low-capacity LoRA issues) and says nothing about verifier-filtered self-training. The paper concedes it is 'a null for the recipe', but the title, abstract and first contribution still read as 'No Detectable Gain from Verifier-Filtered Self-Training', and the intro's two-branch question is answered negatively on branch one and left silent on branch two. The contribution is therefore mostly a failure report of an under-validated pipeline; a sanity check showing the pipeline can improve in any condition (e.g. larger-LR full-gold SFT on in-distribution data, or a rejection-sampling run known to help) is missing.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "Setup",
+  "related_sections": [
+   "Abstract",
+   "Section 4.4",
+   "Section 5.1"
+  ]
+ },
+ {
+  "title": "Training setup likely damages the model: loss on prompt and truncation removes answer and EOS",
+  "quote": "loss over the whole chat sequence, prompt included",
+  "explanation": "Loss is computed on the prompt as well as the solution, and a 512-token limit that includes the prompt cuts 24-26% of the round-0 pool (62.4% in the no-filter arm) so that those examples lose their final answer and end-of-sequence token. Training on such truncated targets directly teaches the model to continue past 512 tokens without terminating, which is the cap-hit/finished-accuracy decline the paper later decomposes. The verifier accepted these solutions when generation was under 512 new tokens, so the problem is created by the paper's own mismatch between generation cap and training limit, not by the loop. Because this affects every arm, including train-on-gold, it confounds all null and decline claims and makes statements like 'accuracy falls at the highest rate' about this implementation rather than about GVT. Truncated examples should have been dropped or the limit raised, and the paper should state whether the tokenizer appends EOS for non-truncated examples.",
+  "comment_type": "technical",
+  "confidence": "high",
+  "source_section": "Setup",
+  "related_sections": [
+   "Section 4.5",
+   "Section 4.4"
+  ]
+ },
+ {
+  "title": "Learning rate 1e-5 with q/v LoRA is far outside the usual regime; 'at any learning rate' is overstated",
+  "quote": "this value was the default of our training code",
+  "explanation": "The main five-round, k=8 runs use LR 1e-5 for rank-16 LoRA on q_proj and v_proj only, an untuned default; LoRA typically needs 1e-4 to 2e-4 or higher, and the paper itself admits the adapter 'did little' and the 10^-5 patch control is uninformative. The higher-LR runs then change k (4), rounds (3, i.e. two adapters) and pool size at the same time, and the 5e-4 runs already degrade. The abstract and intro's 'at any learning rate we tried' therefore rests on a very coarse grid where the useful window (roughly 1e-4 to 2e-4 for 3-5 rounds at k=8) is not covered with the main configuration, and adapter capacity (q/v only, no MLP) is not varied. Claims about the 'cheapest form of the loop' should be limited to this configuration.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "Setup",
+  "related_sections": [
+   "Section 4.2",
+   "Section 4.4"
+  ]
+ },
+ {
+  "title": "Detectable-effect claims: MDE is large, derived post hoc, and omits seed variance",
+  "quote": "5% level only if it exceeded about 2.8 h/1.96: about 10 points of pass@1, 8–10",
+  "explanation": "The design detects only about 10 points of pass@1 (and 3.5-5.5 of sample accuracy), larger than typical gains of rejection-sampling SFT at this scale, so a 'null' is compatible with all realistic effects. The MDE is computed from observed interval half-widths of the same runs (a post hoc power analysis), and the paper itself notes the intervals do not include training-seed variance (the replicate pair differs by 3.2 points of sample accuracy, comparable to the MDE). The quoted '2.2-point bound' on sample-accuracy gains is both post hoc in the choice of measure and smaller than the stated 3.5-5.5 MDE for the same measure, which makes the two statements hard to reconcile for a reader: the 2.2 bound is a confidence limit, the MDE is a power statement, and neither accounts for seed noise. No equivalence/non-inferiority test or pre-specified margin is used, so 'no detectable gain' is an absence-of-evidence statement; the paper also admits no multiplicity correction while concluding from patterns over many intervals. The paper applies a laxer standard to its own claims than the rigour it asks of the RLVR literature in the Introduction.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "Setup",
+  "related_sections": [
+   "Abstract",
+   "Introduction",
+   "Section 5.1"
+  ]
+ },
+ {
+  "title": "Novelty claim 'None measures...' may be satisfied by cited verifier-error work",
+  "quote": "None measures how the",
+  "explanation": "Related Work asserts that STaR/ReST/ReST-EM/RFT do not measure how the filter's errors depend on answer form, and later cites TinyV and Egashira et al. for verifier error. TinyV characterises false negatives by type (formatting, symbolic/format variants of the same answer) and Egashira et al. study systematic vs random false negatives in RLVR; both are measurements of how the verifier's errors depend on answer form, which the paper's own Section 3.2 format probe repeats. The statement is also confined to the four self-training papers, which were not designed to study verifiers, so it is a weak form of novelty. The paper is otherwise candid that the per-round false-reject tracking is not new; the sentence should be tightened to what is actually unmeasured in offline SFT.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "Setup",
+  "related_sections": [
+   "Related Work"
+  ]
+ },
+ {
+  "title": "Claimed '\\dfrac/\\tfrac rejected 100%' may be an artifact of the same storage defect",
+  "quote": "rejected 100% of the time on both datasets",
+  "explanation": "math-verify is designed to parse \\dfrac and \\tfrac when they appear in $...$ or \\boxed{}. A probe that is 'rejected 100% of the time' for a command the library is known to handle suggests the probe (or the pipeline) supplies the answer without a delimiter, i.e. it is the same missing-delimiter gold-storage defect, not a separate verifier weakness. If so, the 'patch' control and the 'rarer defect' narrative in the abstract are mis-specified: the patch repairs a symptom of the defect it leaves in place, and the claim that the patch removes 'the 100%-rejection class and nothing else' is unverified. The probe construction (where the re-rendered gold and prediction are wrapped) is not described, so the reader cannot tell which side was undelimited.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "Setup",
+  "related_sections": [
+   "Section 4.3",
+   "Abstract"
+  ]
+ },
+ {
+  "title": "False-negative audit of V is small, 7B-sourced and graded by an unvalidated scripted comparison; V' is itself unvalidated",
+  "quote": "the false-negative rate is 7.8% (10 of 128; Wilson interval",
+  "explanation": "The 7.8% estimate comes from solutions of a different, larger model (Qwen2.5-7B-Instruct) rather than the 1.5B policy, from 200 problems, with 'correct' defined by a scripted normalised comparison whose own error rate is not reported; the 128 judged-correct subset is not explained. The conclusion that 'most are compound answers, so probably largely the gold-storage defect' is speculation. More importantly, the paper builds r_t (and the headline 'one in six') on V', a verifier that wraps the gold in \\boxed{} when the prediction contains a box, yet the text admits the audit gives no false-positive rate and V' is never validated against a human or independent judge. If V' accepts wrong answers that V rightly rejects, r_t and its 15.5-18.4% overstate the defect. Predictions without a box are handled by an unspecified rule.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "Setup",
+  "related_sections": [
+   "Section 5.3",
+   "Abstract"
+  ]
+ },
+ {
+  "title": "Inconsistent/underspecified pool-size figures for the defect effect",
+  "quote": "It would enlarge the round-0 kept pool by about a",
+  "explanation": "The paper says the defect 'rejects 15.5-18.4% of the generations V' accepts' and that it would enlarge the round-0 kept pool 'from 440 to 542'. 102 of 542 is 18.8%, outside the stated range, and 542/440 is +23%, which is closer to a quarter than 'about a fifth'. Section 4.1 also gives the isolated MATH-500 round-0 pool as 872 examples, so it is unclear to which run (k=8 vs k=4, which seed) 440/542 belongs. The numbers that anchor the abstract's 'about one in six' should be tied to specific runs and denominators (generations vs. kept examples).",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "Setup",
+  "related_sections": [
+   "Section 4.1",
+   "Abstract"
+  ]
+ },
+ {
+  "title": "'Several rounds' framing vs. at most two adapters in the main evidence",
+  "quote": "We ask: after several GVT rounds, is the model better at mathematics, or",
+  "explanation": "The research question concerns compounding over 'several GVT rounds', but each round trains a fresh adapter from the base on only the previous round's pool, and most of the later evidence (3 rounds at k=4) has just two adapters, with the round-2 model a single adapter trained on the round-1 pool. This design gives compounding, the key feature of iterated self-improvement (and of ReST-EM-style results the paper cites), little room, as the paper itself admits in 3.1 but not in the Introduction, Abstract or title. 'Several rounds' and the conclusions about non-compounding therefore over-generalise from a restart-from-base design with minimal depth; the one design that runs five rounds uses the ineffective 1e-5 rate.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Setup",
+  "related_sections": [
+   "Section 3.1",
+   "Section 3.3",
+   "Section 4.4"
+  ]
+ },
+ {
+  "title": "Design P vs I: the 'collapse did not reproduce' claim is not a replication test",
+  "quote": "a pooled design whose sharp decline did not reproduce under",
+  "explanation": "The Intro presents the Design P collapse as a reading that 'did not hold up' under isolation, but P and I differ in model mix (0.5B and 1.5B), pooling of two datasets in one adapter, 4.5x larger pools, k, scoring on selection problems (train-on-eval) rather than a held-out exam, and learning rate/step counts (Design P training logs were not saved). Section 4.1 admits no run separates these explanations, so neither 'did not reproduce' nor 'does not hold up' is justified; the correct statement is that the two designs are not comparable. Because P evaluates on its own selection set, its pass rates are also not comparable to I's exam numbers, and the pooled collapse is an unexplained, un-diagnosed result that could equally reflect a pipeline bug (e.g. the truncation issue), which would also affect Design I.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Setup",
+  "related_sections": [
+   "Section 3.3",
+   "Section 4.1"
+  ]
+ },
+ {
+  "title": "Reproducibility gaps in the Setup",
+  "quote": "Token counts at generation",
+  "explanation": "Design P training logs, token counts at generation time and the per-sample outputs of the 1,536-token re-scorings were not saved, so the cap-hit and truncation statistics on which the 'finished vs capped' decomposition and the 12-30%/52-72% attributions rely cannot be regenerated. The V' rule for predictions without a box, the construction of the format probe, the generation engine and seeds, the exact selection rule (all accepted samples or deduplicated per problem; the pool contains up to k solutions per problem, which up-weights easy problems), and how exam problems with unparsable golds enter denominators are not specified. The number of selected examples per problem matters since 'all kept solutions are used', so training is dominated by easy problems repeated up to k times, a form of selection bias not discussed.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "Setup",
+  "related_sections": [
+   "Section 3.4",
+   "Section 4.5"
+  ]
+ },
+ {
+  "title": "Claim that false rejects 'only remove a training example' is at odds with the paper's own bias account",
+  "quote": "where a false reject only removes a training example",
+  "explanation": "The Introduction justifies the SFT setting by saying a false reject only removes an example, implying lower stakes than RLVR. But a systematic false reject removes whole answer forms and whole problems from the pool (the paper's own 54-62 problems with 94-98% rejection), so SFT learns from a pool skewed toward parseable gold forms; this is the same directional bias the paper claims to study. The 'cheapest and most widely used form of the loop' is also asserted without citation. The contrast with RLVR should be motivated by distribution shift of the pool rather than by the harmlessness of dropped examples.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "Setup",
+  "related_sections": [
+   "Introduction",
+   "Section 3.2"
+  ]
+ },
+ {
+  "title": "Possible benchmark contamination not addressed for 'amplify vs. learn' claims",
+  "quote": "the ﬁrst 500 problems of the GSM8K test",
+  "explanation": "Qwen2.5 models are known to have substantial exposure to MATH and GSM8K-style data, and the paper itself cites Shao et al. for random-reward gains from pre-existing behaviour. Using the first 500 GSM8K test problems and MATH-500 with a 150-problem exam, with no contamination check or fresh held-out set, undermines the claim that a held-out exam measures new learning rather than verifier-style or memorised behaviour; the same applies when the exam is only 150 problems and the pool 350 problems from the same distribution.",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "Setup",
+  "related_sections": [
+   "Section 3.3"
+  ]
+ }
+]

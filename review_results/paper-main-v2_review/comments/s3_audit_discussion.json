@@ -1,0 +1,110 @@
+[
+  {
+    "title": "Falling \\boxed share is the candidate verifier-bias channel, yet the audit conditions it away",
+    "quote": "fall matches the falling \\boxed share among correct answers (91 → 76% and",
+    "explanation": "Algebraically r_all = r_boxed x boxed share (checked: 0.20x0.91=18.2, 0.207x0.76=15.7, 0.194x0.93=18.0, 0.198x0.78=15.4), so the overall fall is entirely the boxed-share fall; that arithmetic is right. But the paper elsewhere shows V's gold-storage defect removes about a fifth of V'-correct, boxed generations from the kept pool (440 vs 542), so the pool is systematically less boxed than the model's outputs, and V thereby rewards unboxing. A falling boxed share is therefore exactly what 'learning to write what V accepts' would produce, not a nuisance. Treating it as format drift that 'accounts for' the fall (Conclusion: 'once the falling \\boxed share is accounted for') and the Discussion's 'imitation and drift would both produce' leave the audit unable to distinguish the hypothesis it was built to test. The boxed-share fall is not itself audited (no decomposition by affected vs unaffected problems, no share for the 10^-5 run).",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "5.3 A Proposed Audit",
+    "related_sections": ["5.1 Answer to the Research Question", "7 Conclusion", "3.2"]
+  },
+  {
+    "title": "'No adaptation' is stated more strongly than a power-less audit with same-direction estimates allows",
+    "quote": "see no adaptation to this defect, in one defect class, three runs and three to",
+    "explanation": "The audit has no positive control, 2-12 relevant training examples per round, and (for the only run with a pool of 9-12) a learning rate of 10^-5 where outputs barely change; the runs with a real update have pools of 2-5. So no run combines both pressure and capacity to adapt. The estimates on the cleanest subset (affected, parseable) are -5.5, -1.6 and -0.2, all in the adaptation direction, with intervals 10-26 points wide, and the overall falls are -2.6, -2.6, -1.5 with upper bounds at 0.3, 0.1, 0.0. 'We see no adaptation' / 'finds no sign' (5.1, Conclusion) reads as a negative finding; the data are compatible with a sizeable adaptation. The paper partly hedges, but the headline phrasing and the Conclusion's 'finds no sign that the model learns to avoid one verifier defect' should be 'uninformative about'. A restart-from-base design (fresh adapter each round) also means r_t over rounds measures single-step response, not accumulating adaptation.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "5.3 A Proposed Audit",
+    "related_sections": ["7 Conclusion", "5.1 Answer to the Research Question", "6 Limitations"]
+  },
+  {
+    "title": "Train-on-gold r_t rise is attributed to 'more boxed' outputs but boxed-only r_t rises almost as much",
+    "quote": "as its outputs become more boxed, a reminder that rt moves with format for",
+    "explanation": "The same boxed-share identity is used to dismiss the fall in self-training runs. For train-on-gold, Table 5 shows boxed-only r_t rising +2.8 and +1.7 against overall +3.3 and +2.1, so only ~0.5 point of the rise is a boxed-share effect; most is a rise within boxed answers, which the boxed-share account cannot explain. Moreover 4.4 says train-on-gold adopts a $-delimited reference style (5% to 98%) and 14% of round-2 generations lack \\boxed; no boxed share is reported for these arms. The statement that r_t 'moves with format for reasons unrelated to the verifier' is therefore not supported by the table it cites, and weakens the 'boxed share explains it' step applied to the other rows. Also, the intervals for all gold rows include zero.",
+    "comment_type": "technical",
+    "confidence": "medium",
+    "source_section": "5.3 A Proposed Audit",
+    "related_sections": ["4.4 Higher Learning Rates"]
+  },
+  {
+    "title": "Cap-share decomposition is undefined in the main text and its shares do not reconcile with the reported finished-accuracy losses",
+    "quote": "three original seed-1 runs and 52–72% at seed 2.",
+    "explanation": "Recomputing the standard decomposition (finished share x finished accuracy) from Tables 1-2 at 5e-4: at seed 1, finished share about 0.57, matched finished loss 9.1 gives about -5.2, cap-share change -3 pts times baseline finished accuracy about 0.59 gives about -1.9, sum about -7 versus an observed sample-accuracy fall of 8.3. At seed 2, finished loss 5.5 gives about -3.1 and the 8-point cap rise gives about -4.3 (sum about -7.4) versus an observed fall of only 4.7, so the two parts overshoot the total by about 60%, and 'share of the decline' is either >90% of the observed decline or 58% of an unreconciled sum, depending on the denominator. This overshoot arises because the matched measure conditions on which problems finish after training (acknowledged as descriptive) or because cap-hit (>=508 re-tokenised tokens) also counts some finished correct answers. The decomposition itself (parts, interaction term, denominator) is deferred to an unresolved appendix table, the '-2 and 5%' cases are given without definition, no intervals accompany the percentages, and 'three original seed-1 runs' is not identified (A, B, no-filter?). The difference between 12-30% and 52-72% is then attributed to 'partition', but seed changes both the 150-problem exam partition and training randomness, so the split cannot be assigned to either; it is also derived from 2 seeds on 150 problems.",
+    "comment_type": "technical",
+    "confidence": "medium",
+    "source_section": "5.3 A Proposed Audit",
+    "related_sections": ["4.5 Anatomy of the Decline", "4.4 Higher Learning Rates", "Table 1", "Table 2"]
+  },
+  {
+    "title": "Conclusion emphasises finished-accuracy loss although the decomposition says cap share dominates at seed 2 and one matched interval includes zero",
+    "quote": "the highest rate the model becomes less accurate on the solutions it does",
+    "explanation": "Section 4.5/5.3 report that the cap share explains 52-72% of the decline at seed 2 and only 12-30% at seed 1, and the matched finished-accuracy interval for A at seed 2 is [-11.7, 0.1] (includes zero; the 'five of six' count rests on that). The Conclusion states as the primary finding that accuracy on finished solutions falls, with cap-hits only 'clearly at one of two seeds'. The two seeds disagree on the mechanism, with different exam partitions and unquantified seed variance, so a single mechanistic statement ('most clearly... less accurate on finished solutions') is not warranted; Table 1 also shows only +3 and +8 point cap-hit changes at the two seeds.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "7 Conclusion",
+    "related_sections": ["4.5 Anatomy of the Decline", "5.3 A Proposed Audit", "Table 2"]
+  },
+  {
+    "title": "Conclusion says removing the filter made no difference of consistent sign, contradicting Section 4.4 and Tables 2-3",
+    "quote": "Patching a rare veriﬁer defect and removing the ﬁlter made no diﬀerence of consistent",
+    "explanation": "Against Run A at the same seed, no-filter is worse on pass@k (-9.3 vs -7.3; -12.0 vs -6.7), on pass@4 at R2 (-2.0 and -5.3, stated in 4.4), on matched finished accuracy (-10.6 vs -9.1; -6.6 vs -5.5), equal or worse on sample accuracy (-8.2 vs -8.3; -10.2 vs -4.7); only pass@1 at seed 1 favours no-filter (-6.0 vs -10.0). That is a consistent sign on most measures, though confounded by dose (3-4x steps) and within noise. The paper's own 4.4 text concedes it is 'lower on pass@4 at both seeds'. 5.2 and the Conclusion should say 'no difference that can be separated from dose and noise' rather than 'no consistent sign', or at least not group it with the patch (where signs flip).",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "7 Conclusion",
+    "related_sections": ["5.2 Interpretation", "4.4 Higher Learning Rates", "Table 2", "Table 3"]
+  },
+  {
+    "title": "Final-round gate failure (-32 points from 300 examples) is read as 'recipe cannot help', but is more plausibly a gate-design or training defect",
+    "quote": "a positive gate that must raise accuracy for the recipe to count as",
+    "explanation": "The gate is SFT of an already instruction-tuned Qwen2.5-1.5B on MATH-train reference solutions (very likely seen in its pretraining/post-training). Such data need not raise accuracy: they have a different format (the model moves to $-delimited prose, 60 to 1,577 of the generations), omit the prompted \\boxed convention, and are not on-policy. Failing this gate shows that reference-solution SFT hurts under this format, not that no pipeline can help. A fall from 49.2 to 17.0 after 300 examples and two rounds at 10^-4 (also at 5e-4) is also large enough to suggest an optimisation/formatting pathology (EOS handling, template mismatch, fp16, adapter on all linear layers at this rate) rather than learning; no lower-rate gate (e.g. 10^-5) or sanity check (train loss, generation inspection, a gate on exam-style on-policy correct data) is reported. Hence the conclusions 'no positive reference showing that any recipe can help', 'this is a null for the recipe, not for self-training' and the call for 'a recipe that passes the positive gate' presuppose the gate is a valid positive control, which was not established. The gate also changes five things at once relative to earlier runs (loss masking, all-linear, cap, gold normalisation, pool), so 'corrected recipe' cannot be credited or blamed for any one.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "4.6 A Final Round with a Corrected Recipe",
+    "related_sections": ["5.1 Answer to the Research Question", "6 Limitations", "7 Conclusion"]
+  },
+  {
+    "title": "Conclusion draws a recipe-level null from a gate that failed, while Table 4 shows the loop declining significantly",
+    "quote": "lowers pass@1 by about 30 points even with a corrected recipe, so this is a null for",
+    "explanation": "If the gate does not validate the recipe, the loop result (pass@1 -4.8 [-9.0, -0.6], the only 500-problem, corrected-recipe, single-seed comparison) cannot be read as a null for the recipe either: a recipe that damages the model by 30 points on trusted data may damage it on self-generated data by a smaller amount. The paper reads the loop as 'no gain and a possible small decline, as at 10^-5', but at 10^-5 no pass@1 interval excluded zero, whereas here it does; and with three measures reported without correction the pass@1 and sample-accuracy intervals (-5.8 to 0.0) straddle the usual threshold. The wording 'null for the recipe, not for self-training' also implies the recipe is known to be at fault, which the gate cannot show. Consider stating simply that the experiment is uninformative about self-training because the positive control failed.",
+    "comment_type": "logical",
+    "confidence": "low",
+    "source_section": "7 Conclusion",
+    "related_sections": ["4.6 A Final Round with a Corrected Recipe", "5.1 Answer to the Research Question"]
+  },
+  {
+    "title": "Detectable-effect numbers for the final round: pass@k bound of 4 does not follow from Table 4",
+    "quote": "only about 10 points of pass@1 and 8–10 of pass@k (6 and 4 in the",
+    "explanation": "The paper's rule is detectable effect = 2.8h/1.96 with h the interval half-width. In Table 4 the loop's pass@1 half-width is 4.2 (gives 6.0, matches the text) but the pass@2 interval [-6.8, +0.6] has half-width 3.7, giving about 5.3, not 4; the figure 4 matches the sample-accuracy half-width (2.9, giving about 4.1). So '6 and 4' pairs pass@1 and pass@k in the sentence but the second number is the sample-accuracy figure. The same pairing appears in the Conclusion ('6 in a final 500-problem round'), so only 5.1 is wrong, but the comparison with the earlier '8-10 of pass@k' overstates the gain in precision.",
+    "comment_type": "technical",
+    "confidence": "medium",
+    "source_section": "5.1 Answer to the Research Question",
+    "related_sections": ["4.6 A Final Round with a Corrected Recipe", "3.4"]
+  },
+  {
+    "title": "Earlier 5e-4 gate result (-30.5) is cited as 'same recipe' but is not reported anywhere in the tables",
+    "quote": "An earlier gate at 5 × 10−4 with the same recipe also failed (−30.5 points",
+    "explanation": "The only train-on-gold results at 5e-4 in Tables 2-3 are under the original recipe (q/v LoRA, prompt loss, 512 cap) and give pass@1 changes of -18.0 / -21.3 at R2 (-15.3 and -22.6 at R1), not -30.5. So the -30.5 must come from an unreported run with the corrected recipe; its seed, k, rounds and interval are not given, and 5.1/6 then count the gate as having 'failed twice'. 'Same recipe' is also ambiguous between the original and the corrected recipe. Report it or the claim rests on an unseen result.",
+    "comment_type": "technical",
+    "confidence": "medium",
+    "source_section": "4.6 A Final Round with a Corrected Recipe",
+    "related_sections": ["5.1 Answer to the Research Question", "Table 2", "Table 3"]
+  },
+  {
+    "title": "Denominator of the style count does not match 500 problems x k = 2",
+    "quote": "1,600 generations at round 0, 1,577 at round 1)",
+    "explanation": "The final round has 500 exam problems and k = 2, i.e. 1,000 exam generations (and 600 pool generations if the 300 pool problems are also sampled, 1,600 in total only if both are counted). The text does not say which population the 1,600 refers to, and the style counts at round 1 include generations from a model that was trained on exactly these pool problems; mixing the exam and training partitions would inflate the adoption figure relative to held-out behaviour.",
+    "comment_type": "technical",
+    "confidence": "low",
+    "source_section": "4.6 A Final Round with a Corrected Recipe",
+    "related_sections": []
+  },
+  {
+    "title": "Cap-hit proxy (>= 508 re-tokenised tokens) is not the generation-time criterion and cannot be validated",
+    "quote": "Re-tokenising the saved text, we call a generation cap-hit at ≥ 508 tokens.",
+    "explanation": "Section 3.4 states that token counts at generation time were not saved. Re-tokenised length of decoded text can differ from the generated token count (special tokens, merges across the decode boundary), and the 4-token margin is not justified; generations that finish between 508 and 512 tokens are classified as unfinished, and the paper's own earlier character proxy is said to have been misleading. Every cap-share and 'finished accuracy' number in 4.5, Tables 2 and the decomposition depends on this classification, yet no sensitivity analysis (e.g. thresholds 500/512, or the saved finish reason) is given.",
+    "comment_type": "technical",
+    "confidence": "low",
+    "source_section": "4.5 Anatomy of the Decline",
+    "related_sections": ["3.4 Models, Data, Training, Metrics", "5.3 A Proposed Audit"]
+  }
+]

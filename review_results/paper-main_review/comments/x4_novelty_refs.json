@@ -1,0 +1,126 @@
+[
+ {
+  "title": "Audit presented as a contribution is conceded to be non-novel, post hoc and unvalidated",
+  "quote": "A post hoc per-round false-reject audit of one veriﬁer defect, carried over",
+  "explanation": "Contribution 2 (and the abstract, Section 5.3 title 'A Proposed Audit', and the Conclusion) frame the false-reject audit as a deliverable, yet the paper itself says in Related Work that 'The per-round false-reject measurement of Section 5.3 is not new either: it is the per-step tracking of Egashira et al. and TinyV', that all four checks 'were deﬁned post hoc' and are offered 'not as tested methods', and the Limitations state 'no positive control'. The result is a null (rt falls 1.5-2.6 points with intervals touching zero, explained by a falling \\boxed share), so the audit has never been shown able to detect adaptation when it exists. A protocol whose sensitivity is unknown cannot be listed as a finding or contribution; the only transferable novelty is the observation that rt must be conditioned on answer format, which is a caveat, not a validated method. The Conclusion's 'natural next step' (apply to public RLVR checkpoints) was not done. Recommend demoting it to a discussion/future-work item or adding a positive control (e.g. train on V-only-accepted data and show rt falls).",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "Introduction (Contributions)",
+  "related_sections": [
+   "Related Work",
+   "5.3 A Proposed Audit",
+   "Limitations",
+   "Conclusion",
+   "Abstract"
+  ]
+ },
+ {
+  "title": "The 'verifier bias' studied is the authors' own gold-storage bug, not a property of math-verify; title and framing overreach",
+  "quote": "The gold-storage defect (post hoc).",
+  "explanation": "The title, abstract and intro ask whether the model learned 'what the verifier accepts', citing verifier false negatives from TinyV, Huang et al. and Egashira et al. But the only frequent defect (about one in six correct solutions; 15.5-18.4%) is a data-storage bug in this pipeline (gold stored without delimiters), discovered post hoc and never varied; the genuine math-verify parser defect (\\dfrac, 0-4 examples) is rare. The audit therefore measures adaptation to an engineering error that a correctly configured math-verify call would not have, which limits relevance to the cited RLVR literature (where verifiers are used as intended) and makes the claim of studying 'verifier bias' largely a claim about a self-inflicted artifact. The related-work positioning ('applied to ... a defect of our own pipeline') concedes this but title and contributions do not.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "3.2 The Verifier and Its Directional Bias",
+  "related_sections": [
+   "Introduction",
+   "Related Work",
+   "Abstract",
+   "Conclusion"
+  ]
+ },
+ {
+  "title": "Wang et al. figures cited inconsistently: no citation marker in Related Work, no locator, and role in argument shifts",
+  "quote": "Wang et al. separate out format correction and report only 8.6 of their 37.6 points as lying beyond it, but the studies mostly do not ask what the rest consists of.",
+  "explanation": "In the Introduction the numbers are tied to [14] ('from 36.0% to 73.6% on MATH-500 [14], a gain whose authors report only 8.6 points beyond format correction'); in Related Work the 8.6/37.6 claim appears with a bare author name and no [14], and 37.6 is never derived (it equals 73.6 - 36.0 only if the reader computes it). No table or section of Wang et al. is given for the 8.6 figure, so a reader cannot check that it is a MATH-500 number for the same model and not, say, an average or different setting. The sentence also uses Wang et al. as an example of a study that does ask the question while concluding that 'the studies mostly do not', which muddles whether the paper is building on or departing from this work. Note too that the 8.6 figure is about format correction, not about verifier-specific learning, so it supports the paper's motivation only indirectly. Cite [14] at each use, state the quantity once, and give a locator.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Related Work",
+  "related_sections": [
+   "Introduction",
+   "References"
+  ]
+ },
+ {
+  "title": "Shao et al. comparison juxtaposed with Wang et al. without matching model/setting, then used to motivate a 1.5B SFT study",
+  "quote": "Shao et al. [9] ﬁnd that GRPO with random rewards raises Qwen2.5-Math-7B by 21.4 points on MATH-500, against 29.1 with ground-truth rewards.",
+  "explanation": "The Introduction places Shao et al.'s 7B result right after Wang et al.'s 1.5B result with 'Yet', as if they conflict, but they involve different models, different reward conditions and different baselines; Shao et al. themselves note that the spurious-reward effect is largely specific to Qwen2.5-Math (the Related Work admits 'the eﬀect varies by model family'). This is stated in Related Work but not in the Introduction, where the 21.4/29.1 figures are used to suggest that a rising score may reflect 'what its reward accepts'. In fact Shao et al. trace the gain to amplified pre-existing behaviour (e.g. code reasoning), not to reward-accepted surface form, so it does not support the 'learned the verifier' hypothesis the paper is testing; this is acknowledged only in Related Work. The two sections should state the finding identically. The Qwen2.5-Instruct model used here is also not the Qwen2.5-Math family, which limits how far Shao et al. transfers to the experimental subject.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Introduction",
+  "related_sections": [
+   "Related Work"
+  ]
+ },
+ {
+  "title": "Egashira et al. findings stated inconsistently and 'harmless' overstates a paper titled 'Delay, Plateau, or Collapse'",
+  "quote": "whether systematic false negatives are harmless in general, as Egashira et al. ﬁnd",
+  "explanation": "Related Work says Egashira et al. 'ﬁnd in RLVR that systematic false negatives behave like random noise', and the cited title lists 'Delay' as one outcome, i.e. false negatives slow learning rather than being harmless. Section 5.2 then says they find them 'harmless', and Section 5.3 and the Introduction attribute to them the per-step tracking and the 'unlearns the behaviour' observation. Each is a different strength of claim about [4], without number in Sections 4-5 ('Egashira et al.' with no marker) and with two markers elsewhere. Because the paper's null for the patch control is interpreted against this finding, the claim should be stated once, precisely (delay vs harmless; which noise model), and cited consistently. The paper also says its controls 'cannot test their ﬁndings', so using their result to interpret its own null in 5.2 is weakly grounded.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "5.2 Interpretation",
+  "related_sections": [
+   "Related Work",
+   "Introduction",
+   "5.3 A Proposed Audit"
+  ]
+ },
+ {
+  "title": "Closest prior work (Xu et al., Phantom Gains) overlaps two of three contributions; differentiation is thin",
+  "quote": "This is the study closest to ours; it is why we separate ﬁnished accuracy from termination (Section 4.5).",
+  "explanation": "Xu et al. [15] already audit LoRA self-training against a frozen control, find measurement failures including fixed-token-cap under style drift and training-seed variance. The paper says this is the reason for its Contribution 3 (decomposing accuracy into finished-accuracy and cap-share), so that contribution is a re-application of a known failure mode, and a decomposition of this kind is elementary arithmetic rather than a new method. Contribution 1 (a null for self-training at a different scale) is a replication-style result, and the paper itself discounts it (null for the recipe only, no positive reference, no arm improves). The stated differences ('scale', 'rule-based verifier', 'auditing what that veriﬁer's ﬁltering does to the training pool') are weak: the pool audit is the post hoc rt analysis that finds nothing, and Xu et al. also lack the training-seed variance that this paper omits (intervals cover 'only problem draw and sampling'). The paper also criticises others for uncontrolled seed variance but applies the same omission itself (self-consistency of standards). As written, the distinct contribution reduces to a small-scale replication; the paper should state this honestly and frame the work as such.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Related Work",
+  "related_sections": [
+   "Introduction (Contributions)",
+   "Limitations",
+   "4.5"
+  ]
+ },
+ {
+  "title": "Kim et al. analogy mismatches the paper's train-on-gold control",
+  "quote": "Kim et al. [7] show that self-distillation on ground-truth solutions",
+  "explanation": "Kim et al.'s title concerns self-distillation degrading reasoning (the student is trained on its own or a conditioned teacher's outputs). The paper's train-on-gold arm is plain SFT on reference solutions with loss over the prompt and a 512-token training limit that truncates a quarter of the pool, so its accuracy drop and shorter outputs have many simpler explanations (distribution shift from terse MATH solutions, prompt-loss training, truncation). Calling this 'a similar surface signature' implies a shared mechanism without evidence, and the characterisation 'self-distillation on ground-truth solutions' may not be what Kim et al. ran. The sentence should be hedged or the cited finding stated precisely. Reference 7 (arXiv:2603.24472) could not be verified here.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "Related Work",
+  "related_sections": [
+   "Conclusion"
+  ]
+ },
+ {
+  "title": "Over-broad novelty statement that no prior self-training work studies filter errors by answer form",
+  "quote": "None measures how the",
+  "explanation": "The sentence is stated flatly about STaR, ReST, ReST-EM and RFT, while the next paragraphs cite TinyV (rule-based verifiers reject correct solutions), Huang et al. (verifier recall) and Egashira et al. (systematic false negatives), which do measure how a rule-based verifier's rejections depend on the answer's form. The paper's own evidence for the form dependence is small (10 of 128 false negatives, \\dfrac probe). The claim also compares the wrong sets: those four methods used ground-truth answers by exact match, not rule-based verifiers designed for LaTeX, so 'None measures' is true but uninformative as a gap. Recast as a statement about what the cited works did not do, not as a gap this paper fills.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "Related Work",
+  "related_sections": [
+   "Introduction"
+  ]
+ },
+ {
+  "title": "Citation naming style inconsistent; 'Imperfect Verifiers [1]' and 'From Accuracy to Robustness [6]' do not match reference titles",
+  "quote": "Imperfect Veriﬁers [1] models ﬁxed false-accept and false-reject rates.",
+  "explanation": "Reference 1 is titled 'Reinforcement Learning with Veriﬁable yet Noisy Rewards under Imperfect Veriﬁers' (Cai et al.), so the text uses an invented short title in place of a name, whereas [6] is cited by its (full) title fragment, [16] by 'TinyV', and [4], [14], [15], [9], [7] by 'X et al.'. A reader cannot tell that 'Imperfect Veriﬁers' is Cai et al. Cai et al. is also a relevant, closely related paper (noisy rewards with asymmetric false-positive and false-negative rates, with a correction method) that is dismissed in one clause with no statement of how this work differs. Use author names consistently and state the relation. The same loose attribution recurs in 'RLVR studies [4,16]', where the markers are cited together to support per-step false-negative tracking though only [4] is said to report the unlearning result.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "Related Work",
+  "related_sections": [
+   "References",
+   "Introduction"
+  ]
+ },
+ {
+  "title": "Several 2026 references cannot be verified from the reference list; two carry load in the positioning",
+  "quote": "Xu, C., Yan, N., Chen, L., Kechadi, M.-T.: Phantom Gains: Auditing Self-",
+  "explanation": "Reference 15 (arXiv:2608.20290), 4 (2605.02909), 7 (2603.24472), 8 (2606.13732) and 13 (2606.07856) are all 2026 preprints; I did not look them up. They are plausible for the Nov 2026 date, but they are not older, widely cited works and several are single-purpose to the argument: [15] is described as 'the study closest to ours', [4] supplies the central RLVR evidence, and [13] and [8] are cited via paraphrase or a quoted phrase ('ampliﬁes but does not compound'). The CLAUDE.md protocol for this project requires titles, IDs and numbers to be confirmed against the actual paper; before submission, the exact IDs, the quoted phrase, and the numerical claims attributed to [4], [6] (86% recall, 0.95 for math-verify) and [15] ('seven measurement failures') should be checked against the sources. Flagged low confidence because it cannot be verified from within the supplied files.",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "References",
+  "related_sections": [
+   "Related Work",
+   "Introduction"
+  ]
+ }
+]

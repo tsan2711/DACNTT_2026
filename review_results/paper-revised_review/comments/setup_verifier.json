@@ -1,0 +1,110 @@
+[
+  {
+    "title": "Scaling the 2.2-point bound to ~3 points contradicts the paper's own re-scored intervals",
+    "quote": "2.2-point bound on gains, which on the re-scored scale is nearer 3 points",
+    "explanation": "The paper takes the factor 0.73–0.78 (a ratio of point estimates in three declining runs: −8.3/−10.7 = 0.78, −4.7/−6.0 = 0.78, −2.4/−3.3 = 0.73) and applies it to 'every original-verifier difference and interval', so the 2.2-point upper bound becomes 2.2/0.75 ≈ 2.9. This would only hold if re-scoring multiplied every per-problem difference by one constant. The re-scored intervals the paper reports do not behave that way. Interval widths barely change: Run A 5e-4 seed 1 goes from [−12.3, −4.5] (width 7.8) to [−14.8, −6.7] (8.1); seed 2 from [−8.2, −1.2] (7.0) to [−9.7, −2.2] (7.5); 1e-5 seed 0 from [−4.8, 0.0] (4.8) to [−5.9, −0.7] (5.2). Widths grow by about 4–8%, not by the ~30% that dividing by 0.75 implies. Meanwhile the point estimates move further negative. The 2.2 bound comes from runs with negative point estimates (A at 1e-4, seeds 1 and 3: −1.5 [−5.3, 2.2] and −1.0 [−4.3, 2.2]). Applying the observed pattern (centre ×1.3, half-width ×1.05) to −1.5 [−5.3, 2.2] gives about −2.0 [−5.9, 2.0]: the upper end stays near 2, it does not move to 3. Rescaling an upper endpoint by a ratio of point estimates only makes sense for an interval centred on a positive gain. Neither run that sets the bound was re-scored. The '≈3 points' figure (also in the summary) is unsupported and probably wrong in direction. It should be dropped, or computed by actually re-scoring the runs that set the bound.",
+    "comment_type": "technical",
+    "confidence": "high",
+    "source_section": "B The Verifier in Full",
+    "related_sections": ["3.2 The Verifier and Its Directional Bias", "5.1 Answer to the Research Question", "Table 5"]
+  },
+  {
+    "title": "The 15.5–18.4% 'storage defect' share and r_t mix in the unparseable-gold defect, which cannot be adapted to by construction",
+    "quote": "in \\boxed{}, the re-score described below, makes 46 of these 51 golds parseable,",
+    "explanation": "V′ wraps the gold in \\boxed{}, and this also makes 46 of the 51 previously unparseable MATH-500 golds parseable. On those problems V rejects every sample, whatever its form, and V′ accepts the correct boxed ones. So every correct boxed generation on these ~46 problems (~9% of problems) lands in the numerator of r_t. The paper admits the overlap ('the two corrections overlap and should not be added'), but the abstract, §3.2 and §5.3 still call the 15.5–18.4% a single 'storage defect' and use its flatness as the adaptation test. The format probe suggests the unparseable part is large. Of the 41 boxed-probe rejections, 24 come from unparseable golds and only 17 (8.5%) are the compound/bare-gold class. The FN audit, which excludes unparseable golds, finds 7.8%. Together these suggest that roughly half of the 15.5–18.4% is the unparseable-gold component. That component cannot fall through adaptation: those problems never enter the pool, never give training signal, and no output form is accepted by V. Its share of r_t can move only through changes in relative accuracy on those problems. A flat r_t is therefore partly guaranteed by construction, which weakens 'the model does not adapt to this defect'. The same mixing affects the pool figure 440→542 used in check (iii) and in §3.2, since newly parseable selection-set problems add examples too. Fix: report r_t (and the pool enlargement) separately for (a) problems whose gold V parses and (b) the 46 newly parseable ones, and make (a) the adaptation test.",
+    "comment_type": "logical",
+    "confidence": "high",
+    "source_section": "B The Verifier in Full",
+    "related_sections": ["Abstract", "3.2 The Verifier and Its Directional Bias", "5.3 A Proposed Audit for GVT with a Biased Verifier"]
+  },
+  {
+    "title": "As instantiated, r_t is not a clean adaptation test: V′ depends on the prediction's format, no feasible V-accepted correct form is shown, and r_t moves with style and problem mix",
+    "quote": "the gold in \\boxed{} when the prediction contains one and the gold does not",
+    "explanation": "The logic is 'r_t falls iff the model adapts to V'. Four things weaken it here. (1) V′ wraps the gold only when the prediction contains \\boxed{}. For unboxed generations V′ = V, so they can never be in the numerator. So r_t ≈ (boxed share among V′-accepted) × P(V rejects | boxed, V′ accepts). A fall in boxed usage, which the paper reports and says it cannot attribute to imitation or drift, lowers r_t mechanically. The test then has the same imitation-vs-drift confound the paper cites for style counts. The reason for the conditional wrap, rather than always wrapping the gold, is not given. (2) Adaptation needs a correct form that V accepts. For a compound bare gold parsed to its first number, a correct boxed answer can never pass. The only accepted outputs are unboxed text parsed the same way, or a wrong answer equal to the first number. The paper does not show that a learnable, correct, V-accepted form exists, so 'r_t should fall' is not established as a prediction. (3) r_t is not controlled for composition. As accuracy falls, which problems contribute correct answers changes, and compound-answer problems may differ in difficulty. So r_t can drift without adaptation, or a fall can be masked. The 'direction-free' test is therefore not independent of accuracy changes. (4) The paper's own train-on-gold data show the defect share moving with output style and no verifier involved: 0.7/16.0 ≈ 4% at seed 1 and 3.3/13.3 ≈ 25% at seed 2, against ~17% at round 0. So a fall in r_t is not specific to adapting to V, and a flat r_t mainly says the boxed answer style did not change. With no interval on r_t and three runs, the paper's 'rules out strong adaptation' wording is about as far as the evidence goes. The abstract's unqualified 'the model does not adapt to this defect' goes further. A problem-fixed version (r_t on a fixed set of problems, boxed generations only) with a bootstrap interval would help.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "5.3 A Proposed Audit for GVT with a Biased Verifier",
+    "related_sections": ["B The Verifier in Full", "Abstract", "4.4 Higher Learning Rates"]
+  },
+  {
+    "title": "The 0.73–0.78 'understatement factor' is a composite of two effects, is outside range for train-on-gold, and is extrapolated to every table",
+    "quote": "understated (by a factor of about 0.73–0.78)",
+    "explanation": "Arithmetic check: the three self-training ratios are 0.78, 0.78 and 0.73. Train-on-gold, re-scored in the same analysis, gives −19.7/−24.7 = 0.80 and −18.7/−22.0 = 0.85, both outside the stated range. A constant defect share f ≈ 17–20% of correct answers would predict a factor of 1−f ≈ 0.80–0.83. The lower observed 0.73–0.78 is consistent with a second effect: the always-zero unparseable-gold problems (11–18 per partition, ≈7–12%) add no change under V but do under V′. So the factor depends on how many dead problems a partition has and on accuracy changes on those problems; it is not a property of the verifier. Extending it to 'every original-verifier difference and interval', to runs never re-scored (all of 1e-4 and 2e-4, Run B, no-filter, Run C), to pass@k, and to the claim that all tables are '4.7–8.0 points too low' is unsupported. The 4.7–8.0 offsets are pass@1 on MATH-500 exams from five runs. GSM8K (0% audited FN, numeric golds) and Design P are presumably mostly unaffected, and pass@k offsets were not reported. The paper should state the factor's derivation and range (including train-on-gold), limit it to the re-scored runs, and restrict the 'too low' statement to MATH-500 pass@1.",
+    "comment_type": "technical",
+    "confidence": "medium",
+    "source_section": "3.2 The Verifier and Its Directional Bias",
+    "related_sections": ["B The Verifier in Full", "Table 5"]
+  },
+  {
+    "title": "False-positive rate left unmeasured, though the audit data permit an estimate and the defect itself implies false positives for both V and V′",
+    "quote": "so it cannot measure the false-positive rate; that the verifier rarely accepts wrong",
+    "explanation": "The FN audit scored all 176 parseable-gold MATH-500 solutions with a scripted correctness check: 128 correct, 48 not recognised as correct. The verifier's decision on those 48 is available, so at least an upper bound on the false-positive rate can be computed from data already in hand. 'Inspected only rejections' describes a choice of analysis; it does not mean FP is unmeasurable. FP matters for three claims. (a) The defect description implies a structural FP channel in V: if a bare compound gold such as 3\\sqrt{13} is parsed to its first number, then a wrong prediction \\boxed{3} matches it. The pool can therefore contain wrong 'accepted' answers on exactly the defect problems, and adapting to V there would mean writing such answers, which r_t (defined over V′-accepted generations) cannot see. (b) The 30-flip hand check found one flip with an empty box. That is an apparent false positive of V′ (~3% of flips), against the stated assumption that V′ accepts no wrong answer. (c) 'Correct' in every table means V-accepted, so FP inflates every pass rate. The paper should report the FP estimate from the audit data, check how often V accepts a prediction equal to the first number of a compound gold, and say what the empty-box case implies for V′.",
+    "comment_type": "technical",
+    "confidence": "medium",
+    "source_section": "B The Verifier in Full",
+    "related_sections": ["3.2 The Verifier and Its Directional Bias", "5.3 A Proposed Audit for GVT with a Biased Verifier"]
+  },
+  {
+    "title": "FN audit: the 'wrong-token extraction' diagnosis is probably confounded with the gold-storage defect, and the 7.8% has a restricted denominator and no interval",
+    "quote": "the false-negative rate is 7.8% (10 of 128) on MATH-500",
+    "explanation": "§3.2 says 'most failures are wrong-token extraction from a long solution'. The basis for the label is that 8 of 10 cases are 'accepted when only the boxed answer is' verified. Appendix B says most of these 8 are compound answers (3\\sqrt{13}, 6−5i, 11\\sqrt{2}, ...) and overlap with the bare-gold class. This raises a confound the paper does not rule out. If the extracted answer is passed without its box delimiter, it may be parsed exactly as the bare gold is (to its first number), and then match by accident. On that reading, the 'boxed-only accepted' test would show the gold-storage defect, not a long-solution extraction failure. The paper hedges that 'the two labels describe where the failure shows', but the main text still states the extraction diagnosis, and it presents the gold-storage defect as a separate post hoc discovery the audit apparently already saw. Also: the denominator keeps only answers the authors' normaliser recognises as correct (128 of 176). Compound answers are where both the normaliser and math-verify are weakest, so FN on exactly the problematic class is probably understated. The audit uses Qwen2.5-7B solutions, not the loop's outputs. And a Wilson interval is given for GSM8K 0/200 but not for MATH-500 10/128, which is roughly [4.3%, 13.8%]. The authors should state exactly what string was passed in the 'boxed-only' check, give the interval, and reconcile 7.8% with the loop's 15.5–18.4%, most of the gap probably being the unparseable-gold overlap.",
+    "comment_type": "technical",
+    "confidence": "medium",
+    "source_section": "3.2 The Verifier and Its Directional Bias",
+    "related_sections": ["B The Verifier in Full"]
+  },
+  {
+    "title": "Unparseable golds 'cancel within a partition' only for level offsets in differences, not for relative effects, conditional metrics or cross-partition comparisons",
+    "quote": "which lowers absolute pass rates but cancels",
+    "explanation": "The 51 unparseable golds (11–18 per exam partition) add a constant zero in each round, so they cancel in a within-run difference of sample accuracy or pass rates. But: (1) they dilute every change by the share of dead problems, 7–12% depending on the partition. Comparisons of decline size across seeds/partitions (e.g. 'the decline may grow with the rate on one seed', seed 1 vs seed 2) therefore carry partition-dependent dilution, and level comparisons across partitions carry offsets up to ~5 points (18 vs 11 dead problems). (2) Conditional and ratio measures do not cancel: matched finished accuracy, the finished/cap-share decomposition and the 'Fin. share' of Table 7, and r_t all include these problems. Their generations count as finished-but-wrong or cap-hit, so a change in termination on these problems moves 'finished accuracy' even though their correctness cannot change. (3) Under V′ they become scorable (46/51), so the 'cancellation' is exactly what makes original and re-scored changes differ (see the factor issue). The paper should state the number of dead problems per partition, and preferably report the main metrics with these problems excluded.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "3.2 The Verifier and Its Directional Bias",
+    "related_sections": ["B The Verifier in Full", "4.5 Anatomy of the Decline", "4.4 Higher Learning Rates"]
+  },
+  {
+    "title": "Training limit of 512 tokens including the prompt, with a 512-new-token generation cap, means accepted examples are trained without their answer or EOS",
+    "quote": "with a training sequence limit of 512 tokens",
+    "explanation": "Any kept solution can be up to 512 generated tokens, but the training sequence (prompt + solution) is cut at 512. With standard right-truncation, every kept solution longer than 512 − (prompt length) loses its ending: the final \\boxed answer and the end-of-turn/EOS token. The summary reports 24–26% of the pool truncated. Two consequences matter for the paper's claims. (a) For a quarter of the pool, the verifier filter does not actually decide what is trained on: the trained text no longer contains the verified answer, so these are not 'kept correct solutions' in the GVT sense. (b) Training on sequences that stop mid-solution without EOS directly teaches non-termination. That is a plausible mechanism for the cap-hit increases at 5e-4 that §4.5 decomposes, and a design-induced cause of decline rather than a property of self-training. The paper does test this partly (one 1024-limit run and one retrain without truncated examples, both at seed 1, reported 'within the noise of single runs'). But the main configuration has the flaw, no rationale is given for setting the limit equal to the generation cap, and the truncation side is not stated. It also matters that the 1024-limit run (−5.7) is closer to the same-configuration replicate (−5.2) than to the original (−8.3). The method should state truncation side and EOS handling, give the truncation rate per run, and either fix the limit or treat it as a named confound in the conclusions about decline.",
+    "comment_type": "technical",
+    "confidence": "medium",
+    "source_section": "3.4 Models, Data, Training, Metrics",
+    "related_sections": ["4.5 Anatomy of the Decline", "H Anatomy of the Decline in Full"]
+  },
+  {
+    "title": "Loss over the prompt is an unjustified, unablated design choice that interacts with duplicate problems and with the token budget",
+    "quote": "learning-rate decay and no warmup; loss over the whole chat sequence, prompt",
+    "explanation": "Computing loss on the prompt departs from standard rejection-sampling SFT (completion-only loss), and no reason is given. In this setup a problem can contribute up to k accepted solutions, so its statement and the fixed instruction are trained up to k times per round. At 5e-4 this adds a strong gradient signal unrelated to solving and invites memorising the problem text. It also uses part of the 512-token training budget, which worsens truncation of the solution. Because the paper attributes declines at high learning rates to self-training dynamics (less accurate finished solutions, more cap-hits), a training-objective choice that could itself cause degradation should be justified or ablated, or at least listed among the confounds. The paper should also state the per-round count of duplicate problems and whether samples were deduplicated.",
+    "comment_type": "logical",
+    "confidence": "low",
+    "source_section": "3.4 Models, Data, Training, Metrics",
+    "related_sections": ["4.4 Higher Learning Rates", "4.5 Anatomy of the Decline"]
+  },
+  {
+    "title": "Reproducibility gaps: what a 'seed' controls, where replicate nondeterminism comes from, shared round-0 generations, and the inference setup",
+    "quote": "A “seed” sets the exam partition, the selection set and the training",
+    "explanation": "A seed is said to fix the partition, the selection set and the training randomness. Yet a 'same-configuration' replicate (Run A, 5e-4, seed 1) ends 3.2 points away, and Runs A and B at seed 2 have identical round-0 pools (424) but end 7.3 points apart in pass@1. If training and sampling were fully seeded, identical pools would give identical round-1 adapters. So something is not controlled (fp16 GPU nondeterminism, unseeded or batch-dependent sampling, data-loader order). The paper never says what, although these replicate gaps are used to calibrate training-seed variance. Also unstated: whether round-0 generations are produced once and shared across runs with the same seed (Tables 4 and 6 show identical R0 values 33.3/50.0/33.7 across three rates, which suggests they are); the generation engine and batching/padding (HF generate vs vLLM, fp16); whether the chat template's default system prompt is included; whether multiple accepted samples of the same problem are deduplicated; truncation side; and how cap-hit was recorded (re-tokenising to ≥508 rather than using the generation's finish reason is an approximation and should be justified). These details decide whether the runs can be reproduced, and they bear directly on the paper's noise arguments.",
+    "comment_type": "technical",
+    "confidence": "medium",
+    "source_section": "3.3 Two Experimental Designs",
+    "related_sections": ["3.4 Models, Data, Training, Metrics", "C Uncertainty in Full"]
+  },
+  {
+    "title": "All headline numbers are graded by a verifier known to reject ~1/6 of correct answers; 'the loop trained with it' does not justify using it as the evaluation measure",
+    "quote": "“Correct” always means accepted by the verifier (preset reward), the",
+    "explanation": "The same verifier V selects training data and grades the held-out exam. The paper then finds that V rejects 15.5–18.4% of V′-accepted generations, yet keeps V in every table, 'since that is the verifier the loop trained with'. That is a reason to use V for selection, not for measuring mathematical ability, which is the research question. For the 'no gain' claim, grading with V is partly conservative: adaptation to V would raise V-scores, so an absence of V-gains is informative. But for magnitudes (declines, finished-accuracy losses, the decomposition, the 2.2 bound), the better-calibrated grader should be primary, or both should be shown side by side. Re-scoring is cheap (saved generations, CPU-only), and only five runs were re-scored, so the conclusions that all other declines 'would also survive a re-score' rest on extrapolation from three. Re-scoring all runs with V′, plus an independent check (e.g. the scripted normaliser), would remove most of the factor/extrapolation issues above.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "3.4 Models, Data, Training, Metrics",
+    "related_sections": ["B The Verifier in Full", "3.2 The Verifier and Its Directional Bias"]
+  },
+  {
+    "title": "The illustrative example of the gold-storage defect is written backwards",
+    "quote": "so a correct boxed prediction can fail against a bare gold (e.g. \\frac43",
+    "explanation": "The sentence describes a boxed prediction failing against a bare gold, but the example reads '\\frac43 against \\boxed{\\frac{4}{3}}', which shows a bare form against a boxed one, apparently the other way round. It is also not clear which of \\frac43 / \\frac{4}{3} is the stored gold. Appendix B's mechanism ('the bare gold is parsed to its first number') makes this matter: for gold '\\frac43' the first number would be 4, so a correct 4/3 would fail and a wrong '4' would pass. That is the false-positive channel raised in a separate comment. A precise example (stored gold string, prediction string, what each side parses to) would remove the ambiguity.",
+    "comment_type": "technical",
+    "confidence": "low",
+    "source_section": "3.2 The Verifier and Its Directional Bias",
+    "related_sections": ["B The Verifier in Full"]
+  }
+]

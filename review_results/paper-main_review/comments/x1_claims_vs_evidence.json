@@ -1,0 +1,132 @@
+[
+ {
+  "title": "The 2.2-point bound is a post hoc maximum of observed upper limits, smaller than the paper's own seed-to-seed spread",
+  "quote": "sample-accuracy intervals exclude gains above about 2.2 points. The bound is",
+  "explanation": "The bound is the largest upper end among per-run bootstrap intervals (Table 2: +2.2 for A seed 3 at 1e-4 and A seed 1 at 1e-4), on a measure chosen after the runs, with no equivalence margin fixed in advance. Section 3.4 says the only replicate pair ends 3.2 points apart in sample accuracy, which is larger than the bound itself, so seed variance alone could move a run by more than the 'excluded' gain; the bound therefore says little about what the recipe can do. It also sits uneasily beside the ex ante statement that only 3.5-5.5 points of sample accuracy are detectable: the two numbers answer different questions (power vs. conditional interval given negative point estimates) and a reader of Abstract/Conclusion will read '2.2' as the effective sensitivity. Finally the bound pools nothing across runs, mixes k=8/5 rounds with k=4/3 rounds, and is stated for MATH-500 only. The caveats are present, but the headline sentence still lets '2.2' carry evidential weight it does not have. The authors are candid; the issue is that a bound dominated by an unmodelled variance source should not be reported as a bound.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "5.1 Answer to the Research Question",
+  "related_sections": [
+   "Abstract",
+   "3.4 Uncertainty",
+   "7 Conclusion",
+   "Table 2"
+  ]
+ },
+ {
+  "title": "'Null for the recipe' makes the headline contribution nearly empty: the recipe has no positive reference and contains known defects",
+  "quote": "improves, not even training on reference solutions, so this is a null for the",
+  "explanation": "Contribution 1 and the Conclusion scope the null to 'the recipe', but the recipe includes loss over the prompt, a 512-token training limit that includes the prompt, and 24-26% of the round-0 pool truncated so that it loses its final answer and end-of-sequence token (Section 3.4). Train-on-gold, the arm that should be the easiest win, drops 18-21 points. A pipeline in which supervised training on gold solutions destroys accuracy is not a test of whether verifier-filtered self-training can help, so 'no detectable gain' is what one expects and distinguishes nothing. The text frames this as scoping ('recipe vs self-training'), yet the title, the research question ('Mathematics or the Verifier?') and the abstract's first sentences are phrased about self-training and verifier-filtered training in general; no condition in the paper separates 'filter does not help' from 'training is broken'. Truncation and prompt-loss are implementation choices that the authors themselves flag as likely culprits (Sec 4.4), so they are better described as unresolved pipeline defects than as a recipe whose null is informative. Without a configuration that is shown able to improve (even a single positive control, e.g. no truncation, completion-only loss, or an easier setting), the paper's main finding cannot be distinguished from a bug-level artifact, and the 'verifier' half of the question is unreachable.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "1 Introduction",
+  "related_sections": [
+   "Abstract",
+   "3.4",
+   "4.4",
+   "6 Limitations",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "Falling \\boxed share is treated as an alternative explanation to adaptation, but it is the very mechanism of adaptation the paper defines",
+  "quote": "to the defect would have to write these answers unboxed, and the training pool",
+  "explanation": "Section 5.3 concludes the fall in r_t is 'accounted for' by the falling \\boxed share among correct answers, hence not adaptation. But the same section says adaptation to the gold-storage defect would consist precisely of writing answers unboxed (V' differs from V only on boxed predictions). Moreover the training pool is selected by V, which rejects boxed answers on defect-affected problems, so the pool is mechanically less boxed than the set of all correct answers; Section 4.4 attributes the falling boxed share to 'imitation of the pool', i.e. imitation of a verifier-shaped distribution, which is verifier-style learning by definition. Thus 'boxed share explains r_t, so no adaptation' is not an alternative to adaptation but a restatement of it at the aggregate level; the boxed-only flat r_t would be expected under adaptation too if it is mediated by dropping the box. In addition, the train-on-gold arm (no verifier) shows boxed-only r_t rising (+2.8, +1.7), so boxed-only r_t is not format-invariant, and Sec 5.3 describes that arm as becoming 'more boxed' while Sec 4.4 says it adopts $-delimited reference style (5% to 98%). The Conclusion's wording 'once the falling \\boxed share is accounted for' and Contribution 2 therefore overstate: the data are uninformative about adaptation rather than showing none. The paper's caveat about low power is present but does not address this logical circularity.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "5.3 A Proposed Audit",
+  "related_sections": [
+   "Abstract",
+   "1 Introduction",
+   "4.4",
+   "7 Conclusion",
+   "Table 4"
+  ]
+ },
+ {
+  "title": "Contribution 2 states the affected-problem r_t is 'flat' although Table 4 shows a -5.5 point point estimate with a 26-point interval, and the audit is not validated",
+  "quote": "which a falling \\boxed share accounts for, and is ﬂat on the",
+  "explanation": "Table 4's affected, parseable rows move by -5.5 [-20.1, 6.3], -1.6 [-14.7, 9.5] and -0.2 [-4.9, 4.6]. Intervals of 10-26 points wide cannot establish 'flat'; the largest estimated change is the one the authors would expect under adaptation, and the text of 5.3 itself says 'moves by -5.5, -1.6 and -0.2'. Beyond wording, the contribution is an audit with no positive control (no run where adaptation is known to occur), a related-work section that says the measurement 'is not new either' (per-step tracking in Egashira et al. and TinyV), and a defect class where the pool holds only 2-12 relevant training examples. Hence the substantive contribution reduces to 'we measured one quantity in three runs and it did not clearly move'. The protocol offered in 5.3 is described as four checks 'defined post hoc'; (iii) and (iv) are lessons from the authors' own dose confounds, and none is tested. Listing it as a standalone contribution, and in the Conclusion calling it a 'natural next step' for RLVR checkpoints, overstates what has been shown: the audit's ability to detect anything is untested.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "1 Introduction",
+  "related_sections": [
+   "5.3",
+   "Table 4",
+   "2 Related Work",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "'Held-out exam' and 'mathematics' claims rest on a verifier-graded, possibly contaminated, in-distribution measure",
+  "quote": "On a held-out exam, the ﬁrst answer is no gain that this design could detect: on",
+  "explanation": "The first research question is whether the model gets better at mathematics, but every accuracy number is graded by V (Limitations: 'Every headline number is graded by the biased veriﬁer that also selects the data'), 51/500 golds are unparsable (11-18 of 150 exam problems always count as unsolved), and the gold-storage defect lowers pass@1 by 4.7-8.0 points. The paper notes that original-verifier changes are 0.73-0.85 of the re-scored ones but declines to rescale; applied, that means a V-measured bound of 2.2 corresponds to roughly 2.6-3.0 true points, and the MDE is likewise inflated. 'Held-out' only means held-out from the selection pool: the exam is a 30% split of the same 500 MATH-500/GSM8K items and Qwen2.5 may have seen them in pretraining (Limitations lists 'possible test-set contamination'), so gains available through genuine learning could be masked while gains from format could not. These caveats appear, but the Abstract/Conclusion use 'held-out' and 'mathematics' without them, and the verifier-independent re-scoring is relegated to the supplementary.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "7 Conclusion",
+  "related_sections": [
+   "3.2",
+   "3.4",
+   "6 Limitations",
+   "Abstract"
+  ]
+ },
+ {
+  "title": "'No detectable gain at any learning rate' overstates coverage of the learning-rate/round space and of the GSM8K arm",
+  "quote": "detect no improvement on held-out problems at any learning rate we tried, but",
+  "explanation": "The research question is about 'several' GVT rounds, but all 1e-4 to 5e-4 runs have three rounds, i.e. two adapters, and the round-2 model is one adapter trained on the round-1 pool (Sec 3.3). Because adapters restart from base, earlier rounds cannot compound, so the design cannot test cumulative improvement at all (Sec 3.1 admits it gives compounding less room). The 1e-5 arm (5 rounds, k=8) is reported to change outputs little, and the other rates change k, rounds and pool size at once (Limitations), so the 'grid' is not a sweep of one variable; the paper itself says only the comparison among 1e-4, 2e-4 and 5e-4 isolates the rate. GSM8K appears with one seed at 1e-5 and one run at 5e-4, and the stated MDE (about 10/8-10/3.5-5.5) is computed from MATH-500 intervals only, so 'no detectable gain' on GSM8K has no stated sensitivity. The abstract thus compresses a sparse, confounded design into 'at [K] learning rates on MATH-500 and GSM8K'. Not wrong, but the strongest accurate statement is much narrower: no gain larger than ~3-10 points at 3 rounds with restart-from-base on MATH-500.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "1 Introduction",
+  "related_sections": [
+   "Abstract",
+   "3.1",
+   "3.3",
+   "4.4",
+   "6 Limitations"
+  ]
+ },
+ {
+  "title": "'Pooled collapse does not reproduce under isolation' conflicts with large isolated declines and with the paper's own caveat",
+  "quote": "we report why: a pooled design whose sharp decline did not reproduce under",
+  "explanation": "Intro and Conclusion state flatly that the sharp pooled decline 'did not reproduce under isolation', but (a) Section 4.2 reports Run C (GSM8K, isolated, 1e-5) falling 12.7 pass@1 points with an interval excluding zero, and Run C at 5e-4 falling 22.0; (b) the high-rate MATH runs fall 4-11 points and train-on-gold falls ~20; (c) Section 5.1 concedes that pooling, selection-set scoring and dose (4.5x more examples) were confounded and 'we cannot say' which produced the pooled curve. A failure to reproduce under a different design with different dose and different exam is not evidence the pooled decline was spurious, nor that it was an artifact of scoring on selection problems; it is equally consistent with a dose effect that the isolated runs reproduce at higher rates. The conclusion 'we report the earlier readings that did not hold up' presents as a retraction what is really an unresolved confound. Also the Design P collapse is the only large effect in the paper and it uses the 0.5B/1.5B pooled design whose training logs were not saved (Sec 3.4), so even its descriptive status is weak.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "1 Introduction",
+  "related_sections": [
+   "4.1",
+   "4.2",
+   "5.1",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "The 5.5-10.6 'finished-accuracy loss' headline mixes recipe and no-filter runs and includes a non-significant interval",
+  "quote": "generations lose 5.5–10.6 points against the untrained model on the same",
+  "explanation": "The range quoted in Contribution 3 and the Conclusion comes from six 5e-4 runs including the two no-filter arms (Table 2: A seed 1 -9.1, A seed 2 -5.5 [-11.7, 0.1], B seed 1 -6.8, B seed 2 -5.9, no-filter -10.6 and -6.6). The lower end, 5.5, belongs to a run whose interval includes zero (4.5 admits 'five of six'), and two pairs are same-seed A/B near-replicates, so the effective number of independent observations is about four. The matched measure also 'conditions on which problems finish after training' and is described as descriptive, yet is worded causally ('lose'). Combined with the sentence that cap-share accounts for 12-30% of the decline at seed 1 but 52-72% at seed 2 (a spread that undermines any single decomposition claim), the contribution reads as a stable quantitative finding while the text calls it descriptive and partly known (Xu et al. already identify the fixed-token-cap failure the paper cites as closest work). The decomposition is therefore a modest methodological note rather than an independent contribution of equal standing to the others.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "1 Introduction",
+  "related_sections": [
+   "4.5",
+   "Table 2",
+   "5.3 (ii)",
+   "7 Conclusion",
+   "2 Related Work"
+  ]
+ },
+ {
+  "title": "'Removing the filter is never better' is not what Tables 2-3 show, and it undercuts the verifier half of the research question",
+  "quote": "Removing the ﬁlter is never better than keeping it",
+  "explanation": "Table 3 seed 1 round 2: no-filter pass@1 27.3 vs verifier-filtered 23.3 (no-filter is better); Table 2 seed 1: no-filter delta pass@1 -6.0 vs A -10.0 and sample accuracy -8.2 vs -8.3, while seed 2 goes the other way (-10.2 vs -4.7). The accurate statement is that the two arms are indistinguishable with a sign that flips by seed and measure. This matters substantively: if training on all unfiltered samples at 3-4x dose does as badly as, or no worse than, verifier-filtered training, the data cannot indicate that the verifier drives the behaviour, and the paper's title question ('Mathematics or the Verifier?') receives no evidence for the verifier branch. The paper correctly says dose differences prevent attribution, but the summary sentence (and the Conclusion's 'removing the filter lowers pass@4 at both seeds, within noise') selects the one metric on which no-filter is consistently worse while the dose confound inflates that very direction.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "4.4 Higher Learning Rates",
+  "related_sections": [
+   "Table 2",
+   "Table 3",
+   "5.2",
+   "7 Conclusion"
+  ]
+ }
+]

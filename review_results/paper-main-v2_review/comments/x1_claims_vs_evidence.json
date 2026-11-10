@@ -1,0 +1,132 @@
+[
+ {
+  "title": "Headline 'no detectable gain' hides detected declines and an invalid test instrument",
+  "quote": "On held-out exams the ﬁrst answer is no gain that this design could detect: no run",
+  "explanation": "The title, abstract and conclusion frame the result as a null ('no detectable gain'). But the evidence is not a null: at 5e-4 every A/B run declines, with sample-accuracy intervals excluding zero in all four (Table 2), train-on-gold falls 18-32 points, the no-filter control falls, and the corrected-recipe loop loses 4.8 points of pass@1 with an interval excluding zero. Meanwhile the positive gate fails in both recipes, so the instrument cannot show that any gain would be detectable under this training procedure. A 'null' from a procedure that damages the model and fails its own positive control is better described as 'the recipe degraded the model / test uninformative', not as evidence about gain from verifier-filtered self-training, as the title implies. The text also reads the -4.8 as 'no gain and a possible small decline' while the abstract's lead sentence reports only the absence of gains. The title's dichotomy ('Mathematics or the Verifier?') is also left unanswered (second branch open), so title and contributions promise more than the evidence gives.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "Abstract / Conclusion",
+  "related_sections": [
+   "Introduction",
+   "4.4 Higher Learning Rates",
+   "4.6 A Final Round with a Corrected Recipe"
+  ]
+ },
+ {
+  "title": "Claimed power ('6-10 points') understates uncertainty and is uninformative for realistic effects",
+  "quote": "gains of about 6–10 points of pass@1 (80% power). A positive gate fails:",
+  "explanation": "The detectable-effect figures are derived from observed interval half-widths that, by the paper's own admission, omit training-seed variance (replicate pair ends 3.2 points apart; seed-to-seed differences of the same configuration exceed several of the reported effects). The 6-point figure for the final round comes from one seed, one rate, k=2, two rounds. The abstract states these as the design's power without that caveat. In addition, a minimum detectable gain of 6-10 pass@1 points (3.5-5.5 for sample accuracy) is larger than the few-point gains typically reported for rejection-sampling SFT at this scale, so 'no detectable gain' is compatible with the effect sizes of interest; the paper's only tight statement (2.2-point bound) is post hoc, on a measure chosen after the runs, and also omits seed variance. The headline null is thus weaker than the abstract/contribution wording suggests.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Abstract",
+  "related_sections": [
+   "3.4 Models, Data, Training, Metrics",
+   "5.1 Answer to the Research Question",
+   "Contributions"
+  ]
+ },
+ {
+  "title": "'No adaptation' conclusion is not identified: conditioning on boxed share removes the channel adaptation would use",
+  "quote": "which a falling \\boxed share accounts for, so we ﬁnd no adaptation to",
+  "explanation": "The abstract, contribution 2 and conclusion say the fall in r_t is 'accounted for' by the falling \\boxed share and therefore 'we find no adaptation'. But the paper itself states that a model adapting to the gold-storage defect 'would have to write these answers unboxed', i.e. adaptation would show up precisely as a lower boxed share. Explaining the r_t decline by the boxed share therefore cannot distinguish adaptation from drift/imitation (the paper concedes this for style elsewhere). The remaining evidence is weak: the overall r_t falls (1.5-2.6) with intervals reaching/just touching zero, the boxed-only changes (-0.4 to +0.7) have intervals about +/-3 points wide, and the affected-problem subset has intervals 10-26 points wide with 2-12 examples/round and no positive control. 'Find no adaptation' (stated in the abstract as a finding, and framed as a contribution 'audit') overstates a non-identifying, unvalidated, underpowered measurement; 'accounts for' is also causal wording for a coincidence of magnitudes. Also, 4.6 (no r_t audit on the corrected recipe) is not covered.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "Abstract / Contributions",
+  "related_sections": [
+   "5.3 A Proposed Audit",
+   "6 Limitations",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "Cap-decomposition contribution stated more strongly than the descriptive, partition-dependent analysis supports",
+  "quote": "generations lose 5.5–10.6 points against the untrained model on the same",
+  "explanation": "Contribution 3 presents the decomposition as a result: finished generations lose 5.5-10.6 points. But (a) the range pools A, B and the no-filter control (so not purely verifier-filtered self-training); (b) the interval for A seed 2 includes zero (-5.5 [-11.7, 0.1]) and Sec 4.5 admits only 'five of six' exclude zero, and the six include near-replicate A/B pairs; (c) the matched measure conditions on which problems finish after training and uses round-0 finished accuracy as baseline, so it is selection-biased and the paper calls it descriptive; (d) Sec 5.3(ii) shows the balance flips by partition, with the cap share accounting for 12-30% of the decline at seed 1 but 52-72% at seed 2, with no uncertainty on these shares, so the 'finished accuracy' story is not general; (e) the same fixed-cap-under-style-drift failure is among Xu et al.'s [15] seven measurement failures, which the paper cites as the reason it separates the two, undermining novelty as a contribution. The contribution list and conclusion ('Most clearly at the highest rate the model becomes less accurate on the solutions it does ﬁnish') drop these qualifications.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Contributions",
+  "related_sections": [
+   "4.5 Anatomy of the Decline",
+   "5.3 A Proposed Audit",
+   "2 Related Work",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "'No run improves' / 'No arm improves' contradicted by point estimates and conflated with 'no significant gain'",
+  "quote": "No arm improves on round 0, and the gate on",
+  "explanation": "Absolute statements 'no run improves pass@1 or pass@k', 'No arm improves' (contributions, 5.1, Limitations, Conclusion) are literally contradicted by the paper's own tables: A seed 1 at 1e-4 has +0.7 pass@1, A seed 3 +1.3 pass@k, A seed 1 at 1e-5 +0.0, and in Table 3 the no-filter arm at seed 2 rises from 31.3 to 34.7 pass@1 at round 1 and the 'largest rise' is quoted in 5.1. Section 5.1 correctly says no rise has an interval excluding zero; the conclusion and limitations drop that qualifier, and the 'no positive reference' argument (null is about the recipe) relies on this stronger version. Statistically insignificant positive changes should not be described as no improvement.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "6 Limitations",
+  "related_sections": [
+   "7 Conclusion",
+   "5.1 Answer to the Research Question",
+   "Contributions"
+  ]
+ },
+ {
+  "title": "Conclusion says removing the filter made 'no difference of consistent sign' while the data show consistent signs",
+  "quote": "sign, neither control could have detected a small eﬀect, and a frequent defect in",
+  "explanation": "The conclusion (and 5.2: 'made no consistent diﬀerence') says patching and removing the filter made no difference of consistent sign. For the no-filter control, however, pass@4 is lower than the filtered loop at both seeds (-2.0 and -5.3 at round 2, as 4.4 itself says), pass@k changes in Table 2 are more negative at both seeds (-9.3, -12.0 vs -7.3, -6.7), and the matched finished accuracy is worse at both seeds (-10.6 vs -9.1; -6.6 vs -5.5). The sign is consistent across these measures; the honest statement is that the dose confound prevents attribution (as 4.4 says), not that no consistent difference exists. The abstract's 'too much dose to show a consistent difference' has the same issue. Also this sentence says neither control could detect a small effect, yet the no-filter control did produce larger declines, so it is not uninformative in the way claimed.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "7 Conclusion",
+  "related_sections": [
+   "Abstract",
+   "4.4 Higher Learning Rates",
+   "5.2 Interpretation"
+  ]
+ },
+ {
+  "title": "Final-round power figure for pass@k ('4') does not follow from the reported interval",
+  "quote": "only about 10 points of pass@1 and 8–10 of pass@k (6 and 4 in the ﬁnal round).",
+  "explanation": "Using the paper's own formula (2.8h/1.96) with the final-round pass@2 interval [-6.8, +0.6] (half-width about 3.7) gives roughly 5.3 points, not 4; the value of about 4 matches sample accuracy (half-width about 2.9 gives about 4.1), not pass@k. The Conclusion lists only 6 for the final round, and the abstract '6-10' omits pass@k. So the parenthetical mismatches the measure it is attached to and overstates the final round's pass@k resolution.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "5.1 Answer to the Research Question",
+  "related_sections": [
+   "4.6 A Final Round with a Corrected Recipe",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "Gate failure is read as a recipe limitation without ruling out format/verifier or train-on-gold artefacts; 'null for the recipe' premise untested",
+  "quote": "The corrected recipe therefore still has no positive reference, so we",
+  "explanation": "The central framing 'so the null concerns this recipe, not self-training in general' rests on train-on-gold lowering pass@1 by 32 points. But the paper shows the gold-trained model adopts the reference style ($-delimited spans in 1,577 of 1,600 generations), which the math-verify based scoring may not credit; in 4.4 the verifier-error bound covers only boxed answers (14% without \\boxed uncovered), and for 4.6 no check at all of verifier error, boxed share, or truncation is reported. A 32-point drop on an instruction-tuned model that has probably seen MATH-train, with a corrected recipe and identical failure at two rates, is more plausibly a mismatch between reference-solution style and the scored format (or an implementation problem) than evidence that LoRA SFT cannot help; it then says nothing about whether the loop's null is about the recipe or about the gate being an invalid positive control. Stopping after the first failed gate (data-dependent stopping, 'so we stopped') leaves the key explanatory claim untested, so 'a null for the recipe' is itself an interpretation, not a demonstrated result. The same section also calls the loop's -4.8 'no gain and a possible small decline' although its pass@1 interval excludes zero.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "4.6 A Final Round with a Corrected Recipe",
+  "related_sections": [
+   "Abstract",
+   "5.1 Answer to the Research Question",
+   "7 Conclusion",
+   "4.4 Higher Learning Rates"
+  ]
+ },
+ {
+  "title": "Conclusion/limitations say the gold-storage defect ran unvaried through every experiment, but the final round uses 'normalised gold'",
+  "quote": "gold-storage defect was measured afterwards and ran unvaried through every",
+  "explanation": "Section 4.6 states that the corrected-recipe round uses 'normalised gold answers'. If this removes the bare-gold storage defect (the paper never says whether it does, nor reports r_t or the V/V' gap for that round), then the defect was varied in the final round and the statements 'ran unvaried through every experiment' (Conclusion, Limitations), 'was never varied' (5.2) and 'a dose-matched control for the gold-storage defect ... come first' are inconsistent with the paper's own design; if it does not, the text should say so. Either way the single run that is the paper's only 500-problem, corrected-recipe evidence is not tied to the audit or the defect analysis, and the headline claims are not updated to say which experiment is clean of the defect.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "6 Limitations",
+  "related_sections": [
+   "4.6 A Final Round with a Corrected Recipe",
+   "7 Conclusion",
+   "5.2 Interpretation"
+  ]
+ },
+ {
+  "title": "Final round is post hoc and data-dependent but not listed among the post hoc choices; the Introduction does not mention it",
+  "quote": "Only these measures and the rule were ﬁxed in advance. The higher",
+  "explanation": "The Introduction enumerates what was chosen after seeing runs (higher learning rates, controls, round count, k, primary measure, re-scoring) but does not list the final round (new recipe, k=2, 2 rounds, 300-problem pool, one seed, lr 1e-4), which was designed after earlier arms failed and is described as using 'changes a reviewer asked for'. The Introduction's summary of the answer ('no improvement ... at any learning rate we tried') also does not mention that the single run with the corrected recipe shows a significant pass@1 drop, which is the paper's most favourable-recipe result. Since the abstract and conclusion now rely on this run for the 6-point resolution and for the failed gate, the pre-set vs post hoc ledger should include it.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "1 Introduction",
+  "related_sections": [
+   "4.6 A Final Round with a Corrected Recipe",
+   "Abstract"
+  ]
+ }
+]

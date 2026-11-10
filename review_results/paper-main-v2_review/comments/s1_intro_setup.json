@@ -1,0 +1,123 @@
+[
+ {
+  "title": "Headline power figure inconsistent: abstract says 6-10 points, body says about 10",
+  "quote": "gains of about 6–10 points of pass@1 (80% power).",
+  "explanation": "Abstract reports a detectable effect of 6-10 points of pass@1, while the Introduction and Sec. 3.4 state 'about 10 points of pass@1' (and 8-10 for pass@k, 3.5-5.5 for sample accuracy). The 6 lower bound appears nowhere in the Setup derivation (which is based on Table 2 half-widths of the 150-problem exam). Since the paper's whole claim is 'null within the power of the design', the quoted power must be a single, derivable number; the abstract appears to blend the 150-problem and 500-problem (final-round) designs without saying so.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "Abstract",
+  "related_sections": [
+   "Introduction",
+   "3.4 Models, Data, Training, Metrics"
+  ]
+ },
+ {
+  "title": "Power calculation reuses observed interval half-widths and ignores seed variance, so 'detectable effect' and the 2.2-point bound are optimistic",
+  "quote": "a change would be\ndetected with 80% power at the 5% level only if it exceeded about 2.8 h/1.96",
+  "explanation": "The minimum detectable effect is computed from the half-widths h of the observed bootstrap intervals (post hoc power from the data), and those intervals, by the paper's own admission, cover only problem-sampling noise on a 150-problem exam and not training-seed variance. The one replicate pair differs by 3.2 points of sample accuracy, which is larger than the 2.2-point bound on gains claimed from the same measure, and larger than the 3.5 lower end of the detectable range. pass@1 is also a single draw at T=0.8 per problem, adding noise not in a problem-level bootstrap of 'first sample'. A 2.2-point exclusion bound is therefore not supportable as stated; with seed variance included the design likely detects only substantially larger effects, weakening the 'no gain of this size' conclusion. No multiplicity correction is applied while the paper reads 'patterns across runs' as evidence, which mixes correlated runs sharing partitions and seeds.",
+  "comment_type": "technical",
+  "confidence": "high",
+  "source_section": "3.4 Models, Data, Training, Metrics",
+  "related_sections": [
+   "Introduction",
+   "Abstract"
+  ]
+ },
+ {
+  "title": "Failed positive gate shows the recipe/pipeline is broken, undermining title and framing as a result about verifier-filtered self-training",
+  "quote": "training on reference solutions lowers pass@1 by 32.2 points, so the null",
+  "explanation": "The authors correctly refuse to generalise, but the title ('No Detectable Gain from Verifier-Filtered Self-Training of a 1.5B Model'), the opening framing (the 'cheapest and most widely used form of the loop') and the research question still address self-training. A drop of 30+ points from SFT on gold solutions (twice, at 5e-4 and in the corrected recipe at 1e-4) is not a mild failure to improve: it signals a defect in training/eval (truncation without EOS, loss on the prompt, sampling settings, fp16, evaluation cap) rather than a property of learning from data. Without a working positive control the experiment cannot discriminate 'verifier filtering does nothing' from 'any training here destroys the model', so even the null about the verifier is uninterpretable. The related-work analogy to Kim et al. (self-distillation on ground-truth cutting accuracy while shortening responses) is offered as an explanation but is not tested and does not explain a 32-point collapse. The contribution 'a null for the recipe' is thus a statement that the recipe is not a valid test bed.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "Abstract",
+  "related_sections": [
+   "Introduction",
+   "Related Work"
+  ]
+ },
+ {
+  "title": "Training recipe contains known confounds that plausibly drive the decline and make a null unsurprising",
+  "quote": "loss over the whole chat sequence, prompt\nincluded; fp16 on one Kaggle T4), with a training sequence limit of 512 tokens\nthat includes the prompt.",
+  "explanation": "Setup trains with loss on the prompt, LoRA only on q_proj/v_proj, 512-token limit including prompt, and 24-26% of the round-0 pool (62.4% in the no-filter control) truncated so that the final answer and EOS are cut. That means a quarter of positive examples teach the model to run on without a final answer, directly inducing the cap-hit rise later attributed to 'drift'. The headline learning rate 1e-5 is described as 'default of our training code and not tuned'; for LoRA r=16 this is one to two orders of magnitude below typical rates, so the main 5-round, k=8 Design I runs are near no-ops (the paper admits outputs change little), while the higher rates produce degradation likely from the truncation artifact. The fixes appear only in the late Sec. 4.6 corrected recipe, with one seed, 300 problems and 2 rounds. The reader is asked to accept a general-sounding null from a pipeline whose defects were found after most runs; the abstract and intro should say that the bulk of the evidence comes from the flawed recipe.",
+  "comment_type": "technical",
+  "confidence": "high",
+  "source_section": "3.4 Models, Data, Training, Metrics",
+  "related_sections": [
+   "Abstract",
+   "Introduction",
+   "4.5"
+  ]
+ },
+ {
+  "title": "The research question is left unanswered: one-sided pre-set rule and a 'verifier bias' that is really a pipeline storage bug",
+  "quote": "In hindsight the rule is one-sided: it can only ﬁre when accuracy rises (Sec-\ntion 5.1).",
+  "explanation": "The title asks 'Mathematics or the Verifier?' and the intro poses a two-branch question, but the only pre-specified decision rule cannot fire unless accuracy rises, which never happens; so the 'verifier-style' branch is not tested by any pre-set criterion and the intro admits 'the pre-set rule is silent'. The substitute is a post hoc audit of the gold-storage defect, which Sec. 3.2 describes as a property of 'our pipeline' (the gold stored without delimiter), not of math-verify's behaviour on answer forms. Section 3.2 is nevertheless titled 'The Verifier and Its Directional Bias', and the abstract/related work frame it as verifier bias. The paper should state clearly that the verifier-adaptation question is unaddressed, and that the studied defect is an implementation error of the authors, whose fix (V') they had available but did not use in the loop.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Introduction",
+  "related_sections": [
+   "3.2 The Verifier and Its Directional Bias",
+   "Abstract"
+  ]
+ },
+ {
+  "title": "Adaptation audit has almost no possible signal by construction",
+  "quote": "on the 54–62 problems where it ever ﬁres, it\nrejects 94–98% of correct answers in every round, and 29–34 of these problems\nhave a gold the original veriﬁer cannot parse at all, so no answer form avoids\nit there.",
+  "explanation": "The audit asks whether the model learns to avoid the defect, yet by the paper's own numbers the defect is nearly unavoidable on the problems where it fires (94-98% rejection, and for 29-34 of 54-62 problems no answer form escapes it). Only 24-28 problems have an escaping form, and the affected examples removed from the pool number 2-12 per round out of hundreds. A fresh adapter per round with a handful of examples of selection pressure, at a learning rate that barely changes outputs, cannot be expected to produce measurable adaptation. The absence of a falling r_t is therefore predicted under the null and under the alternative, which the paper partly concedes ('no positive control') but still lists as a contribution and uses in the abstract ('we find no adaptation'). The 'carried over from RLVR' framing also overstates comparability: in RLVR the false negative directly zeroes the reward on every rollout, whereas here it removes at most a few examples. Relatedly, explaining the 1.5-2.6 point fall by a falling boxed share is asserted via a post hoc decomposition not specified in the Setup.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "3.2 The Verifier and Its Directional Bias",
+  "related_sections": [
+   "Abstract",
+   "Introduction",
+   "Related Work"
+  ]
+ },
+ {
+  "title": "Verifier false-negative evidence comes from a different model, a small scripted judge, and is not reconciled with the 15.5-18.3% figure",
+  "quote": "the false-negative rate is 7.8% (10 of 128; Wilson interval\n4.3–13.8%) on MATH-500 and 0% on GSM8K.",
+  "explanation": "The rate is estimated on public solutions of Qwen2.5-7B-Instruct (not the 1.5B policy, with different answer styles) for 200 problems, where 'correct' is defined by the authors' own scripted normalised comparison, whose own error rate is unreported; only 128 solutions qualify. The GSM8K 0% has no denominator. Then the same section reports that the gold-storage defect rejects 15.5-18.3% of V'-accepted generations of the loop itself, roughly double the 7.8%; the text says 8 of the 10 failures are 'probably largely' the storage defect, but never reconciles why the real policy suffers twice the rate, nor whether the 7.8% was measured with the faulty bare gold. Because the headline motivation (verifier rejects correct answers) rests on these numbers, the measurement pipeline and the relation between the two estimates need specifying. The statement that the audit gives 'no false-positive rate' also leaves the more consequential verifier error (false accepts in the pool, which Egashira et al. find harmful) completely unmeasured while the paper frames the study around what the verifier accepts.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "3.2 The Verifier and Its Directional Bias",
+  "related_sections": [
+   "Introduction",
+   "Related Work"
+  ]
+ },
+ {
+  "title": "Novelty claim in Related Work is stronger than the cited literature supports and is inconsistently hedged",
+  "quote": "None measures how the ﬁlter’s errors depend on the form of\nthe answer.",
+  "explanation": "This sweeping statement about STaR, ReST, ReST-EM and RFT is unverified, and the same section immediately cites TinyV and From Accuracy to Robustness, which do study how rule-based verifiers' errors depend on answer format. Later the section says the per-round false-reject measurement 'is not new either' and that the authors 'do not claim this combination as the contribution', yet the Introduction's contributions list still presents the audit as a contribution and the abstract presents it as the study's second finding. The positioning is thus internally uneven: strong negative-novelty claims in one paragraph, disclaimers in another, and the remaining actual contribution (a null from a recipe that fails its positive control, plus a post hoc decomposition) is not clearly separated from Xu et al., described as 'closest to ours'. The comparison is also deferred to a Supplementary Appendix ('??') not available to a reader of the main paper.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Related Work",
+  "related_sections": [
+   "Introduction"
+  ]
+ },
+ {
+  "title": "Claims of generality beyond a single model family, single verifier and few seeds",
+  "quote": "tectable on a held-out exam at any learning rate we tried, with problem-level",
+  "explanation": "The scope is Qwen2.5-1.5B-Instruct only (0.5B only in the pooled design), one verifier, LoRA on q/v, one epoch, a 150-problem exam, and learning rates from 1e-5 to 5e-4 with different k and round counts between rates (the paper says only the comparison among 1e-4, 2e-4, 5e-4 isolates the rate). Only the 1e-4 rate has three seeds; GSM8K appears only at 1e-5 per the Setup. The abstract states 'four learning rates on MATH-500 and two on GSM8K' but Setup (Sec. 3.3) describes only Run C (one rate) on GSM8K, and the 1e-4 run of the final round is a separate recipe; the count and the grid should be tabulated in the main text. Qwen2.5-Instruct models are also heavily post-trained on math data, so the headroom for self-training is low, which the paper does not discuss as a reason for a null. 'Any learning rate we tried' hides that the settings are not comparable across rates.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Introduction",
+  "related_sections": [
+   "Abstract",
+   "3.3 Two Experimental Designs"
+  ]
+ },
+ {
+  "title": "Reproducibility gaps: unsaved logs and outputs behind quoted results, unspecified seeds and sampling evaluation",
+  "quote": "token counts at generation time, Design P’s training logs and the\n1,536-token re-scoring outputs were not saved.",
+  "explanation": "Several quantities used in results (cap-hit shares are computed by re-tokenising decoded text rather than from generation-time counts; the Design P collapse that motivates the study; the 1,536-token re-scoring that is never introduced in the Setup) rely on artefacts that were not kept, so a reader cannot recompute them. The Setup also does not give the seeds, the exam/selection split procedure beyond '30%', the generation stop conditions, the adapter initialisation, or how many optimizer steps each run used, and the exam is evaluated by single-sample pass@1 at temperature 0.8 with repetition penalty 1.1, a setting which depresses and adds variance to accuracy relative to greedy evaluation. The mention of the pre-registered 'four measures' is not backed by a dated record. For a negative result whose value depends on the exact protocol, these omissions matter.",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "3.4 Models, Data, Training, Metrics",
+  "related_sections": [
+   "Introduction",
+   "4.1"
+  ]
+ }
+]

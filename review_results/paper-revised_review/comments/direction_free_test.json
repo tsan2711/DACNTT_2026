@@ -1,0 +1,138 @@
+[
+  {
+    "title": "r_t does fall in every re-scored run; 'no downward trend' is contradicted by the paper's own data",
+    "quote": "at 10−5), with no downward trend; as a share of re-scored pass@1 it is 17% at",
+    "explanation": "I recomputed r_t per round from the saved re-score files (experiments/viec3/review_cpu/patched/*.json, the same files patch_dose.py produced, all 500 problems). Run A 5e-4 seed 1: 18.3% → 16.8% → 15.7%. Seed 2: 18.1% → 17.6% → 15.5%. Run A 1e-5 seed 0: 18.3 → 17.8 → 17.5 → 16.8 → 16.8%. The series never rises from one round to the next in any of the three runs, and '15.5–18.4%' is just the range from first to last round. A problem-level paired bootstrap of the change from first to last round (2,000 resamples, problems as clusters) gives −2.6 [−5.3, +0.3] and −2.6 [−5.2, +0.1] points at 5e-4, and −1.5 [−2.9, −0.1] at 1e-5. The last interval excludes zero. By the paper's own decision rule ('r_t should fall if the model adapts'), the data point weakly toward adaptation, not against it. The headline reading 'does not fall … does not adapt' therefore does not follow from the numbers. At minimum the paper must report the per-round values and intervals and say that r_t declined. Findings 2–3 suggest the decline comes from unboxing and composition rather than adaptation, but the paper does not make that argument either.",
+    "comment_type": "technical",
+    "confidence": "high",
+    "source_section": "5.3 A Proposed Audit for GVT with a Biased Verifier",
+    "related_sections": [
+      "Abstract",
+      "3.2 The Verifier and Its Directional Bias",
+      "B The Verifier in Full",
+      "1 Introduction",
+      "7 Conclusion"
+    ]
+  },
+  {
+    "title": "The defect is fixed by the problem, so the model can avoid it only by giving up the box (or a correct answer)",
+    "quote": "the bare gold is parsed to its first number and no longer",
+    "explanation": "App B says the failure comes from the stored gold. For a compound gold such as 6\\sqrt{2} or 137 \\frac{1}{2}, the bare gold is parsed to its first number, so no correct boxed prediction can match it. Whether a correct sample is rejected depends on the problem, not on how the model writes. The saved data confirm this. Across the three runs, 54–62 problems ever produce a flip. On those problems 94–98% of V'-accepted generations are rejected by V in every round, and in most rounds 0–3 problems (at most 7 at 1e-5) have both flipped and unflipped accepts. Of the few V-accepted generations on these problems, 14 of 15 (seed 1) and 51 of 69 (1e-5) contain no \\boxed. So the only way to escape the defect is to write the final answer without \\boxed, but only on compound-answer problems. Writing it 'better' (e.g. \\frac{4}{3} instead of \\frac43) changes nothing. The test therefore asks whether the model learns a conditional 'unbox on compound answers' behaviour, which is a very specific and hard adaptation. A flat r_t is close to what one expects under any amount of global verifier adaptation, so it is uninformative. The test as proposed needs a defect whose acceptance depends on the output's form (like \\dfrac → \\frac), not on the gold. The paper should state this validity condition explicitly. As written, it fails for the one defect actually tested.",
+    "comment_type": "logical",
+    "confidence": "high",
+    "source_section": "B The Verifier in Full",
+    "related_sections": [
+      "5.3 A Proposed Audit for GVT with a Biased Verifier",
+      "3.2 The Verifier and Its Directional Bias",
+      "Abstract"
+    ]
+  },
+  {
+    "title": "Unboxed predictions enter only the denominator, so the falling \\boxed share lowers r_t mechanically",
+    "quote": "the gold in \\boxed{} when the prediction contains one and the gold does not",
+    "explanation": "V' wraps the gold only when the prediction contains \\boxed. For an unboxed prediction V' = V, so it can be in the denominator (V'-accepted) but never in the numerator. r_t therefore equals (share of V'-accepts that are boxed) × (flip rate among boxed accepts). App G reports the \\boxed share falling 52% → 36% (A, seed 1). In the saved data, unboxed V-accepts grow from 73/787 (9%) to 138/566 (24%) of V'-accepts at seed 1, and from 126/1543 to 197/1446 at 1e-5. Among boxed V'-accepts only, r_t is flat: 20.2% → 20.8% (seed 1) and 19.9% → 19.5% (1e-5). So all of the observed decline in r_t is the unboxing effect. This cuts both ways. (i) A model drifting away from \\boxed for reasons unrelated to V would lower r_t, and the test would read that drift as adaptation. (ii) Dropping \\boxed is exactly the one route that avoids this defect (finding 2), so the paper cannot tell drift from adaptation here, the same problem it concedes for the \\boxed-share measure in §4.4. The test needs the numerator and denominator restricted to boxed predictions, or V' defined for every prediction, with the boxed share reported alongside.",
+    "comment_type": "technical",
+    "confidence": "high",
+    "source_section": "B The Verifier in Full",
+    "related_sections": [
+      "5.3 A Proposed Audit for GVT with a Biased Verifier",
+      "G Higher Learning Rates in Full",
+      "3.2 The Verifier and Its Directional Bias"
+    ]
+  },
+  {
+    "title": "Composition confound: r_t pools over problems, and its movement is set by which problems are solved",
+    "quote": "rejects does not fall over rounds, so for this one defect the model does not learn",
+    "explanation": "Because flips are nearly all-or-nothing per problem (finding 2), r_t ≈ (V'-accepts on the ~50 defect-eligible problems) / (V'-accepts on all problems). Any change in how accuracy is spread across problems moves r_t, whatever the model learns about V. If training hurts compound-answer (often harder) problems more, r_t falls. If it hurts simple-number problems more, r_t rises. Seed 1 shows this: flips fall 144 → 89 (−38%) while all V'-accepts fall 787 → 566 (−28%), so r_t drops even though the within-problem flip rate on eligible problems is unchanged (96.6% → 93.7%). The train-on-gold runs, which have no verifier in the loop, show r_t moving the other way, 18.2% → 21.5% and 18.0% → 20.2%. Shifts of ±2–3 points thus occur with no verifier pressure at all, the same size as the self-training changes. A valid test should be computed within problem: for example, the per-problem flip rate among V'-accepts on defect-eligible problems that are solved in both rounds, or a problem-fixed-effects estimate. The pooled statistic confounds adaptation with changes in which problems are solved.",
+    "comment_type": "logical",
+    "confidence": "high",
+    "source_section": "3.2 The Verifier and Its Directional Bias",
+    "related_sections": [
+      "5.3 A Proposed Audit for GVT with a Biased Verifier",
+      "B The Verifier in Full",
+      "G Higher Learning Rates in Full"
+    ]
+  },
+  {
+    "title": "Test sensitivity is not shown: no interval, no positive control, and little pressure to adapt in offline SFT",
+    "quote": "it rules out strong adaptation to this defect, not weak adaptation or adaptation",
+    "explanation": "The claim that the test 'rules out strong adaptation' is never quantified. (1) There is no interval. My problem-level bootstrap gives first-to-last-round changes with intervals as wide as [−5.3, +0.3] points, so a fall of about 30% relative to an 18% baseline is not excluded. The effective sample size is the ~50 eligible problems, not the ~600–1,500 generations, because flips cluster by problem. (2) There is no positive control. Nothing shows that r_t falls when a model does adapt, for example by fine-tuning on a pool filtered to remove one output-side form, or by tracking the \\dfrac class, which is output-avoidable but which the 1.5B model barely uses. (3) The pressure to adapt is small. In rejection-sampling SFT a false reject only removes a sample from the pool; there is no negative gradient. At round 0 the defect excludes ~102 of ~542 correct pool examples (19%), almost all on ~50 problems. On those problems the pool keeps only the handful of unboxed accepts, against ~400 boxed examples elsewhere teaching the opposite. With restart-from-base and 1–4 rounds, even a model that fully 'learns V' from the pool would barely see the signal. (4) The paper never says how far r_t would have to fall to count as adaptation. Without such a threshold, 'strong adaptation' has no defined meaning, and 'rules out' is unsupported.",
+    "comment_type": "logical",
+    "confidence": "high",
+    "source_section": "5.3 A Proposed Audit for GVT with a Biased Verifier",
+    "related_sections": [
+      "B The Verifier in Full",
+      "3.1 The GVT Loop",
+      "Abstract"
+    ]
+  },
+  {
+    "title": "Different statistics are reported under one name (generation-level r_t vs exam pass@1 share)",
+    "quote": "as a share of re-scored pass@1 it roughly is (6.7/40.0 and",
+    "explanation": "The abstract and §3.2 give 15.5–18.4%: generation-level V'-accept shares, pooled over all 500 problems and all k samples. §5.3 and App B also cite 17% (seed 1, round 0 and round 2) and 20% throughout at 1e-5. These are (V' pass@1 − V pass@1)/V' pass@1 on the 150-problem exam, first sample only. That is a different denominator, a different subset of problems, and about 40–60 correct answers per round. Read together, '17% at round 0 and round 2' looks like a flat statistic, while the generation-level r_t for the same run falls 18.3% → 15.7%. The exam-share figure is also very noisy: one problem on a 150-problem exam is 0.67 points of pass@1, so 4.7/28.0 vs 6.7/40.0 can be equal by chance. The 20% at 1e-5 lies outside the 15.5–18.4% range quoted as covering 'every round of the three runs'. The paper should report one pre-specified statistic (the generation-level r_t with intervals) and describe the exam share as a separate descriptive figure, or drop it.",
+    "comment_type": "technical",
+    "confidence": "high",
+    "source_section": "B The Verifier in Full",
+    "related_sections": [
+      "5.3 A Proposed Audit for GVT with a Biased Verifier",
+      "Abstract",
+      "3.2 The Verifier and Its Directional Bias",
+      "1 Introduction"
+    ]
+  },
+  {
+    "title": "'No false accepts by V'' is assumed, yet the paper's own hand check found one",
+    "quote": "one prediction had an empty box",
+    "explanation": "The test counts every V'-accept as correct ('share of correct solutions'). App B says the 15.5–18.4% figure 'assumes that the re-scored verifier itself accepts no wrong answer, which we did not measure'. But in the 30-flip hand check, one flip was an empty \\boxed{} that V' accepted: a V' false accept, about 3% of flips (binomial 95% CI roughly 0.1–17%). Wrapping the gold also changes how compound golds parse (for example, whether 137 \\frac{1}{2} is read as a mixed number or as a product). So V' can accept answers that are differently, but not equivalently, written. If V' false accepts are concentrated in some answer styles whose frequency changes over rounds, r_t moves for reasons unrelated to adaptation. The 'correct solutions' wording in the abstract and introduction should become 'V'-accepted solutions'. A hand audit of V' accepts (not only flips) is needed before r_t can be read as a false-reject rate.",
+    "comment_type": "technical",
+    "confidence": "medium",
+    "source_section": "B The Verifier in Full",
+    "related_sections": [
+      "Abstract",
+      "1 Introduction",
+      "5.3 A Proposed Audit for GVT with a Biased Verifier"
+    ]
+  },
+  {
+    "title": "Applying the test to RLVR does not follow without stated validity conditions",
+    "quote": "should write the rejected form less often and rt should fall over training steps.",
+    "explanation": "The RLVR argument assumes there is a 'rejected form' the policy can stop writing. For the one defect studied, there is not (finding 2): the rejection is set by the gold, so even strong RL pressure (zero or negative advantage on correct-but-rejected samples) can lower r_t only through problem-conditional unboxing or by changing the answer. RLVR pipelines also typically use their own answer extraction and gold formatting, so a 'known defect class' of one verifier may not exist in another. The proposal also needs within-problem computation (finding 4), restriction to predictions V' can actually re-score (finding 3), a positive control, and intervals. None of these are stated as conditions. The interpretation 'a gain with flat r_t is evidence against adaptation to that defect' also reaches less far than the abstract's framing, 'a test that separates the two': flat r_t on one defect says nothing about whether the gain is mathematics or adaptation to other verifier properties, such as reward for any parsable answer. Shao et al.'s random-reward gains, for instance, would show flat r_t with no adaptation to the verifier at all. 'It applies to RL checkpoints' should be restated as a hypothesis that holds under explicit conditions.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "5.3 A Proposed Audit for GVT with a Biased Verifier",
+    "related_sections": [
+      "Abstract",
+      "1 Introduction",
+      "7 Conclusion"
+    ]
+  },
+  {
+    "title": "Abstract claim 'the model does not adapt to this defect' is not supported",
+    "quote": "rounds: the model does not adapt to this defect. Nor does it improve.",
+    "explanation": "The abstract states a flat negative. The body hedges ('rules out strong adaptation … not weak adaptation', §5.3; 'only direct test … covers one defect', App B). Taken together, the evidence does not support the categorical statement. (a) r_t actually fell in all three runs, and at 1e-5 the problem-level interval excludes zero (finding 1). (b) The defect can be avoided only by dropping \\boxed on specific problems, so the test has almost no power for it (finding 2). (c) The fall is fully accounted for by unboxing and by which problems are solved (findings 3–4), and either could be adaptation or drift. (d) There is no positive control or sensitivity analysis (finding 5). The defensible statement is roughly: 'on one gold-side defect that the model could avoid only by dropping \\boxed, the share of re-scored-correct solutions it rejects changes by at most a few points (falling slightly, consistent with the decline in \\boxed use); the test as applied here cannot distinguish weak adaptation from drift.' The same overstatement appears in the introduction ('for that defect the model does not adapt'), §3.2 and the conclusion ('answers it for one defect'). Because this is the title contribution, the gap between the claim and the evidence is a major problem.",
+    "comment_type": "logical",
+    "confidence": "high",
+    "source_section": "Abstract",
+    "related_sections": [
+      "1 Introduction",
+      "3.2 The Verifier and Its Directional Bias",
+      "5.3 A Proposed Audit for GVT with a Biased Verifier",
+      "B The Verifier in Full",
+      "7 Conclusion"
+    ]
+  },
+  {
+    "title": "'Correct solutions' and 'one in six' gloss over the definition of the numerator and denominator",
+    "quote": "frequent defect we measured it stays at about one in six in every round of",
+    "explanation": "The introduction and abstract describe r_t as 'the share of the model's own correct solutions that a known verifier defect rejects'. In fact the denominator is V'-accepted generations (finding 7), and V' differs from V only for boxed predictions (finding 3). An unboxed correct answer that V wrongly rejects can never appear in the numerator. For eligible problems the denominator mixes ~50 problems where the share is ~96% with ~230–280 where it is 0%. 'About one in six' is thus not a per-solution rejection probability. It is a mixture weight set by how many compound-gold problems the model solves. Readers will take it as a uniform false-negative rate and will expect 'adaptation' to show up as a smooth decline of that rate. The paper should present the statistic as a problem-mixture quantity and report the within-eligible flip rate (~96%) alongside it.",
+    "comment_type": "technical",
+    "confidence": "medium",
+    "source_section": "1 Introduction",
+    "related_sections": [
+      "Abstract",
+      "3.2 The Verifier and Its Directional Bias",
+      "B The Verifier in Full",
+      "5.3 A Proposed Audit for GVT with a Biased Verifier"
+    ]
+  }
+]

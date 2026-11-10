@@ -1,0 +1,113 @@
+[
+  {
+    "title": "§4.1 overstates the selection-vs-exam check; at Design P's own learning rate the selection problems fell less, and the differences are within noise",
+    "quote": "set scoring is unlikely to have masked a decline (in Design I the selection problems",
+    "explanation": "The main text says that in Design I the selection problems 'fall as much as the exam'. Appendix D does not support that as a blanket statement. Selection falls as much or more only at the two higher rates (5e-4: -8.2/-5.3 vs -8.3/-4.7; 1e-4 seed 1: -6.2 vs -1.5). At 1e-5 Run A's selection problems fall less (-1.0 and -1.1 against -2.4 and -1.4/-1.5), less than half the exam decline at seed 0. Run C at 5e-4 also falls less (-11.3 vs -15.4). The rate that matters here is 1e-5, because Design P was trained at 1e-5. At that rate, and for Run A, the comparison leans the other way: training on a problem's own accepted solutions may have partly protected it. Second, Appendix D gives no intervals for these selection-minus-exam differences. With 150 exam problems the sample-accuracy changes alone have intervals about ±2.5–4 points wide (Table 5), so gaps of 1–2 points (and even the 4.7-point gap at 1e-4 seed 1, which has no interval) cannot tell 'falls more', 'as much' and 'less' apart. The honest summary is 'no detectable difference, with a hint of protection at 1e-5'. That supports 'unlikely to have masked' only weakly. It does not support App D's further remark that selection scoring 'may have enlarged' the decline, which rests on noise-level gaps at other rates. The main text should match the appendix: mixed results, slightly less decline at 1e-5, no intervals.",
+    "comment_type": "logical",
+    "confidence": "high",
+    "source_section": "4.1 Design P: An Apparent Collapse",
+    "related_sections": [
+      "D Design P in Full",
+      "Table 5"
+    ]
+  },
+  {
+    "title": "Sample-accuracy interval for A, seed 0 does not exclude zero, yet §4.2 and App E say it does",
+    "quote": "matched finished accuracy 1.1–4.2, with intervals that only just exclude zero for",
+    "explanation": "§4.2 says the sample-accuracy and matched finished-accuracy intervals 'only just exclude zero for A and B at seed 0'. In Table 5 the sample-accuracy interval for A, seed 0 is [-4.8, 0.0]. Its upper end is 0.0, so it includes zero, or at best touches it. Only B, seed 0 ([-5.9, -0.6]) excludes zero. Appendix E first says this correctly ('one interval (B, seed 0) excluding zero'). A few lines later it says 'These seed-0 intervals only just exclude zero (upper ends -0.6 and 0.0 for sample accuracy ...)', which contradicts itself because an upper end of 0.0 does not exclude zero. Both lists of upper ends also switch order: -0.6 and 0.0 is B then A, while -0.5 and -0.9 matched is A then B. The right count is: for sample accuracy, 1 of 4 MATH-500 intervals excludes zero at 1e-5; for matched finished accuracy, 2 of 4 do, both at seed 0, and the paper itself calls those two close to one replicate. The main text should say this and not merge the two metrics. The conclusion ('possible small decline, not an established one') survives, but the evidence is weaker than §4.2 suggests.",
+    "comment_type": "technical",
+    "confidence": "high",
+    "source_section": "4.2 Design I at 10^-5",
+    "related_sections": [
+      "E Design I at 10^-5 in Full",
+      "Table 5"
+    ]
+  },
+  {
+    "title": "'The adapter barely changes the outputs' at 1e-5 rests on coarse aggregates and conflicts with the paper's own decline and divergence evidence",
+    "quote": "on MATH-500 the adapter barely changes the outputs (length and cap-hit share",
+    "explanation": "This claim carries a lot of weight. It is used to say the flat MATH-500 curve at 1e-5 is uninformative (§4.2), to explain the null patch control (§4.3, App F: 'nearly identical pools would give nearly identical models'), and it motivates the higher-rate runs (§4.4). The only evidence given is that mean length (1158->1147) and cap-hit share (46.9->47.4%, 40.7->41.8%) barely move for Run A. Those are coarse summaries: an adapter can change which answers are produced, the reasoning, or the style while leaving length and termination unchanged. The paper's own data show outputs did change in ways that matter. Finished accuracy goes 54.8->51.0 (Table 11). Matched finished accuracy falls 3.8 and 4.2 points with intervals excluding zero at seed 0. All-agree shares fall (14.6->12.0%). The paper reads the decline as a 'possible small decline', which implies the model changed. Either the 1e-5 declines are real, and then the adapter changed the outputs, or the outputs did not change, and then the declines are noise. The paper uses both readings in different places. The supporting evidence that 'the adapter therefore learns' (training loss 0.72->0.38) is also weak for this purpose: §3.4 says loss is computed over the whole chat sequence including the fixed prompt, so part of that drop may just be fitting the repeated template. To support the claim, a direct output-level measure is needed, for example \\boxed/$ style shares by round at 1e-5 (as reported for the higher rates), per-problem added/lost churn compared with a resampling-of-base baseline, or token-level divergence between round-0 and round-4 generations. Otherwise 'little change' should be stated as an inference from length and cap-hit only.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "4.2 Design I at 10^-5",
+    "related_sections": [
+      "E Design I at 10^-5 in Full",
+      "4.3 The Patch Control Could Not Detect an Effect",
+      "F Patch Control and Answer Diversity in Full",
+      "3.4 Models, Data, Training, Metrics",
+      "Table 11"
+    ]
+  },
+  {
+    "title": "'Little change is a property of rate and steps together' is concluded from a comparison confounded by dataset",
+    "quote": "is therefore a property of rate and steps together, not of the rate alone. A flat",
+    "explanation": "Appendix E concludes that 'little change' depends on steps as well as rate, because Run C, at the same rate with about twice the steps (951 vs 436), does change its outputs. Run C is also the only GSM8K run. It differs from Run A in dataset, in base accuracy (66.7% vs 32%), and in cap-hit regime (3.5% vs 41–48%). The same appendix and §4.2 explicitly decline to attribute Run C's decline to the dataset alone, for exactly this reason. Attributing Run C's larger output change to steps is the mirror-image inference and needs the same hedge. Run C's time course also does not fit a per-round dose effect well: 9.3 of its 12.7 pass@1 points are lost in the final round, while the per-round dose is roughly constant or shrinking. App D then cites this inference ('Run C ... is the one 10^-5 run that declines clearly') as support for the Design P dose reading, so the conclusion rests on a single confounded comparison. It should be stated as one possible reading, not as a finding.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "E Design I at 10^-5 in Full",
+    "related_sections": [
+      "4.2 Design I at 10^-5",
+      "D Design P in Full"
+    ]
+  },
+  {
+    "title": "The 'dose explains level, not acceleration' argument is a false dichotomy, and dose does not even explain the level at round 1",
+    "quote": "Dose also explains at most the level of the decline, not its time course: with a",
+    "explanation": "The arithmetic checks out: the two largest pass@1 drops (-12.1 = 44.5->32.4 and -13.8 = 32.4->18.6) come from models trained on the pools of 3,395 and 2,638 examples. The inference drawn from it does not hold. (a) Dose and compounding through data interact rather than compete. Under restart-from-base, a larger per-round dose makes each round's model imitate its pool more strongly, so whatever drift is in the pool passes into the next generation faster. A high dose can therefore produce acceleration even while pool sizes shrink, so 'dose explains at most the level' does not follow. (b) The level is not explained by dose either. The round-1 model received the largest dose (3,962 examples, about 4.5x Run A) yet fell only 3.8 points (50.0->46.2), about the same as Design I Run A's round-1 drop of 2.7–5.3 points at 1x dose. On the dose reading the early level should differ most, and it does not. Together these suggest the collapse emerges over rounds, which fits a data-borne compounding mechanism amplified by dose more than either alone. The paper reaches a similar view ('something carried through the data ... fits this acceleration better'), but its stated reason splits the two mechanisms. The 1.5B pool shrinks by 60% (3,962->1,566) while the 0.5B pool shrinks only 16% (2,533->2,123); this is a further signal of compounding that could be used and is not discussed.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "D Design P in Full",
+    "related_sections": [
+      "4.1 Design P: An Apparent Collapse",
+      "Table 2"
+    ]
+  },
+  {
+    "title": "The 0.5B Design P run is the natural within-design control but is underused and has no uncertainty attached",
+    "quote": "declines only a little, though it is a different model. Pooling or scoring may also",
+    "explanation": "The 0.5B and 1.5B Design P runs share both structural features the paper lists as alternative explanations: pooled training on one adapter, and scoring on the selection set. The 0.5B run also has a large dose (2,533 examples, about 2.9x Run A, not far from the 1.5B's 4.5x). It shows only a mild, roughly linear decline (pass@1 -3.7, pass@8 -5.6) and little pool contraction. This is the strongest evidence in the paper that pooling and selection scoring are not sufficient on their own to produce the collapse. Yet App D closes with 'Pooling or scoring may also have contributed' without confronting it, and dismisses the 0.5B comparison only with 'it is a different model'. Several things are missing for 0.5B that are given for 1.5B: a per-dataset split (Table 9), style counts, a per-round pool trajectory (only the endpoints 2,533 to 2,123), and any interval on its decline. The main text calls the decline 'small' with no interval, even though the paper insists elsewhere on bootstrap intervals and patterns across runs. Either analyse the 0.5B run as the partial control it is, which narrows the candidate causes to model-by-dose interaction or compounding, or state clearly that it was not analysed and why.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "D Design P in Full",
+    "related_sections": [
+      "4.1 Design P: An Apparent Collapse",
+      "Table 2"
+    ]
+  },
+  {
+    "title": "Exam declines quoted in App D's selection-set comparison do not match Table 5",
+    "quote": "less (−1.0 and −1.1 against −2.4 and −1.4), and Run C’s selection problems",
+    "explanation": "App D compares selection-set declines with exam declines, but three of the exam figures differ from Table 5's sample-accuracy column. Run A, 1e-5, seed 1 is -1.4 in App D and -1.5 in Table 5. Run C at 5e-4 is -15.4 in App D ('-11.3 against -15.4') and -15.3 in Table 5. Run C at 1e-5 is -13.0 in App D ('-13.8 against -13.0') and -13.1 in Table 5. The differences are probably due to the separate re-scoring mentioned in Appendix C, but App D does not say which scoring it uses, and the same comparison mixes figures that do match Table 5 (-8.3, -4.7, -1.5 at 1e-4) with figures that do not. App D should state the scoring source or use the Table 5 values. These gaps are small, but they are the same size as the selection-minus-exam differences the argument relies on (e.g. -13.8 vs -13.0 is reported as 'slightly more').",
+    "comment_type": "technical",
+    "confidence": "high",
+    "source_section": "D Design P in Full",
+    "related_sections": [
+      "Table 5",
+      "C Uncertainty in Full"
+    ]
+  },
+  {
+    "title": "Answer-diversity measures: stated scope contradicted by reported values, and the handling of cap-hit (no-answer) generations is unspecified",
+    "quote": "(0.542 →0.554 for Run A, seed 0; 0.528 →0.543 for Run B, seed 1) but rises",
+    "explanation": "App F says diversity was measured 'for Design P's 1.5B run and the 10^-5 Design I runs at seed 0'. The distinct-answer fraction is then reported for 'Run B, seed 1', which lies outside that scope. Either the scope or the label is wrong, and A and B are compared at different seeds and different partitions. More substantively, 41–48% of MATH-500 generations hit the token cap and mostly have no extractable answer, and in Design P \\boxed usage halves. Neither the all-agree measure nor the distinct-answer measure says how a missing or unextractable answer is counted: as its own 'answer', as distinct each time, or excluded. That choice can by itself drive the reported movements, for example Design P's distinct fraction rising 0.443->0.712 and all-agree falling 24.8->1.7% as formatting drifts. The paper notes the link to cap-hits but gives no rule. Mixing selection and exam problems in Design I also mixes problems the model trained on with held-out ones. The paper draws no conclusion from these measures, which is appropriate, but the definitions need to be given for the numbers to be interpretable or reproducible.",
+    "comment_type": "technical",
+    "confidence": "medium",
+    "source_section": "F Patch Control and Answer Diversity in Full",
+    "related_sections": [
+      "4.3 The Patch Control Could Not Detect an Effect"
+    ]
+  },
+  {
+    "title": "Table 2's round-3 pass@8 corresponds to the default preset, contradicting 'the two presets gave identical pooled values'",
+    "quote": "identical pooled values; a later per-dataset recomputation differs by one prob-",
+    "explanation": "App D says Table 2 was computed during the run, 'where the two verifier presets gave identical pooled values'. Table 9's caption says that after recomputation the pooled round-3 pass@8 is 63.5% under the reward preset (the one used for selection, and per §3.4 the definition of 'correct') and 63.6% under the default preset. 63.6% is the value in Table 2. Recomputing from Table 9's per-dataset reward values gives (82.2+44.8)/2 = 63.5. So Table 2's R3 pass@8 matches the default preset rather than the reward preset. This is a one-problem difference with no effect on conclusions, but the 'identical' statement and the convention that 'correct' means the reward preset are not exactly true for Table 2. The caption could say which preset Table 2 uses. All other Table 2 entries reproduce exactly as averages of Table 9's two datasets, and all Table 2, 3 and 9 deltas recompute correctly.",
+    "comment_type": "technical",
+    "confidence": "low",
+    "source_section": "D Design P in Full",
+    "related_sections": [
+      "Table 2",
+      "Table 9",
+      "3.4 Models, Data, Training, Metrics"
+    ]
+  }
+]

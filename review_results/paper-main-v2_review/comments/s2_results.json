@@ -1,0 +1,125 @@
+[
+ {
+  "title": "Pass@k detectable effect in final round misstated (4 vs ~5.4)",
+  "quote": "only about 10 points of pass@1 and 8–10 of pass@k (6 and 4 in the ﬁnal round)",
+  "explanation": "Section 4.6 gives pass@2 for the loop as −3.0 [−6.8, +0.6], half-width 3.8. By the paper's own rule (2.8h/1.96) the detectable pass@2 effect is about 5.4 points, not 4. Pass@1 (h about 4.2 gives 6.0) is right, and 4 would fit sample accuracy (−2.9 [−5.8, 0.0], h 2.9 gives about 4.1), but the sentence pairs it with pass@k, and the 150-problem contrast (8–10 for pass@k) is a pass@k contrast. Section 6 and Section 7 repeat only the pass@1 value (6), so only 5.1 is wrong. All of these also omit seed variance, so the 6-point figure is optimistic for a single seed.",
+  "comment_type": "technical",
+  "confidence": "high",
+  "source_section": "5.1 Answer to the Research Question",
+  "related_sections": [
+   "4.6 A Final Round with a Corrected Recipe",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "Positive gate failure is not diagnosed and may not certify the recipe",
+  "quote": "The gate fails. Training on reference solutions lowers pass@1 from 49.2%",
+  "explanation": "A 32-point collapse after one adapter trained on 300 examples (about 150 steps at batch size 2) at 1e-4 with completion-only loss and all-linear LoRA is far larger than ordinary SFT damage, and it is read as 'the recipe cannot help'. Two other readings are not excluded. (a) A pipeline or scoring fault: the model switches to the reference style ($-spans 60 to 1,577 of 1,600), and the verifier (including the stored-gold defect and unboxed answers) is not shown to score that style fairly; the paper itself says verifier error is bounded only from below. No boxed share, length, cap-hit or finished-accuracy breakdown is given for the gold arm in 4.6. (b) The gate is the wrong control: SFT on terse human reference solutions moves an instruct model off its own distribution, whereas self-training trains on its own on-distribution samples. Failing to improve on gold does not show that self-generated data could not help under the same recipe. So 'no positive reference' and 'a null for the recipe, not for self-training' (Section 7) are stronger than the evidence, and the paper stops without a diagnostic.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "4.6 A Final Round with a Corrected Recipe",
+  "related_sections": [
+   "5.1 Answer to the Research Question",
+   "6 Limitations",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "Earlier 5e-4 gate figure is unreported and 'same recipe' is unclear",
+  "quote": "An earlier gate at 5 × 10−4 with the same recipe also failed (−30.5 points",
+  "explanation": "The −30.5 pass@1 change appears in no table and has no interval or seed, and its exam partition is not stated. The train-on-gold arms in Table 3 (old recipe, 150-problem exams) fall −18.0 and −21.3 pass@1 at 5e-4, so −30.5 must come from a different run, yet it is called the 'same recipe' as the corrected one, which is described as one seed at 1e-4. Section 5.1 and Section 6 then say the gate failed 'twice', while Table 3 already has two failed gold arms. The count of failed gates, and which recipe each used, is inconsistent and not traceable.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "4.6 A Final Round with a Corrected Recipe",
+  "related_sections": [
+   "5.1 Answer to the Research Question",
+   "4.4 Higher Learning Rates"
+  ]
+ },
+ {
+  "title": "Final-round decline rests on first-draw pass@1; sample accuracy and 10^-5 comparison do not support the reading",
+  "quote": "The veriﬁer-ﬁltered loop loses 4.8 points of pass@1, with an interval",
+  "explanation": "With k = 2, sample accuracy is the mean of the two draws, so a sample-accuracy change of −2.9 and a pass@1 change of −4.8 imply the second draw fell only about 1.0 point. The pass@1 headline is therefore partly a feature of which draw is called 'first', and it is the more extreme of two estimates of the same quantity. The pass@1 interval (−9.0, −0.6) only just excludes zero; the sample-accuracy interval (−5.8, 0.0) touches it; pass@2 includes zero. With no multiplicity correction, one seed and no seed variance, this does not show a decline. The text also says the result is 'as at 10−5', but at 1e-5 every pass@1 interval included zero (Table 2), whereas here one excludes it; the two are not the same pattern. Section 5.1 ('pass@1 falls 4.8 points') presents the point estimate without these caveats.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "4.6 A Final Round with a Corrected Recipe",
+  "related_sections": [
+   "5.1 Answer to the Research Question",
+   "3.4 Models, Data, Training, Metrics"
+  ]
+ },
+ {
+  "title": "2.2-point 'bound' is smaller than the observed seed-to-seed spread",
+  "quote": "exams the sample-accuracy intervals exclude gains above about 2.2 points, but",
+  "explanation": "The 2.2 figure is the largest upper limit among the sample-accuracy intervals in Table 2 (+2.2 for A at 1e-4, seeds 1 and 3). It is small because most point estimates are negative, not because the design is sensitive: Section 3.4 puts the detectable sample-accuracy effect at 3.5–5.5, and the only replicate pair differs by 3.2 points, larger than 2.2 (the two 5e-4 seeds of A differ by 8.3 vs 4.7). A bound that is tighter than the demonstrated run-to-run variation cannot rule out gains of that size for a new seed, and the paper repeats it in Section 7 even while calling it loose. The sentence reads as a power statement, which it is not.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "5.1 Answer to the Research Question",
+  "related_sections": [
+   "3.4 Models, Data, Training, Metrics",
+   "4.4 Higher Learning Rates",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "Round-0 pool enlargement (440 to 542) implies an 18.8% reject share, above the stated 15.5–18.3%",
+  "quote": "(440 → 542, +23%)",
+  "explanation": "If 542 examples are accepted by V′ and 440 by V, V rejects 102/542 = 18.8% of V′-accepted solutions, which is outside the stated 15.5–18.3% range (the Table 5 round-0 values are 18.0–18.3). Either the pool figures come from a different set (e.g. different seed or run) than the rates, or the range is wrong; the text does not say. The 'about a fifth to a quarter' dose and the claim that the defect would change a larger share of the pool than the 0–4 examples of the patch depend on this number.",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "3.2 The Verifier and Its Directional Bias",
+  "related_sections": [
+   "5.3 A Proposed Audit for GVT with a Biased Verifier",
+   "Table 5"
+  ]
+ },
+ {
+  "title": "Cap-share attribution at seed 2 (52–72%) conflicts with Table 1 and the matched finished loss",
+  "quote": "(and −2 and 5% in the replicate and the 1,024-limit run) and 52–72% at seed 2",
+  "explanation": "Using Table 1 for A at 5e-4, seed 2: cap-hit rises from 43.1% to 51.2% (+8.1) while sample accuracy falls 30.8 to 26.2. If capped generations are essentially never correct, finished accuracy goes from about 54% to about 54%, so the cap share would explain nearly all the decline (over 90%), not 52–72%. Yet the matched finished accuracy in Table 2 is −5.5 for the same run, which would imply a large finished-accuracy loss as well. The two measures cannot both hold under an additive split, and the decomposition formula is not in the main text (only 'Table ??'). At seed 1 the same arithmetic gives about 22%, in line with 12–30%, so the inconsistency is specific to seed 2. The conclusion that the balance 'differs by partition' and that the effect is clear 'at one of two seeds' depends on this decomposition.",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "4.5 Anatomy of the Decline",
+  "related_sections": [
+   "5.3 A Proposed Audit for GVT with a Biased Verifier",
+   "7 Conclusion",
+   "Table 1",
+   "Table 2"
+  ]
+ },
+ {
+  "title": "Section 4.6 tests a single adapter, not the iterated loop",
+  "quote": "It is one seed at 10−4 with k = 2 and two rounds.",
+  "explanation": "'Two rounds' here means round 0 plus one adapter (the table reports untrained to round 1). No second self-training iteration, and so no compounding, is tested. The Conclusion and Section 5.1 use this result to answer whether 'generate–verify–select–train iterations' help, and the Limitations list 'a restart-from-base design that leaves compounding little room'. With one seed, one adapter and a failed gate, the new round adds little to the multi-round question; the extra power (500 problems) addresses only problem sampling, not seed variance, so the 'detectable effect about 6' is a lower bound on what a single seed can resolve.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "4.6 A Final Round with a Corrected Recipe",
+  "related_sections": [
+   "7 Conclusion",
+   "5.1 Answer to the Research Question",
+   "3.1 The GVT Loop"
+  ]
+ },
+ {
+  "title": "Denominator of dollar-span counts (1,600) does not match the 500 × 2 exam generations",
+  "quote": "the model adopts the reference style ($-delimited spans in 60 of",
+  "explanation": "The exam is 500 problems at k = 2 (1,000 generations), and the 300-problem pool adds 600 more, so 1,600 seems to be exam plus selection generations at round 0. This is not stated, and it differs from the exam-only denominators used for the earlier $-span share (5% to 98%) and for the Table 4 metrics. A reader cannot tell whether 3.8% and 98.6% refer to the evaluated generations.",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "4.6 A Final Round with a Corrected Recipe",
+  "related_sections": [
+   "4.4 Higher Learning Rates"
+  ]
+ },
+ {
+  "title": "Table 2 mixes run-log values with recomputed generation-based values",
+  "quote": "seed 1 (recomputed from the saved generations; Table 2 lists values from the",
+  "explanation": "Section 4.3 gives B minus A at seed 1 as +0.0 [−2.7, +2.7] from recomputed generations, whereas Table 2 lists B,1 at −4.0 and A,1 at −3.3, whose difference is −0.7. Intervals in Table 2 are said to be bootstrapped from saved generations, but the point estimates are from run logs. Six round values differ by one problem. Not consequential for conclusions, but the headline table is not the same data as the text's recomputation, and the interval centres may not match the generation-based estimates.",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "4.3 The Patch Control Could Not Detect an Effect",
+  "related_sections": [
+   "Table 2"
+  ]
+ }
+]

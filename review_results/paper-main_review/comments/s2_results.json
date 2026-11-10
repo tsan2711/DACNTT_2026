@@ -1,0 +1,97 @@
+[
+ {
+  "title": "B minus A at seed 1 (10^-5) contradicts Table 2 changes",
+  "quote": "+0.0 [−2.7, +2.7] at seed 1",
+  "explanation": "Section 4.3 gives B minus A at round 4 as +0.0 pass@1 at seed 1. Table 2 reports the round-0 to round-4 change of pass@1 as -3.3 for A,1 and -4.0 for B,1. Round 0 is the same untrained model on the same exam partition, so B minus A should be -4.0 - (-3.3) = -0.7 (1 problem of 150), as it is at seed 0 (-3.3 - (-2.7) = -0.7, matching the quoted -0.7). Either the round-0 pass@1 of A and B differ at seed 1 (first-sample draws or patched scoring), in which case the comparison is not of changes and Table 2 does not show it, or one of the numbers is wrong. The interval [-2.7, +2.7] is centred on 0.0, so it is not a rounding artifact. Since this sentence is the only quantitative support for the 'patch has no effect' reading, the discrepancy should be resolved or explained (state the round-0 values for A and B).",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "4.3 The Patch Control Could Not Detect an Effect",
+  "related_sections": [
+   "Table 2"
+  ]
+ },
+ {
+  "title": "Detectable-effect figures rest on bootstrap half-widths that the paper's own data show are too narrow",
+  "quote": "means no gain of roughly that size.",
+  "explanation": "The 80%-power threshold 2.8*h/1.96 (correct for a two-sided 5% test: 1.96+0.84) is built from the half-widths h of within-run problem-level bootstrap intervals, which by the paper's own statement exclude training-seed variance. The paper's evidence says this variance is not small: the replicate pair ends 3.2 points of sample accuracy apart, and Section 4.4 reports a same-pool-size B minus A pass@1 difference of -7.3 [-14.0, -0.7] at seed 2 whose interval excludes zero, which is then called 'trajectory noise'. If run-to-run noise alone produces a difference with an interval excluding zero, the bootstrap intervals understate uncertainty, so the true minimum detectable effect is larger than 'about 10 / 8-10 / 3.5-5.5' (my recomputation from Table 2 gives roughly 9.5, 8.6-9.6 and 3.4-5.6, so the arithmetic is fine; the input is the problem). Moreover h is taken from runs with large declines and different k/rounds, mixing designs. The same caveat undermines statements like 'sample-accuracy intervals exclude zero in all four A/B runs' at 5e-4. The text should present the MDE as a lower bound and not use it as the definition of what 'null' means in the Abstract/Conclusion.",
+  "comment_type": "technical",
+  "confidence": "high",
+  "source_section": "3.4 Models, Data, Training, Metrics (Uncertainty / Detectable effects)",
+  "related_sections": [
+   "4.4 Higher Learning Rates",
+   "5.1 Answer to the Research Question",
+   "Table 2"
+  ]
+ },
+ {
+  "title": "The 2.2-point bound on gains is smaller than the acknowledged seed noise and is a maximum over selected intervals",
+  "quote": "sample-accuracy intervals exclude gains above about 2.2 points.",
+  "explanation": "I recomputed from Table 2: the largest upper limit of a sample-accuracy interval over all 17 rows is +2.2 (A,1 and A,3 at 10^-4). Reading this as 'the data exclude gains above 2.2' conflicts with Section 3.4, which says the same intervals imply a design able to detect only 3.5-5.5 points, and with the 3.2-point gap between the two replicates (larger than the bound itself). An interval upper limit equals the (negative) point estimate plus h, so it is small largely because runs drifted down; it says nothing about what a recipe that works could gain, and its coverage is for each run separately, not for the max of 17 uncorrected intervals. The paper does call the bound loose, but still uses it as a headline conclusion (Section 5.1, Abstract); with seed variance omitted it cannot support a 2.2-point statement.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "5.1 Answer to the Research Question",
+  "related_sections": [
+   "3.4 Models, Data, Training, Metrics",
+   "Table 2"
+  ]
+ },
+ {
+  "title": "Consistent direction of change at 10^-5 is read as 'no detectable change' and as weak evidence that the adapter did little",
+  "quote": "We read this as a possible small decline, not an established",
+  "explanation": "In Table 2 the sample-accuracy change is negative in every A/B row on MATH-500 (all 11 rows at 10^-5 to 5e-4, excluding controls) and pass@1 is negative in all but one (A,1 at 10^-4 is +0.7); at 10^-5 all four runs fall 1.2-3.2 points of sample accuracy and 2.7-4.0 of pass@1, with matched finished accuracy falling in all four. Section 3.4 says conclusions should rest on 'patterns across runs and seeds, not on single intervals', but here the pattern (a uniform sign across runs) is discounted run by run because each interval touches zero. The same section then argues that a flat output-length/cap-hit curve is 'weak evidence that the adapter did little', which sits uneasily with a consistent accuracy decline of 1-4 points that the adapter must have caused (round 0 is the same base model). Either the decline is real (a small harm even at 10^-5) or there is a systematic round-0 vs later-round difference (e.g. sampling or scoring), and the paper should say which and pool the runs (e.g. a sign test or pooled paired estimate over A/B/seed) rather than leave the pattern unevaluated. The A/B pairs are close to replicates, so the effective number of independent runs is small, which is also worth stating.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "4.2 Design I at 10^-5",
+  "related_sections": [
+   "3.4 Models, Data, Training, Metrics",
+   "Table 2"
+  ]
+ },
+ {
+  "title": "Verifier-error argument for train-on-gold is a non sequitur",
+  "quote": "accuracy among boxed answers), and the 14% of round-2 generations without",
+  "explanation": "The text says post hoc checks 'bound verifier error from below only (about 2 points ...)' and that 14% of round-2 generations without \\boxed are not covered, and then concludes 'we think this fall is unlikely to be mainly verifier error'. A lower bound of about 2 points on verifier error cannot support a claim that verifier error is small relative to a 20-point fall; the paper itself says it 'cannot bound it from above'. The risk is concrete: train-on-gold moves the output style to the reference style (dollar-delimited spans 5% to 98%), responses shorten by more than half, and the unboxed share is where the checks do not reach, which is exactly the regime where a rule-based extractor (and the known gold-storage defect, 10.2% unparsable golds) would reject correct answers. Because this arm is used to argue that no arm, 'this one included', improves (and hence that the null belongs to the recipe), whether the -21 point drop is genuine degradation or a format-induced scoring artifact matters for that inference; a re-score with V' or a normalised comparison on the unboxed 14% would settle it.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "4.4 Higher Learning Rates",
+  "related_sections": [
+   "Table 3",
+   "4.5 Anatomy of the Decline"
+  ]
+ },
+ {
+  "title": "'About 195 optimizer steps' does not match pool sizes in Table 3",
+  "quote": "so the round-2 model is a single adapter (about 195 optimizer",
+  "explanation": "The text says the round-2 model is one adapter trained on the round-1 pool, with about 195 steps for Run A at 5e-4. Table 3 caption states optimizer steps are half the pool, and the round-1 pools are 326 (seed 1) and 350 (seed 2), i.e. 163 and 175 steps. 195 would correspond to a pool of about 390, which matches neither seed (the round-0 pool, 440 and 424, gives 220 and 212 steps for the round-1 adapter). Possibly an average of the two adapters is intended, but then 'single adapter' is misleading. Dose is the central confound in the no-filter and train-on-gold comparisons (3-4x steps), so the step counts should be stated precisely.",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "3.3 Two Experimental Designs",
+  "related_sections": [
+   "Table 3",
+   "4.4 Higher Learning Rates"
+  ]
+ },
+ {
+  "title": "Table 2 caption cites Section 3.4 for off-by-one values and re-scoring that Section 3.4 does not describe",
+  "quote": "whose round-4 pass@8 is 58.0% against 58.7%; the matched column uses the separate",
+  "explanation": "The caption says six round values differ by one problem from recomputation and points to Section 3.4 for these and for the 'separate re-scoring' behind the matched column, but Section 3.4 contains neither (only a remark that 1,536-token re-scorings were not saved). It is also unclear which version enters the table: B,1 shows -1.3 for pass@k, which equals 58.0 - 59.3 on 150 problems only if one of 58.0/58.7 is used (58.7 minus the round-0 value would give about -0.6 or -0.7). A reader cannot tell whether the quoted changes and intervals use the recomputed or the logged values, and the one-problem differences are comparable to the 0.7-point effects discussed (e.g. the +0.7 maximum rise in Section 5.1).",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "Table 2",
+  "related_sections": [
+   "3.4 Models, Data, Training, Metrics"
+  ]
+ },
+ {
+  "title": "'Worse on pass@4 at both seeds' stated although intervals include zero and one difference is 3 problems",
+  "quote": "beyond noise and is worse on pass@4 at both seeds (round-2",
+  "explanation": "The no-filter minus A round-2 pass@4 differences are -2.0 (3 of 150 problems) and about -5.3, both with intervals that include zero by the paper's own account. Calling the control 'worse' at both seeds is directional language that the evidence does not support under the paper's own standard (no conclusions from single intervals). Table 3 also shows no-filter pass@1 above A at seed 2 in round 1 (34.7 vs 31.3). The sentence is hedged by the dose caveat, but 'never better ... and is worse' should read as 'not distinguishable from' unless a pooled estimate across seeds is given.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "4.4 Higher Learning Rates",
+  "related_sections": [
+   "Table 3",
+   "Table 2"
+  ]
+ }
+]

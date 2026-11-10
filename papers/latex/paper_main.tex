@@ -31,30 +31,22 @@ Verifier-Filtered Self-Training of a 1.5B Model}
 \begin{abstract}
 Self-training and reinforcement learning with verifiable rewards report large
 gains for small language models, but a rising score does not show that a
-model learned mathematics rather than what its verifier accepts; RL with
-random rewards has been shown to raise accuracy too. We study the cheapest
-form of the loop, generate--verify--select--train with offline LoRA SFT, on
-Qwen2.5-1.5B-Instruct with the rule-based verifier \texttt{math-verify}. On a
-held-out exam of 150 problems, at four learning rates on MATH-500 and two on
-GSM8K, no pass@1 or pass@$k$ gain has a problem-level bootstrap interval
-excluding zero. The design could detect only gains of about $10$ points of
-pass@1, $8$--$10$ of pass@$k$ and $3.5$--$5.5$ of sample accuracy ($80\%$
-power); sample-accuracy intervals (a primary measure chosen after the runs)
-exclude gains above $2.2$ points, a bound that omits training-seed variance.
-No arm, including training on reference solutions, improves on the untrained
-model, so this null concerns the recipe, not self-training in general. At the
-highest rate accuracy falls in every run, and in a post hoc measure matched on
-problem mix, finished solutions are $5.5$--$10.6$ points less accurate. Our
-pre-set rule for verifier-style learning could fire only if accuracy rose. As
-a post hoc audit we track, per round, the share of the loop's own correct
-solutions that a storage defect in our pipeline rejects (about one in six).
-It falls by $1.5$--$2.6$ points, which a falling \verb|\boxed| share accounts
-for; on the problems the defect affects it stays near $95\%$. With $2$--$12$
-training examples per round that avoid the defect and no positive control,
-this finds no adaptation to the defect but cannot exclude it. A control that
-patches a rarer defect changes $0$--$4$ training examples and cannot detect an
-effect; removing the filter also changes the training dose, and neither shows
-a consistent difference.
+model learned mathematics rather than what its verifier accepts. We study the
+cheapest form of the loop, generate--verify--select--train with offline LoRA
+SFT, on Qwen2.5-1.5B-Instruct with the rule-based verifier
+\texttt{math-verify}, on held-out MATH-500 and GSM8K exams (150 problems; $500$
+in a final round) at four learning rates on MATH-500 and two on GSM8K. No
+pass@1 or pass@$k$ gain has a problem-level bootstrap interval excluding zero;
+in the final round, with a corrected recipe, pass@1 falls $4.8$ points
+($[-9.0,-0.6]$). The design detects only gains of about $6$--$10$ points of
+pass@1 ($80\%$ power). A positive gate fails: training on reference solutions
+lowers pass@1 by $32.2$ points, so the null concerns this recipe, not
+self-training in general. As a post hoc audit we track the share of the loop's
+own correct solutions that a storage defect in our pipeline rejects (about one
+in six). It falls by $1.5$--$2.6$ points, which a falling \verb|\boxed| share
+accounts for, so we find no adaptation to the defect but cannot exclude it.
+Two controls, patching a rarer defect and removing the filter, change too few
+training examples or too much dose to show a consistent difference.
 
 \keywords{self-training \and self-improvement \and verifier bias \and
 mathematical reasoning \and small language models \and verifiable rewards
@@ -251,9 +243,9 @@ inside \verb|\boxed{}| or \verb|$...$|, so a correct boxed prediction can fail
 against a bare gold (e.g.\ the prediction \verb|\boxed{\frac{4}{3}}| against
 the stored gold \verb|\frac43|). Re-scoring the saved generations with a
 verifier $V'$ that wraps the gold in \verb|\boxed{}| when the prediction
-contains one shows that this defect rejects $15.5$--$18.4\%$ of the
+contains one shows that this defect rejects $15.5$--$18.3\%$ of the
 generations $V'$ accepts. It would enlarge the round-0 kept pool by about a
-fifth ($440\to542$), against $0$--$4$ examples for the \verb|\dfrac| patch, and
+fifth to a quarter ($440\to542$, $+23\%$), against $0$--$4$ examples for the \verb|\dfrac| patch, and
 it lowers absolute pass@1 by $4.7$--$8.0$ points in self-training. It is bound
 to the problem, not to the answer: on the $54$--$62$ problems where it ever
 fires, it rejects $94$--$98\%$ of correct answers in every round, and $29$--$34$
@@ -334,7 +326,7 @@ including the $2.2$-point bound, are therefore post hoc in the choice of measure
 \paragraph{Uncertainty.} For every within-run change (round~0 against the last
 round) and every paired comparison of two runs on the same exam partition we
 report a 95\% interval from a paired problem-level bootstrap ($10{,}000$
-resamples of the $150$ exam problems), which respects the clustering of the $k$
+resamples of the $150$ exam problems; $2{,}000$ for the matched and audit columns), which respects the clustering of the $k$
 samples within a problem. These intervals do \emph{not} cover training-seed
 variance, which we see only across two or three seeds: the one
 same-configuration replicate pair we have ends $3.2$ points of sample accuracy
@@ -347,12 +339,9 @@ $8$--$10$ of pass@$k$ and $3.5$--$5.5$ of sample accuracy on MATH-500. A null
 in this paper means no gain of roughly that size. Details are in
 Supplementary Appendix~\ref{app:uncertainty}.
 
-\paragraph{Reproducibility.} The analysis scripts named in the paper and the
-saved generations of every run are in our project repository. Token counts at
-generation time, Design~P's training logs and the per-sample outputs of the
-$1{,}536$-token re-scorings were not saved. Every accuracy number in the paper
-is graded by the same biased verifier that selects the training data, except
-the re-scored figures of Supplementary Appendix~\ref{app:verifier}.
+\paragraph{Reproducibility.} Analysis scripts and saved generations of every run
+are in our repository; token counts at generation time, Design~P's training
+logs and the $1{,}536$-token re-scoring outputs were not saved.
 
 \section{Results}
 \label{sec:results}
@@ -384,11 +373,9 @@ possible small decline, not an established one; what we do not see is a gain
 of the size the design could detect. Run~C
 (GSM8K) declines more: pass@1 falls $12.7$ points ($[-21.3,-4.0]$), almost all in
 finished accuracy, but it took about twice Run~A's optimizer steps, so we do not
-attribute this to the dataset alone. At this rate the training loss falls, but
-on MATH-500 two coarse output statistics, length and cap-hit share, barely
-change; we did not measure a finer one, so this is weak evidence that the
-adapter did little, and a flat curve there does not show that GVT is stable
-(Supplementary Appendix~\ref{app:isolated}).
+attribute this to the dataset alone. On MATH-500 two coarse output statistics,
+length and cap-hit share, barely change, which is weak evidence that the adapter
+did little (Supplementary Appendix~\ref{app:isolated}).
 
 \subsection{The Patch Control Could Not Detect an Effect}
 \label{sec:control}
@@ -397,15 +384,12 @@ adapter did little, and a flat curve there does not show that GVT is stable
 
 Runs A and B differ only in the \verb|\dfrac|/\verb|\tfrac| patch. At round~4,
 B minus A is $-0.7$ [$-3.3$, $+2.0$] points of pass@1 at seed~0 and $+0.0$
-[$-2.7$, $+2.7$] at seed~1. This null is uninformative: \verb|\dfrac| appears
+[$-2.7$, $+2.7$] at seed~1 (recomputed from the saved generations; Table~\ref{tab:ci} lists values from the run logs that differ by one problem, giving $-0.7$). This null is uninformative: \verb|\dfrac| appears
 in $0.50$--$0.73\%$ of generations, so the kept pools differ by $3$--$4$
-examples (under $0.5\%$), and at $10^{-5}$ the adapter changes the outputs
+examples (under $0.5\%$ of the $872$-example pool), and at $10^{-5}$ the adapter changes the outputs
 little anyway. Removing one rare format defect had no detectable effect, which a
 prevalence count alone predicts; the frequent gold-storage defect is present in
-both arms. The pre-filter share of problems on which all $k$ samples agree falls
-in each of the four runs where we measured it (Design~P 1.5B and the seed-0
-$10^{-5}$ runs, over all $500$ items), but it is mechanically tied to accuracy,
-so we draw no conclusion from it (Supplementary Appendix~\ref{app:control}).
+both arms.
 
 \subsection{Higher Learning Rates}
 \label{sec:lrcheck}
@@ -466,7 +450,7 @@ untrained model's accuracy on the same problem mix (Section~\ref{sec:anatomy};
 $2{,}000$ resamples, \texttt{capanat.py} in the repository). The
 intervals do not include training-seed variance. Recomputed values match the
 reported ones except six round values that differ by one problem
-(Section~\ref{sec:config}), e.g.\ B, seed~1 at $10^{-5}$, whose round-4 pass@8
+(Supplementary Appendix~\ref{app:uncertainty}), e.g.\ B, seed~1 at $10^{-5}$, whose round-4 pass@8
 is $58.0\%$ against $58.7\%$; the matched column uses the separate re-scoring
 described there.}
 \label{tab:ci}
@@ -512,7 +496,7 @@ The \emph{no-filter} run trains on all $k$ samples of every selection problem
 \emph{train-on-gold} run trains on the $350$ reference solutions every round
 (Table~\ref{tab:controls}). Neither is a single-variable control: no-filter
 takes $3$--$4\times$ Run~A's optimizer steps, train-on-gold about the same.
-Removing the filter is never better than keeping it beyond noise and is worse on
+Removing the filter is not better than keeping it beyond noise and is lower on
 pass@4 at both seeds (round-2 differences $-2.0$ and $-5.3$ points, intervals
 including zero), but the dose difference means this cannot be attributed to the
 filter; the no-filter pool is also truncated far more often in training
@@ -532,8 +516,9 @@ accurate and more unfinished solutions (Supplementary Appendix~\ref{app:lrcheck}
 
 \begin{table}[!htb]
 \caption{Controls at $5\times10^{-4}$ (MATH-500, $k=4$, three rounds), on the
-exam partition of Run~A at the same seed. Pool is the number of training
-examples per round; optimizer steps are half of it.}
+exam partition of Run~A at the same seed. Pool is the kept pool at round~0 $\to$ round~2; the round-2 model trains on the
+round-1 pool ($392$ and $386$ examples, about $195$ steps) and optimizer steps are
+half the pool size.}
 \label{tab:controls}
 \centering
 \setlength{\tabcolsep}{5pt}
@@ -583,6 +568,46 @@ adapters at a $1{,}536$-token cap leaves their deficit in place, and the
 character proxy there points to generations that do not stop rather than to
 less accurate finished ones (Supplementary Appendix~\ref{app:anatomy}).
 
+\subsection{A Final Round with a Corrected Recipe}
+\label{sec:final}
+Because no earlier arm improved, we ran one last round with the recipe changes
+a reviewer asked for: loss on the completion only, LoRA on all linear layers,
+a 1,024-token cap and training limit, normalised gold answers, and a pool of
+300 problems from the MATH training split, so that the exam is all 500
+MATH-500 problems. It is one seed at $10^{-4}$ with $k=2$ and two rounds. The
+verifier-filtered loop (298 examples kept) is compared with training on the 300
+reference solutions, a positive gate that must raise accuracy for the recipe to
+count as able to help. Intervals are paired problem-level bootstrap intervals
+over the 500 problems ($10{,}000$ resamples).
+
+\begin{table}[!htb]
+\caption{Final round, MATH-500 (500 exam problems, $k=2$, $10^{-4}$, one seed).
+Change from the untrained model to round 1 in points, with 95\% paired
+problem-level bootstrap intervals that omit training-seed variance.}
+\label{tab:final}
+\centering
+\begin{tabular}{lccc}
+\hline
+Arm & pass@1 & pass@2 & Sample acc.\\
+\hline
+Untrained & 49.2 & 59.4 & --\\
+Verifier-filtered loop & $-4.8$ $[-9.0,-0.6]$ & $-3.0$ $[-6.8,+0.6]$ & $-2.9$ $[-5.8,0.0]$\\
+Train on gold & $-32.2$ $[-36.8,-27.6]$ & $-32.0$ $[-36.6,-27.2]$ & $-30.2$ $[-33.8,-26.6]$\\
+\hline
+\end{tabular}
+\end{table}
+
+The gate fails. Training on reference solutions lowers pass@1 from $49.2\%$ to
+$17.0\%$, and the model adopts the reference style ($\$$-delimited spans in
+$60$ of $1{,}600$ generations at round 0, $1{,}577$ at round 1, counted over the
+exam and selection problems), as in the earlier train-on-gold arms. The
+corrected recipe therefore still has no positive reference, so we stopped. The verifier-filtered
+loop loses $4.8$ points of pass@1, with an interval that only just excludes zero
+and a pass@2 interval that includes it; with one seed we read it as no gain and a possible small decline. Half-widths of about $4$
+points of pass@1 (and $3.8$ of pass@2) give detectable effects of about $6$
+and $5$ points ($2.8h/1.96$), against about $10$ on the 150-problem exams.
+
+
 \section{Discussion}
 \label{sec:discussion}
 
@@ -590,18 +615,15 @@ less accurate finished ones (Supplementary Appendix~\ref{app:anatomy}).
 \label{sec:answer}
 
 \emph{Does the model get better at mathematics?} Not detectably. No run raises
-pass@1 or pass@$k$ by an amount whose interval excludes zero, at any rate, and
-the sample-accuracy intervals exclude gains above about $2.2$ points. The bound
-is loose: it is read off observed intervals rather than a pre-specified
-equivalence test, uses a measure chosen after the runs (on pass@1 and pass@$k$
-the upper ends reach $+8.0$ and $+7.3$), and omits training-seed variance. On
-the pre-set measures the design could detect only gains of about $10$ points
-of pass@1 and $8$--$10$ of pass@$k$, so ``no gain'' means no gain of that size.
-In every MATH-500 run but one the problems lost equal or outnumber those
-gained, which restates the sign of the pass@$k$ change rather than adding
-evidence. Because no arm improves, including training on reference
-solutions, the null may be a property of this LoRA recipe rather than of
-self-training.
+pass@1 or pass@$k$ by an amount whose interval excludes zero, at any rate; in
+the 500-problem final round (Section~\ref{sec:final}) pass@1 falls $4.8$
+points. On the 150-problem exams the sample-accuracy intervals exclude gains
+above about $2.2$ points, but that bound is read off observed intervals, uses a
+measure chosen after the runs and omits training-seed variance; on the pre-set
+measures the design could detect only about $10$ points of pass@1 and
+$8$--$10$ of pass@$k$ ($6$ and $5$ in the final round). Because no arm
+improves, and training on reference solutions failed the positive gate,
+the null may be a property of this LoRA recipe rather than of self-training.
 
 \emph{Does it learn to write what the verifier accepts?} The data cannot settle
 this. The pre-set pattern requires pass@1 to rise, which never happens
@@ -612,7 +634,7 @@ Section~\ref{sec:audit} finds no sign of adaptation to the gold-storage
 defect, but it is too weak to rule adaptation out.
 
 \emph{What happened to the pooled collapse?} It does not reproduce when each
-dataset has its own adapter and is scored on held-out problems. Because the
+dataset has its own adapter and is scored on held-out problems; since the
 pooled design also trained on about $4.5\times$ more examples per round, we
 cannot say whether pooling, selection-set scoring or dose produced it.
 
@@ -622,16 +644,14 @@ cannot say whether pooling, selection-set scoring or dose produced it.
 An earlier version explained the Design~P curves by a self-reinforcing
 shrinking pool shaped by the biased verifier. The data neither support nor rule
 it out: the patch tests how strong a rare bias is, not whether a frequent bias
-compounds; the no-filter control declines without any verifier but with more
+compounds, and the no-filter control declines without any verifier but with more
 dose. The defensible statement is narrow: \emph{removing a format defect present
 in under $1\%$ of generations, or removing the filter entirely, made no
-consistent difference at the resolution of this setup}. The frequent gold-storage
-defect was never varied, so whether systematic false negatives are harmless in
-general, as Egashira et al.\ find for RLVR, our data cannot say; and the
-no-filter control admits unstructured wrong answers, not the systematic false
-positives they find harmful, so it does not test that side either. Practices
-our experience suggests, none of them tested here, are listed in
-Supplementary Appendix~\ref{app:discussion}.
+consistent difference at the resolution of this setup}. The frequent
+gold-storage defect was never varied, and the no-filter control admits
+unstructured wrong answers, not the systematic false positives Egashira et
+al.\ find harmful, so neither tests their findings for RLVR. Untested practices
+are listed in Supplementary Appendix~\ref{app:discussion}.
 
 \subsection{A Proposed Audit for GVT with a Biased Verifier}
 \label{sec:audit}
@@ -726,7 +746,7 @@ at seed~2.
 \emph{(iii) Check the dose of a control before running it.} Count how many
 training examples the treatment changes. Our \verb|\dfrac| patch changed $0$--$4$
 examples, while the unvaried gold-storage defect would have changed about a
-fifth of the pool ($440\to542$ at round~0); the first number alone shows the
+fifth to a quarter of the pool ($440\to542$ at round~0); the first number alone shows the
 patch control could not detect an effect.
 
 \emph{(iv) Match training dose across designs.} Our pooled design trained on
@@ -734,84 +754,71 @@ about $4.5\times$ more examples per round than the isolated one, so its sharp
 decline cannot be attributed to pooling.
 
 \emph{Check (i) in RLVR.} There a false reject gives the correct answer zero
-reward, a direct pressure that SFT lacks, and Egashira et al.\ already
-observe the policy unlearning behaviour that triggers false negatives. The
-audit needs only checkpoints, their generations on fixed problems and a
-repaired verifier, so it can be run on public RLVR checkpoints, with the
-conditioning above; we have not done so.
+reward, a direct pressure that SFT lacks, so the audit could be run on public
+RLVR checkpoints with the conditioning above; we have not done so.
 
 \section{Limitations}
 \label{sec:limitations}
 
-\emph{Unequal training doses} confound every cross-arm comparison.
-\emph{The controls are underpowered:} the patch changes $0$--$4$ training
-examples, and the no-filter and train-on-gold controls have two seeds each.
-\emph{Intervals cover only problem draw and sampling,} not training-seed
-variance; several conditions have one seed, and no multiplicity correction is
-applied. \emph{The learning-rate grid is coarse,} with three rounds and $k=4$, and it
-changes $k$, rounds, dose and metric along with the rate. \emph{The power is
-limited:} with $150$ exam problems only gains of about $10$ points of pass@1
-or $3.5$--$5.5$ of sample accuracy would be detected. \emph{The adaptation
-audit is weak:} $24$--$28$ problems, $2$--$12$ training examples per round
-that could teach the avoidance, and no positive control. \emph{Cap-hit is
-reconstructed} from decoded text. \emph{The verifier audit} used other models'
-solutions and inspected only rejections; the gold-storage defect was measured
-afterwards and ran unvaried through every run. \emph{Every headline number is
-graded by the biased verifier} that also selects the data. \emph{The
-$512$-token cap binds} from the start, and the equal training limit, which
-includes the prompt, truncates a quarter of the pool. \emph{Scope:} one model
-family (Qwen2.5) and one size in Design~I, one verifier, one LoRA recipe with
-loss over the prompt, a restart-from-base design that leaves compounding
-little room, and possible test-set contamination. No arm improves on round~0,
-so we have no positive reference showing this recipe can help a 1.5B model.
-Supplementary Appendix~\ref{app:limitations} gives the full list.
+\emph{Unequal training doses} confound every cross-arm comparison, and the
+controls are underpowered: the patch changes $0$--$4$ training examples, and
+the no-filter and train-on-gold controls have two seeds each. \emph{Intervals
+cover only problem draw and sampling,} not training-seed variance; several
+conditions have one seed, and no multiplicity correction is applied. \emph{The
+learning-rate grid is coarse} and changes $k$, rounds, dose and metric along
+with the rate. \emph{The power is limited:} with $150$ exam problems only
+gains of about $10$ points of pass@1 would be detected ($6$ with the $500$ of
+Section~\ref{sec:final}, a single seed at one rate with $k=2$ and two rounds).
+\emph{The adaptation audit is weak:} $24$--$28$ problems, $2$--$12$ training
+examples per round that could teach the avoidance, and no positive control.
+\emph{The verifier audit} used other models' solutions and inspected only
+rejections; the gold-storage defect was measured afterwards and ran unvaried
+through every run, and every headline number is graded by the biased verifier
+that also selects the data. \emph{Truncation:} the $512$-token cap binds from
+the start and truncates a quarter of the pool in the main runs. \emph{Scope:}
+one model family and size, one verifier, a restart-from-base design that leaves
+compounding little room, and possible test-set contamination. \emph{No arm
+improves on round~0, and the gate on reference solutions failed even with the
+corrected recipe,} so we have no positive reference showing that any recipe
+can help a 1.5B model here. Supplementary Appendix~\ref{app:limitations} gives
+the full list.
 
 \section{Conclusion}
 \label{sec:conclusion}
 
 We asked whether generate--verify--select--train iterations make a 1.5B model
 better at mathematics or only teach it to write what a rule-based verifier
-accepts. On a held-out exam, the first answer is no gain that this design
-could detect: on pass@1 and pass@$k$, the pre-set accuracy measures, no run
-improves detectably, though gains below about $10$ and $8$--$10$ points could
-have been missed; the intervals for sample accuracy (a primary measure chosen
-after the runs) exclude gains above about $2.2$ points, a loose bound because
-they omit training-seed variance and are not an equivalence test. No arm
-improves, including training on reference solutions, so this is a null for
-the recipe. The second question stays open, because our pre-set rule for it
-could only fire if accuracy rose, and the post hoc \verb|\boxed| share falls
-in a way that imitation of the less-boxed training pool and drift would both
-produce. A post hoc per-round false-reject audit, carried over from RLVR,
-finds no sign that the model learns to avoid one verifier defect once the
-falling \verb|\boxed| share is accounted for, but with about $25$ affected
-problems, a handful of training examples per round and no positive control it
-cannot rule such learning out. In a post hoc description, most clearly at the
-highest rate, the model becomes less accurate on the solutions it does finish;
-more generations hit the token cap only at the highest rate, and clearly only
-at one of its two seeds, where the change in cap-hit share accounts for
-$12$--$30\%$ of the decline in the original seed-1 runs and $52$--$72\%$ at
-seed~2; a character-length heuristic we first used overstated that part.
-Reference-solution training degrades the model more, with much shorter answers.
-Patching a rare verifier defect and removing the filter made no difference of
-consistent sign across measures and seeds (pass@1 flips sign between seeds;
-removing the filter lowers pass@4 at both seeds, within noise; single-seed
-intervals sometimes exclude zero), neither control could have detected a small effect,
-and a frequent defect in our gold storage, which rejects about one in six
-correct solutions, ran unvaried through every experiment. A sharp
-decline seen in an earlier pooled design does not reproduce under isolation and
-held-out scoring, and because that design also trained several times longer per
-round, we leave its cause open. We report the earlier readings that did not hold
-up because the designs that produced them are common.
+accepts. On held-out exams the first answer is no gain that this design could
+detect: no run improves pass@1 or pass@$k$, though gains below about $10$ and
+$8$--$10$ points could have been missed ($6$ in a final $500$-problem round,
+where pass@1 falls $4.8$ points), and the sample-accuracy bound of about $2.2$
+points is loose because it omits training-seed variance. No arm improves, and
+training on reference solutions lowers pass@1 by about $30$ points even with a
+corrected recipe, so this is a null for the recipe, not for self-training. The
+second question stays open: our pre-set rule could only fire if accuracy rose,
+and the post hoc \verb|\boxed| share falls in a way that imitation of the
+less-boxed pool and drift would both produce. A post hoc per-round false-reject
+audit, carried over from RLVR, finds no sign that the model learns to avoid one
+verifier defect once the falling \verb|\boxed| share is accounted for, but with
+about $25$ affected problems, a handful of training examples per round and no
+positive control it cannot rule such learning out. Most clearly at the highest
+rate the model becomes less accurate on the solutions it does finish, and more
+generations hit the token cap, clearly at one of two seeds. Patching a rare
+verifier defect and removing the filter made no difference of consistent sign,
+neither control could have detected a small effect, and a frequent defect in our
+gold storage, which rejects about one in six correct solutions, ran unvaried
+through every experiment. A sharp decline seen in an earlier pooled design does
+not reproduce under isolation, and because that design also trained several
+times longer per round we leave its cause open.
 
 A rising score, in self-training or in RLVR, does not by itself show that a
 model learned mathematics rather than its verifier. A per-round false-reject
-audit asks part of that question whether accuracy rises or falls, but our
-data show it must be conditioned on answer format and on the problems where
-the defect can be avoided, and it needs a positive control; applying it so to
-public RLVR checkpoints, where the pressure to adapt is direct, is a natural
-next step.
-Future work, including a dose-matched control for the gold-storage defect,
-is outlined in Supplementary Appendix~\ref{app:future}.
+audit asks part of that question whether accuracy rises or falls, but it must
+be conditioned on answer format and on the problems where the defect can be
+avoided, and it needs a positive control; applying it to public RLVR
+checkpoints, where the pressure to adapt is direct, is a natural next step. A
+dose-matched control for the gold-storage defect and a recipe that passes the
+positive gate come first (Supplementary Appendix~\ref{app:future}).
 
 \begin{credits}
 \subsubsection{\ackname}

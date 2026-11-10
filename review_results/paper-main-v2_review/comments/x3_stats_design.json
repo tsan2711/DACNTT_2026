@@ -1,0 +1,137 @@
+[
+{
+"title": "Power rule is a post hoc MDE from observed intervals; no equivalence margin, so 'null' is not shown to mean 'no meaningful gain'",
+"quote": "A null in this paper means no gain of roughly that size.",
+"explanation": "The detectable effect is computed as 2.8 h/1.96 from half-widths h of the intervals actually observed, in runs whose estimates are already known (post hoc / observed power). More importantly it is a power statement, not an equivalence statement: a gain of exactly the MDE is still missed 20% of the time and smaller gains much more often, so 'a null means no gain of roughly that size' does not follow. No smallest effect of interest or equivalence (TOST / CI-inside-margin) criterion is defined. A 2-3 point gain would be meaningful for self-training, and the paper's own upper bounds still include +8.0 for pass@1 ([-6.7, +8.0]). The MDE also uses a bootstrap SE that omits training-seed variance (see other comments), so it is a lower bound on the true MDE. The cross-run replication that exists (17 runs) is not used for a pooled or random-effects estimate with between-run variance, which would be the natural way to get both an average effect and a defensible bound.",
+"comment_type": "logical",
+"confidence": "high",
+"source_section": "3.4 Models, Data, Training, Metrics (Detectable effects)",
+"related_sections": ["Abstract", "5.1 Answer to the Research Question", "7 Conclusion"]
+},
+{
+"title": "2.2-point sample-accuracy bound is a maximum of per-run upper limits, post hoc, and contradicted by the paper's own replicate gap",
+"quote": "exams the sample-accuracy intervals exclude gains above about 2.2 points",
+"explanation": "The 2.2 figure is the largest upper limit among individual 95% intervals (e.g. A,1 and A,3 at 1e-4). It is selected from many runs, on a measure chosen after the runs, and without seed variance. The paper itself reports that its only same-configuration replicate pair ends 3.2 points of sample accuracy apart, which is larger than the bound and about as large as the claimed MDE (3.5-5.5). A bound tighter than the empirical run-to-run difference cannot be a bound on the true effect. In addition the power logic is inconsistent: the abstract/intro quote 3.5-5.5 as what could be missed, while 5.1 and 7 say gains above 2.2 are excluded. A reader can take the 2.2 as the operative claim. The caveat is stated but the number is still used as the quantitative content of the negative result. Note also that the replicate gap includes a different exam partition because the seed sets the split, so it is not even a pure training-seed estimate.",
+"comment_type": "logical",
+"confidence": "high",
+"source_section": "5.1 Answer to the Research Question",
+"related_sections": ["3.4 Models, Data, Training, Metrics (Uncertainty)", "7 Conclusion", "Abstract"]
+},
+{
+"title": "The A-vs-B contrast is an empirical null contrast showing the bootstrap intervals are too narrow, yet the MDE is not inflated",
+"quote": "pass@1 is +5.3 at seed 1 and −7.3 [−14.0, −0.7] at seed 2",
+"explanation": "Runs A and B differ by 0-3 training examples (a de facto replicate), yet B minus A is +5.3 at seed 1 and -7.3 with an interval excluding zero at seed 2. This is a direct calibration check of the interval procedure: for a contrast with a true effect of about zero, the problem-level bootstrap produced a 'significant' result, so it omits a variance source (training/trajectory noise) that is at least as large as the sampling noise. The paper describes this as 'trajectory noise' but does not propagate it. The 10-point MDE, the 2.2 bound, and the 'intervals exclude zero' statements for declines (e.g. five of six matched runs, all four A/B runs at 5e-4) all use the too-narrow intervals. A sensible fix is to estimate the between-replicate SD from same-config pairs (A vs B, seeds) and add it in quadrature, or run >=3 training seeds on a fixed exam partition, before claiming any bound or any significant decline.",
+"comment_type": "technical",
+"confidence": "high",
+"source_section": "4.4 Higher Learning Rates",
+"related_sections": ["3.4 Models, Data, Training, Metrics (Uncertainty)", "5.1 Answer to the Research Question", "6 Limitations"]
+},
+{
+"title": "Runs sharing a seed share exam partition and a single round-0 baseline; 'patterns across runs' are counted as independent evidence",
+"quote": "accuracy intervals exclude zero in all four A/B runs",
+"explanation": "Within a seed, A, B, no-filter, train-on-gold and the three learning rates all share the same 150-problem exam and the same round-0 generations (round 0 is identical, 33.3 / 50.0 for every seed-1 row). All 'declines' are therefore measured against one stochastic baseline draw per seed: if round 0 happened to be a high draw, every arm declines together (regression to the mean) and the declines are perfectly correlated, not replicated. Effectively the 5e-4 evidence is two exam/baseline draws, not four runs, and the paper does acknowledge A/B pairs are 'closer to two replicates' but then still tallies 'five of six' and 'every run declines' as pattern evidence and says it rests conclusions on patterns across runs. With no multiplicity correction and ~17 runs x 4 metrics, a handful of excluded-zero intervals are also expected by chance. Conversely the main null on gains is conservative with respect to multiplicity, but the decline claims at the highest rate are not. The effective sample size should be counted per (seed, partition), and the baseline should be re-measured with several generation seeds.",
+"comment_type": "logical",
+"confidence": "medium",
+"source_section": "4.4 Higher Learning Rates",
+"related_sections": ["3.4 Models, Data, Training, Metrics (Uncertainty)", "4.5 Anatomy of the Decline", "6 Limitations"]
+},
+{
+"title": "Rate dose-response is read from two seeds that disagree",
+"quote": "on one seed: at seed 1 sample accuracy falls 1.5, 3.5 and 8.3 points across the",
+"explanation": "The claim that the decline 'may grow with the rate' rests on seed 1 alone; seed 2 is 'almost flat' (3.7, 3.8, 4.7). The differences between rates (1.5 vs 3.5) are smaller than the 3.2-point gap between a replicate pair and than the A-vs-B pass@1 swing of 12.6 points at 5e-4. Rates also differ in effective steps and truncation. With intervals that omit training-seed variance, no rate effect is identifiable; even the 8.3 vs 4.7 difference at 5e-4 is within the demonstrated noise. The statement is hedged ('may') but the grid is used in the abstract as 'four learning rates' as if it established robustness across rate.",
+"comment_type": "logical",
+"confidence": "medium",
+"source_section": "4.4 Higher Learning Rates",
+"related_sections": ["Abstract", "6 Limitations"]
+},
+{
+"title": "Headline final-round result singles out the one interval that excludes zero, one seed, three correlated metrics, no correction",
+"quote": "pass@1 falls 4.8 points ([−9.0, −0.6])",
+"explanation": "In Table 4 the loop's pass@2 interval ([-6.8,+0.6]) and sample-accuracy interval ([-5.8, 0.0]) both touch or include zero; only pass@1, computed from the first of just two samples per problem (the noisiest metric), excludes zero, with an upper limit of -0.6. The abstract reports only this one. With one seed, no training-seed variance (shown elsewhere to be at least as large as the sampling noise), and three correlated measures, the evidence for a decline is weak; elsewhere the paper reads the same size of effect as 'no gain and a possible small decline', so the abstract wording is inconsistent with the body. The converse also holds: since the interval is a lower bound on the noise, the non-excluded values should be reported symmetrically (an equally plausible reading is zero change).",
+"comment_type": "logical",
+"confidence": "medium",
+"source_section": "Abstract",
+"related_sections": ["4.6 A Final Round with a Corrected Recipe", "5.1 Answer to the Research Question"]
+},
+{
+"title": "Final-round detectable effect for pass@k is misquoted (4 vs about 5.3 implied by Table 4)",
+"quote": "8–10 of pass@k (6 and 4 in the",
+"explanation": "The paper's rule is MDE = 2.8 h/1.96. In Table 4 the loop's pass@2 interval is [-6.8, +0.6], so h = 3.7 and MDE about 5.3, and the gold arm's pass@2 gives h = 4.7 (MDE about 6.7). Pass@1 gives h about 4.2 and MDE about 6.0, which matches the stated 6. The '4' for pass@k therefore appears to be taken from the sample-accuracy interval (h about 2.9, MDE about 4.1), not from pass@k. Since this number feeds the power claims in 5.1, 6 and 7, the final round is presented as more sensitive for pass@k than the paper's own formula supports.",
+"comment_type": "technical",
+"confidence": "medium",
+"source_section": "5.1 Answer to the Research Question",
+"related_sections": ["4.6 A Final Round with a Corrected Recipe", "7 Conclusion"]
+},
+{
+"title": "A failed gate makes the pipeline, not only the recipe, uninterpretable; gate failure is not diagnosed and may be a grading or distribution-shift artifact",
+"quote": "a positive gate that must raise accuracy for the recipe to count as",
+"explanation": "A positive control is only informative if its failure can be attributed. Here training on 300 human MATH solutions drops pass@1 from 49.2 to 17.0, with $-delimited style adopted in 1,577 of 1,600 generations. Several explanations are not separated: (i) grading artifact - the same biased math-verify parses LaTeX only inside \\boxed or $, gold storage is known to be defective, and 14% or more of generations in the older gold arms lack \\boxed, so a style switch can lower the verifier-scored accuracy without lowering mathematical accuracy; the paper bounds verifier error 'from below only'. (ii) SFT of an RL-/instruction-tuned Qwen2.5-Instruct on terse human solutions (a known to degrade it, cf. Kim et al. which the paper cites) is an expected failure, so the gate fails for a reason unrelated to whether verified self-generated data could help. (iii) a bug or under-trained step schedule. Because the gate cannot be passed by any arm, the experiment contains no demonstration that its metric can register an improvement at all. This changes what the negative result can claim: it supports only 'this harness shows no gain', and the title and abstract ('No Detectable Gain from Verifier-Filtered Self-Training of a 1.5B Model') still read as a statement about self-training. A positive control with a known sign is needed first, for example verified solutions from a stronger model, a synthetic format fix, a larger pool with a lower rate, or checking training-set fit and re-grading the gate outputs with a format-agnostic judge.",
+"comment_type": "logical",
+"confidence": "high",
+"source_section": "4.6 A Final Round with a Corrected Recipe",
+"related_sections": ["Abstract", "5.1 Answer to the Research Question", "7 Conclusion", "4.4 Higher Learning Rates"]
+},
+{
+"title": "Gate tried only at high rates, an undocumented second gate run, and a stopping rule applied after the fact",
+"quote": "An earlier gate at 5 × 10−4 with the same recipe also failed (−30.5 points",
+"explanation": "The text says the earlier 5e-4 gate used 'the same recipe', yet the corrected recipe (completion-only loss, all-linear, 1,024 cap, normalised gold, MATH-train pool) is introduced only in 4.6, and the gold arms reported in Tables 2-3 at 5e-4 used the old recipe and fell -18.0 / -21.3, not -30.5. So either a further run exists that appears in no table, or the sentence is wrong. Either way, the number of recipe variants and gates attempted before reporting is not disclosed, which makes 'we stopped' a data-dependent stopping rule (forking paths) in a study whose message depends on gate failure. Both gates used rates (1e-4, 5e-4) at which the loop itself already declined; the gate was never run at the 1e-5 rate or on a smaller dose where harm may be absent. Failing a gate only at damaging rates does not show that no rate or recipe can pass.",
+"comment_type": "logical",
+"confidence": "medium",
+"source_section": "4.6 A Final Round with a Corrected Recipe",
+"related_sections": ["4.4 Higher Learning Rates", "6 Limitations"]
+},
+{
+"title": "The 'loop' in the final round is a single adapter from base: nothing about iteration, compounding or multi-round self-training is tested",
+"quote": "It is one seed at 10−4 with k = 2 and two rounds.",
+"explanation": "By the paper's own definitions (restart from base, round 0 is the untrained model, Table 4 reports 'untrained model to round 1'), two rounds means exactly one adapter trained once on the round-0 pool of 298 examples (about 150 steps). That is one-shot rejection-sampling fine-tuning, not a generate-verify-select-train loop. The paper concedes that restart-from-base gives compounding little room, so what it can say about 'several GVT rounds' (research question, title) is essentially nothing from this round. With k = 2, pass@2 is also barely a coverage measure, so the 'amplify not expand' pass@k question cannot be examined. One seed, 300 selection problems, k = 2 and one update step cannot support statements about the loop, only about a single tiny SFT step, and the abstract/discussion generalise from it.",
+"comment_type": "logical",
+"confidence": "high",
+"source_section": "4.6 A Final Round with a Corrected Recipe",
+"related_sections": ["3.1 The GVT Loop", "5.1 Answer to the Research Question", "7 Conclusion"]
+},
+{
+"title": "The tested manipulations range from near no-op to damaging; the 'any learning rate' null is largely produced by a weak or broken intervention",
+"quote": "Because 10−5 changed the MATH-500 outputs little, we reran Run A at 10−4",
+"explanation": "At 1e-5 the paper itself says outputs barely changed (weak evidence the adapter did little), so a null there is the expected result for an almost identity update and says nothing about self-training. Rates that do move the model (5e-4) all lower accuracy, and the gate shows that even gold data lowers it by 18-32 points. No rate sits in a regime where training both changes the model and is plausibly beneficial. 'No detectable gain at any learning rate' therefore reflects the grid chosen post hoc (raised after seeing 1e-5), not exploration of the dose-response region where a gain could appear, and a coarse grid with only 2 seeds cannot rule out a narrow beneficial window between 1e-5 and 1e-4. This should be stated in the abstract, not only in the limitations.",
+"comment_type": "logical",
+"confidence": "medium",
+"source_section": "4.4 Higher Learning Rates",
+"related_sections": ["4.2 Design I at 1e-5", "Abstract", "6 Limitations"]
+},
+{
+"title": "Training truncation drops the answer and EOS in a quarter of the pool, so declines/nulls partly reflect a recipe defect; the truncation-removal check has no power",
+"quote": "Retraining without truncated examples changes little within the noise of single",
+"explanation": "24-26% of the round-0 pool (62.4% for no-filter) is cut in training and loses its final answer and end-of-sequence token, and the loss is taken over the prompt. Training the model on solutions with no EOS or answer plausibly drives the rise in cap-hits and the finished-accuracy decline, i.e. it is a pipeline defect confounded with the effect of self-training in every arm. The one check offered, retraining without truncated examples, is described as changing 'little within the noise of single runs'. With single runs and noise of the size documented (A vs B swings of 5-7 pass@1 points), that check cannot discriminate between a zero and a several-point effect, and it also changes dose (fewer steps). The attribution split (12-30% vs 52-72% of decline to cap share) differs across the two seeds by a wide margin, a further sign that the decomposition is not stable. The conclusions about what 'GVT' does, and the corrected-recipe round that changes six factors at once, cannot separate truncation from other changes.",
+"comment_type": "technical",
+"confidence": "medium",
+"source_section": "4.5 Anatomy of the Decline",
+"related_sections": ["3.4 Models, Data, Training, Metrics", "4.4 Higher Learning Rates", "6 Limitations"]
+},
+{
+"title": "Cross-arm dose, k, rounds and metric confounds make the controls and the rate comparisons uninterpretable; steps are endogenous to accuracy",
+"quote": "changes k, rounds, dose and metric along with the rate.",
+"explanation": "Optimizer steps equal half the kept-pool size, and pool size depends on the model's own accuracy and the verifier's acceptance, so dose is an outcome of the intervention, not a controlled variable, and it differs between A, B, no-filter (1400 examples, 3-4x steps) and gold (350). The 1e-5 and higher-rate runs differ in k (8 vs 4), rounds (5 vs 3) and metric (pass@8 vs pass@4), so the abstract's 'four learning rates' is not a clean rate sweep, and the claim that comparisons among 1e-4, 2e-4 and 5e-4 'isolate the rate' ignores unequal steps and truncation. Run C takes twice Run A's steps and is attributed partly to dataset. The no-filter and gold controls are described as 'not single-variable' yet are used to infer that removing the filter is 'not better than keeping it'; with these confounds the sign of that contrast has no causal reading. The arms should be dose-matched (fixed number of steps, fixed number of examples drawn by subsampling the pool) before any between-arm comparison is drawn.",
+"comment_type": "logical",
+"confidence": "high",
+"source_section": "6 Limitations",
+"related_sections": ["4.4 Higher Learning Rates", "3.3 Two Experimental Designs", "Abstract"]
+},
+{
+"title": "Test-set contamination of Qwen2.5 on MATH/GSM8K is relegated to a three-word mention although it bears directly on both headroom and the gate",
+"quote": "possible test-set contamination",
+"explanation": "Qwen2.5-Instruct is trained on large math corpora that include the MATH and GSM8K training distributions and plausibly test-adjacent data, and the exam consists of the public first 500 GSM8K test and the MATH-500 problems. If the exam answers are partly memorised, accuracy is dominated by recall that fine-tuning on self-generated samples has no room to improve (a ceiling-type null) and the effect of fine-tuning on human MATH-train solutions that the model has already seen in pre/post-training would be expected to be neutral or harmful, which undermines the gate's interpretation. Contamination also makes the 'amplify not expand' reading ambiguous. No decontamination check (n-gram overlap, perturbed-problem accuracy, performance on a post-cutoff set) or sensitivity analysis is reported, and the Limitations mention does not state which direction it biases the main conclusion. A fresh held-out set or perturbed variants would resolve this.",
+"comment_type": "logical",
+"confidence": "medium",
+"source_section": "6 Limitations",
+"related_sections": ["4.6 A Final Round with a Corrected Recipe", "3.4 Models, Data, Training, Metrics"]
+},
+{
+"title": "Repeated reuse of the same 500 problems for design decisions makes the exam adaptive; the final round is not a clean confirmatory test",
+"quote": "Because no earlier arm improved, we ran one last round with the recipe changes",
+"explanation": "All decisions (higher rates, k, rounds, sample accuracy as primary, which controls to run, which recipe fixes) were taken after seeing results on partitions of the same 500 MATH-500 problems, and the final round then uses all 500 as the exam. Seeds 1-3 draw overlapping 150-problem exams from this pool, so the exams are not independent. The final round's recipe was chosen after reviewer criticism of earlier exam results and is evaluated on those same problems, so it is exploratory by the paper's own definition and its smaller interval (MDE 6) is not a pre-registered confirmatory test. The paper marks several choices as post hoc but does not carry that status through to the final-round conclusions, and the exam is also the data on which the gate was declared failed and the study stopped. A fresh, locked test split (or MATH problems outside MATH-500) with decisions fixed beforehand would be needed for a confirmatory claim.",
+"comment_type": "logical",
+"confidence": "medium",
+"source_section": "4.6 A Final Round with a Corrected Recipe",
+"related_sections": ["1 Introduction", "3.3 Two Experimental Designs", "6 Limitations"]
+}
+]

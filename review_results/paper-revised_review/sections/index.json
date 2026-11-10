@@ -1,0 +1,182 @@
+[
+  {
+    "file": "00_mathematics_or_the_verifier_a_direction_free_test.md",
+    "heading": "Mathematics or the Verifier? A Direction-Free Test of Verifier Adaptation, Applied to Self-Training of Qwen2.5-1.5B",
+    "chars": 379
+  },
+  {
+    "file": "01_abstract.md",
+    "heading": "Abstract",
+    "chars": 1689
+  },
+  {
+    "file": "02_1_introduction.md",
+    "heading": "1 Introduction",
+    "chars": 4895
+  },
+  {
+    "file": "03_2_related_work.md",
+    "heading": "2 Related Work",
+    "chars": 3094
+  },
+  {
+    "file": "04_3_setup.md",
+    "heading": "3 Setup",
+    "chars": 10
+  },
+  {
+    "file": "05_3_1_the_gvt_loop.md",
+    "heading": "3.1 The GVT Loop",
+    "chars": 715
+  },
+  {
+    "file": "06_3_2_the_verifier_and_its_directional_bias.md",
+    "heading": "3.2 The Verifier and Its Directional Bias",
+    "chars": 2030
+  },
+  {
+    "file": "07_3_3_two_experimental_designs.md",
+    "heading": "3.3 Two Experimental Designs",
+    "chars": 1132
+  },
+  {
+    "file": "08_3_4_models_data_training_metrics.md",
+    "heading": "3.4 Models, Data, Training, Metrics",
+    "chars": 3567
+  },
+  {
+    "file": "09_4_results.md",
+    "heading": "4 Results",
+    "chars": 12
+  },
+  {
+    "file": "10_4_1_design_p_an_apparent_collapse.md",
+    "heading": "4.1 Design P: An Apparent Collapse",
+    "chars": 1304
+  },
+  {
+    "file": "11_4_2_design_i_at_10_5_small_declines_a_larger_one_o.md",
+    "heading": "4.2 Design I at 10\u22125: Small Declines, a Larger One on GSM8K",
+    "chars": 2393
+  },
+  {
+    "file": "12_4_3_the_patch_control_could_not_detect_an_effect.md",
+    "heading": "4.3 The Patch Control Could Not Detect an Effect",
+    "chars": 754
+  },
+  {
+    "file": "13_4_4_higher_learning_rates.md",
+    "heading": "4.4 Higher Learning Rates",
+    "chars": 5334
+  },
+  {
+    "file": "14_4_5_anatomy_of_the_decline.md",
+    "heading": "4.5 Anatomy of the Decline",
+    "chars": 3086
+  },
+  {
+    "file": "15_5_discussion.md",
+    "heading": "5 Discussion",
+    "chars": 15
+  },
+  {
+    "file": "16_5_1_answer_to_the_research_question.md",
+    "heading": "5.1 Answer to the Research Question",
+    "chars": 1393
+  },
+  {
+    "file": "17_5_2_interpretation.md",
+    "heading": "5.2 Interpretation",
+    "chars": 747
+  },
+  {
+    "file": "18_5_3_a_proposed_audit_for_gvt_with_a_biased_verifie.md",
+    "heading": "5.3 A Proposed Audit for GVT with a Biased Verifier",
+    "chars": 2702
+  },
+  {
+    "file": "19_6_limitations.md",
+    "heading": "6 Limitations",
+    "chars": 1085
+  },
+  {
+    "file": "20_7_conclusion.md",
+    "heading": "7 Conclusion",
+    "chars": 2795
+  },
+  {
+    "file": "21_references.md",
+    "heading": "References",
+    "chars": 3678
+  },
+  {
+    "file": "22_a_related_work_in_full.md",
+    "heading": "A Related Work in Full",
+    "chars": 6924
+  },
+  {
+    "file": "23_b_the_verifier_in_full.md",
+    "heading": "B The Verifier in Full",
+    "chars": 7220
+  },
+  {
+    "file": "24_c_uncertainty_in_full.md",
+    "heading": "C Uncertainty in Full",
+    "chars": 3489
+  },
+  {
+    "file": "25_d_design_p_in_full.md",
+    "heading": "D Design P in Full",
+    "chars": 3778
+  },
+  {
+    "file": "26_e_design_i_at_10_5_in_full.md",
+    "heading": "E Design I at 10\u22125 in Full",
+    "chars": 3939
+  },
+  {
+    "file": "27_f_patch_control_and_answer_diversity_in_full.md",
+    "heading": "F Patch Control and Answer Diversity in Full",
+    "chars": 3063
+  },
+  {
+    "file": "28_g_higher_learning_rates_in_full.md",
+    "heading": "G Higher Learning Rates in Full",
+    "chars": 8882
+  },
+  {
+    "file": "29_h_anatomy_of_the_decline_in_full.md",
+    "heading": "H Anatomy of the Decline in Full",
+    "chars": 11854
+  },
+  {
+    "file": "30_i_discussion_in_full.md",
+    "heading": "I Discussion in Full",
+    "chars": 23
+  },
+  {
+    "file": "31_i_1_answer_to_the_research_question.md",
+    "heading": "I.1 Answer to the Research Question",
+    "chars": 4434
+  },
+  {
+    "file": "32_i_2_interpretation.md",
+    "heading": "I.2 Interpretation",
+    "chars": 1909
+  },
+  {
+    "file": "33_i_3_practical_suggestions.md",
+    "heading": "I.3 Practical Suggestions",
+    "chars": 1203
+  },
+  {
+    "file": "34_j_limitations_in_full.md",
+    "heading": "J Limitations in Full",
+    "chars": 4858
+  },
+  {
+    "file": "35_k_future_work.md",
+    "heading": "K Future Work",
+    "chars": 1351
+  }
+]

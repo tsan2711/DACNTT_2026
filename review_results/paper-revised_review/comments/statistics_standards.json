@@ -1,0 +1,119 @@
+[
+  {
+    "title": "\"Nor does it improve\" turns absence of a detected gain into evidence of absence; the bound that would justify it is wider than 2.2 points",
+    "quote": "Nor does it improve.",
+    "explanation": "§5.1 and §I.1 phrase the result correctly as 'Not detectably', and App C itself says an interval that includes zero 'does not rule an effect out'. The abstract ('Nor does it improve') and the introduction ('Our answer is negative on the first branch') instead state a flat negative. The bound offered in support is weaker than its number suggests, for four reasons. (a) 2.2 is the largest per-run upper end in Table 5 (10^-4 seeds 1 and 3). Claiming that no run gains more than 2.2 is a joint statement over about 13 self-training runs, and its joint coverage is well below 97.5% (Bonferroni gives only >=67%). (b) It leaves out training-seed variance, which the paper estimates from a replicate pair at 3.2 points apart. Adding that variance in quadrature is rough arithmetic: bootstrap SE about 1.9 (from interval width / 3.92), plus a per-run seed SD of about 3.2/sqrt(2) ≈ 2.3, gives a combined SE of about 3.0. For a run like 10^-4 seed 1 (-1.5) the upper end then becomes about +4.4. (c) On the re-scored verifier scale, which the paper says shrinks every difference by 0.73–0.78, that is about +6. (d) There is no pre-set equivalence margin (J.10). With all this, the data are consistent with modest gains of 4–6 sample-accuracy points in individual runs. A pooled or random-effects estimate across runs and seeds would give a meaningful bound. Without one, the abstract and introduction should keep the 'not detectably' wording used in §5.1.",
+    "comment_type": "logical",
+    "confidence": "high",
+    "source_section": "Abstract",
+    "related_sections": ["1 Introduction", "5.1 Answer to the Research Question", "I.1 Answer to the Research Question", "C Uncertainty in Full", "J Limitations in Full", "B The Verifier in Full"]
+  },
+  {
+    "title": "No power or minimum-detectable-effect analysis, so the reader cannot tell how informative the null is",
+    "quote": "a single 150-problem pass@1 has a standard error of",
+    "explanation": "The headline negative result rests on 150 held-out problems, but the paper never states which effect sizes its design could detect. From Table 5, paired pass@1 intervals are about ±6.7–7.5 points wide, pass@k about ±6, and sample accuracy about ±2.5–3.8. At 80% power and two-sided alpha 0.05, the minimum detectable effect is about 2.8 SE: roughly 9–10 points for pass@1, about 8 for pass@k, and about 4–5 for sample accuracy. That is before seed variance and before the 0.73–0.78 understatement factor. So the pre-set measures (pass@1, pass@k) could detect only large gains. The statement that 'no pass@1 or pass@k gain has an interval excluding zero' carries little information beyond the sign of the point estimates. Stated positively, the null is informative against gains of the size cited in the introduction from RLVR (tens of points), and much less so against the few-point gains typical of SFT self-training. Saying this would make the negative result more precise and more honest.",
+    "comment_type": "technical",
+    "confidence": "high",
+    "source_section": "E Design I at 10−5 in Full",
+    "related_sections": ["3.4 Models, Data, Training, Metrics", "Abstract", "5.1 Answer to the Research Question", "4.4 Higher Learning Rates"]
+  },
+  {
+    "title": "Abstract states post hoc results without the post hoc label the body attaches to them",
+    "quote": "gains above 2.2 points, a loose bound that omits training-seed variance.",
+    "explanation": "§3.4 says that claims resting on sample accuracy, 'including the 2.2-point bound, are therefore post hoc in the choice of measure'. §4.5 calls the finished-accuracy analysis 'post hoc and descriptive', and App H says the matched metric 'conditions on an outcome of training and is descriptive, not a causal effect'. The abstract qualifies the 2.2-point bound only for seed variance, not for the post hoc choice of measure or the lack of an equivalence margin. It also gives 'finished solutions become 5–11 points less accurate' as a plain headline finding, with no mention that it comes from a post hoc, post-treatment-conditioned metric. That metric drops 22–45 problems per run and uses a baseline that App H admits is biased for 6–21 problems. The abstract does label the r_t test 'post hoc', so the labelling is inconsistent. The paper applies its own standard of marking post hoc analyses in the body but relaxes it exactly where readers look first.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "Abstract",
+    "related_sections": ["3.4 Models, Data, Training, Metrics", "4.5 Anatomy of the Decline", "H Anatomy of the Decline in Full"]
+  },
+  {
+    "title": "Categorical claim of 'no adaptation' from a post hoc test with no interval, against the paper's own standard for single intervals",
+    "quote": "the model does not adapt to this defect",
+    "explanation": "App C warns that even a single interval excluding zero is not enough evidence, and J.10 asks for caution with intervals that only just exclude zero. The paper also faults its pre-set rule for being uninformative. Yet the strongest positive claim in the abstract and contributions, that the model 'does not adapt to this defect' (contributions: 'for that defect the model does not adapt'), rests on a post hoc statistic. That statistic has no interval, no trend test, no stated null, and no power analysis, and it covers three runs, two of them on the same configuration and rate. §5.3 itself limits the claim: 'it rules out strong adaptation to this defect, not weak adaptation'. Even that limit is not quantified, because 'strong' is never defined. The 15.5–18.4% band means r_t varies by about 3 points across rounds and runs, which would be a relative fall of up to about 16% within one run. The abstract should match the hedge in §5.3 and give, for example, a per-run slope with a problem-level bootstrap interval, plus the smallest fall the test could detect.",
+    "comment_type": "logical",
+    "confidence": "high",
+    "source_section": "Abstract",
+    "related_sections": ["1 Introduction", "5.3 A Proposed Audit for GVT with a Biased Verifier", "B The Verifier in Full", "C Uncertainty in Full", "I.1 Answer to the Research Question"]
+  },
+  {
+    "title": "One of the three r_t runs is at a rate the paper says barely changes outputs: the same no-power flaw the paper criticises in the patch control",
+    "quote": "in every round of the three runs we re-scored (Run A at 5×10−4, two seeds, and",
+    "explanation": "The third r_t run is Run A at 10^-5. App E says this rate 'changes the outputs little' (length and cap-hit unchanged), and that a flat curve there 'is evidence that this training step did little'. A flat r_t at 10^-5 is therefore expected whether or not the loop would adapt to V. This is the same logic the paper uses to dismiss the \\dfrac patch control ('Its null is expected whatever the truth', J.2). The two cases are judged by different standards. Effectively, the evidence for 'no adaptation' is the two 5×10^-4 runs on two partitions. In those runs the model is degrading overall (less accurate finished solutions, more cap-hits), so a failure to learn the accepted form is hard to separate from general degradation. The paper should count the 10^-5 run as uninformative and say that the claim rests on two runs.",
+    "comment_type": "logical",
+    "confidence": "high",
+    "source_section": "5.3 A Proposed Audit for GVT with a Biased Verifier",
+    "related_sections": ["E Design I at 10−5 in Full", "J Limitations in Full", "B The Verifier in Full", "4.3 The Patch Control Could Not Detect an Effect"]
+  },
+  {
+    "title": "r_t is not adjusted for the changing problem mix, although the paper applies matching to finished accuracy for exactly this reason",
+    "quote": "If the model learns to write what V accepts, rt should fall over rounds, whatever",
+    "explanation": "The gold-storage defect is triggered by how a problem's gold answer is stored, combined with the prediction's form. So whether a V'-accepted generation is rejected by V depends largely on which problems the model solves. As accuracy falls and the solved set changes (Table 4: 14–36 problems lost per run), r_t can stay flat while the per-problem rejected fraction falls, or the reverse. This is a composition effect. For finished accuracy the paper recognises this exact problem ('Because the problems that still finish change') and builds a matched metric. The r_t test, which supports the headline 'no adaptation' claim, gets no such treatment. A within-problem version (restricted to problems whose gold triggers the defect, weighted by a fixed problem mix), with a problem-clustered bootstrap, would apply the paper's own standard. Related point: the falling \\boxed share (52%→36%) is a change in prediction form that interacts with a defect described as penalising \\boxed answers. The paper should state the direction of that interaction for r_t.",
+    "comment_type": "technical",
+    "confidence": "medium",
+    "source_section": "5.3 A Proposed Audit for GVT with a Biased Verifier",
+    "related_sections": ["B The Verifier in Full", "H Anatomy of the Decline in Full", "I.1 Answer to the Research Question"]
+  },
+  {
+    "title": "Two different r_t-like statistics are reported for the same test, and the 10^-5 value (20%) falls outside the headline range",
+    "quote": "round 0 and round 2 at seed 1 and 20% throughout at 10−5 (Appendix B). This",
+    "explanation": "The abstract and §5.3 give r_t as 15.5–18.4% 'in every round' of three runs, including 10^-5. The same paragraph then gives a second figure, the defect's share of re-scored exam pass@1: 17% at seed 1 and '20% throughout at 10−5'. App B shows the 15.5–18.4% is computed over all 500 problems and all generations, while the 17%/20% is computed on the exam set's pass@1. The two have different denominators and different noise levels; pass@1 is a single draw on 150 problems. A reader cannot tell which is the test statistic, and 20% at 10^-5 sits outside the 15.5–18.4% band that the abstract says holds in every round of every run. The paper should define one statistic and report it per run and round, with an interval.",
+    "comment_type": "technical",
+    "confidence": "medium",
+    "source_section": "5.3 A Proposed Audit for GVT with a Biased Verifier",
+    "related_sections": ["B The Verifier in Full", "Abstract"]
+  },
+  {
+    "title": "'Five of six runs' counts near-replicates and runs that share a baseline as independent evidence",
+    "quote": "vals excluding zero in five of six runs, while the cap-hit share rises 2–14 points.",
+    "explanation": "The six 5×10^-4 MATH-500 runs (A, B, no-filter at seeds 1 and 2) come from only two exam partitions. Within a seed, all three share the same round-0 generations, so the matched baseline is shared, and A and B share almost all of their pool. §4.4 says correctly that 'same-seed A and B are closer to two replicates than four', and App E/I.1 make the same point for A and B at seed 0 at 10^-5. §4.5 and I.1 still report 'five of six' as if it were six independent confirmations; the same goes for the cap-hit statement 'in all three seed-2 runs'. Since seed sets the partition, these really amount to two partition-level observations with correlated intervals. Reporting them as 'both partitions' (with the per-seed pattern) would be consistent with the paper's own replicate accounting.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "4.5 Anatomy of the Decline",
+    "related_sections": ["4.4 Higher Learning Rates", "I.1 Answer to the Research Question", "H Anatomy of the Decline in Full", "C Uncertainty in Full"]
+  },
+  {
+    "title": "The cap-share split by seed is called 'qualitative' and possibly partition noise in App H, but is said to move the reading in §5.3",
+    "quote": "the split moves the reading: at 5 × 10−4 the cap share accounts for 12–30% of",
+    "explanation": "App H says the finished-accuracy shares 'have wide intervals' (e.g. 59% [−11, 114], 73% [43, 108]), that they split by seed, that 'this may be partition variation', and that 'What the table supports is qualitative'. §5.3(ii), the proposed audit protocol, and I.1 nonetheless present 12–30% versus 52–72% as a substantive finding that 'moves the reading'. These are ratios of two noisy differences, which are unstable when the total change is small (A, seed 2: −4.7), and the seed-1 and seed-2 intervals overlap. The ranges are point estimates over near-replicate runs (see the five-of-six comment). §5.3 should carry the App H caveat, or report the cap-share part in points with intervals rather than as a percentage of the decline.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "5.3 A Proposed Audit for GVT with a Biased Verifier",
+    "related_sections": ["4.5 Anatomy of the Decline", "H Anatomy of the Decline in Full", "I.1 Answer to the Research Question"]
+  },
+  {
+    "title": "Added/lost counts appear as supporting evidence in §5.1, although §3.4 says they are not an independent test",
+    "quote": "the problems lost equal or outnumber those gained",
+    "explanation": "§3.4 notes that added minus lost equals 150×Δpass@k, 'so these counts add only the gross churn behind the net change, not an independent test'. I.1 likewise says the count 'restates the sign of the pass@k change rather than adding evidence'. The main-text answer in §5.1 drops this qualifier and places the sentence right after the 2.2-point bound, as a further reason for 'Not detectably'. A reader of the main text alone would take it as extra evidence. It is the sign of Δpass@k, which Table 5 already reports with intervals, mostly including zero. The I.1 qualifier should be added to §5.1, or the sentence removed.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "5.1 Answer to the Research Question",
+    "related_sections": ["3.4 Models, Data, Training, Metrics", "I.1 Answer to the Research Question"]
+  },
+  {
+    "title": "Training-seed variance rests on a single replicate pair at a different rate, and the 'same size' comparison mixes a difference with an SD",
+    "quote": "which is of the same size (a replicate of Run A at 5 × 10−4, seed 1, ends 3.2",
+    "explanation": "The only direct estimate of training-seed variance is one replicate pair (Run A, 5×10^-4, seed 1). It gives a difference of 3.2 points, a variance estimate with one degree of freedom whose own uncertainty is very large. A difference between two runs has about sqrt(2) times the SD of a single run, so the implied per-run seed SD is about 2.3. The paper calls the 3.2 'of the same size' as the bootstrap half-widths, which compares a difference with a half-width. Also, the bound being questioned (2.2) comes from the 10^-4 and 10^-5 runs, where training changes outputs much less and seed variance could be smaller or larger; there is no replicate at those rates. The second illustration in App C (A vs B at seed 2, 7.3 points of pass@1) is a single-draw pass@1 contrast between arms that differ in treatment. The paper should say explicitly that seed variance is essentially unestimated at the rates behind the no-gain bound, rather than citing a precise-looking 3.2.",
+    "comment_type": "technical",
+    "confidence": "medium",
+    "source_section": "I.1 Answer to the Research Question",
+    "related_sections": ["C Uncertainty in Full", "3.4 Models, Data, Training, Metrics", "H Anatomy of the Decline in Full"]
+  },
+  {
+    "title": "The 'about four of 76 by chance' heuristic is misapplied and used one-sidedly",
+    "quote": "at the 95% level about four of the 76 would exclude zero by chance if nothing",
+    "explanation": "The expected count of 76×0.05 ≈ 4 assumes the global null holds for all 76 intervals. Many are plainly non-null: train-on-gold (−18 to −26), Run C (−12 to −22), and most 5×10^-4 rows. The number of intervals for which 'nothing changed' is plausible is much smaller, so the expected count of false exclusions among them is lower, about 1–2 if roughly 30 are near-null. The count also includes the post hoc matched column, which uses a different re-scoring and 2,000 resamples. App E uses the heuristic to discount the 10^-5 seed-0 declines, but the multiplicity argument is not turned on the no-gain conclusion. There, the relevant issue is that the reported bound is the maximum of about 13 upper ends, so its joint coverage is below nominal. A family-wise or false-discovery-rate adjustment over a defined family (e.g. the 13 self-training Δsample-acc intervals), or a pooled analysis, would apply the multiplicity standard in both directions.",
+    "comment_type": "technical",
+    "confidence": "medium",
+    "source_section": "C Uncertainty in Full",
+    "related_sections": ["E Design I at 10−5 in Full", "J Limitations in Full", "5.1 Answer to the Research Question"]
+  },
+  {
+    "title": "'Fixed in advance' covers the measures only: the design itself (rates, k, rounds, controls) was adaptive, and no registration record is given",
+    "quote": "Because 10−5 changed the MATH-500 outputs little, we reran Run A at 10−4",
+    "explanation": "The introduction says four measures and a reading rule were 'fixed in advance', which suggests pre-registration. No registration or timestamped protocol is cited. The learning-rate grid, the switch to k=4 and three rounds, the controls and the replicate were all chosen after seeing the 10^-5 results, and the primary measure, the cap-hit definition, the matched metric, the decomposition and the r_t test were all added afterwards. The paper is admirably open about most of these individually. Still, a headline such as 'no gain at four learning rates' comes from a sequence of data-dependent design choices, and Δpass@k mixes k=8 (10^-5) with k=4 (other rates). One sentence stating that only pass@1, pass@k, \\boxed share and transitions plus the reading rule were pre-set, and that the rest of the design was adaptive, would prevent readers from crediting the study with more pre-specification than it had.",
+    "comment_type": "logical",
+    "confidence": "low",
+    "source_section": "1 Introduction",
+    "related_sections": ["4.4 Higher Learning Rates", "3.4 Models, Data, Training, Metrics"]
+  }
+]

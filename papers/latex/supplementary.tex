@@ -56,7 +56,7 @@ false negatives; their Table~5, on DeepSeek-R1-Distill-Qwen-32B outputs). Our
 MATH-500 audit gives $7.8\%$ (95\% Wilson interval $4.3$--$13.8\%$) on another
 model's solutions, a figure whose relation to the loop's own rate is not known
 (Section~\ref{app:verifier}), and a pipeline-specific defect alone rejects
-$15.5$--$18.4\%$ of the loop's own solutions that a repaired verifier accepts, concentrated on about a tenth of the problems. These figures differ in
+$15.5$--$18.3\%$ of the loop's own solutions that a repaired verifier accepts, concentrated on about a tenth of the problems. These figures differ in
 verifier version, solution source and denominator, so we compare them only in
 order of magnitude. Imperfect Verifiers~\cite{ref_imperfect} gives the most formal noise model,
 with fixed false-accept and false-reject probabilities, and notes that real noise
@@ -216,7 +216,7 @@ re-scored the saved generations with a second normalisation that wraps the gold
 in \verb|\boxed{}| when the prediction contains one and the gold does not
 (\path{experiments/viec3/review_cpu/}: \texttt{patch\_dose.py},
 \texttt{dose.py}, \texttt{flips.py}). This defect is far more frequent than the \verb|\dfrac|
-class. Over all $500$ problems it rejects $15.5$--$18.4\%$ of the generations
+class. Over all $500$ problems it rejects $15.5$--$18.3\%$ of the generations
 the re-scored verifier accepts (Run~A at $5\times10^{-4}$, seeds~1 and~2, and
 at $10^{-5}$, seed~0, every round). The kept pool covers only the $350$
 selection problems, where the share is about the same ($17.8$--$18.8\%$ at round~0): accepting these
@@ -225,7 +225,7 @@ $440\to542$, $+23\%$; at $10^{-5}$: $872\to1{,}066$, $+22\%$), against $0$--$4$
 examples (under $1\%$) for the \verb|\dfrac| patch. In a hand
 check of $30$ random flips, $29$ pairs were the same value written differently
 (e.g.\ \verb|\frac43| and \verb|\frac{4}{3}|; one prediction had an empty box).
-The $15.5$--$18.4\%$ assumes that the re-scored verifier itself accepts no wrong
+The $15.5$--$18.3\%$ assumes that the re-scored verifier itself accepts no wrong
 answer, which we did not measure. On the exam set the defect lowers absolute
 pass@1 by $6.7$--$8.0$ points at round~0 and throughout the $10^{-5}$ runs, by
 $4.7$ points at round~2 under $5\times10^{-4}$, and by $0.7$--$3.3$ points for
@@ -572,7 +572,7 @@ nearly identical models whatever the verifier did. We cannot separate these
 two explanations. The result is therefore: \emph{removing one rare format defect
 had no detectable effect}, which the prevalence count alone predicts; it is not
 evidence about directional verifier bias in general, and it leaves untouched the
-gold-storage defect, which rejects $15.5$--$18.4\%$ of correct in-loop solutions
+gold-storage defect, which rejects $15.5$--$18.3\%$ of correct in-loop solutions
 in both arms (Section~\ref{app:verifier}). Verifier-bias figures in
 the literature, such as the $\sim$14\% of~\cite{ref_robustness}, are likewise
 conditional on a reference distribution; what matters for a loop is how often

@@ -1,0 +1,118 @@
+[
+  {
+    "title": "Without a positive reference, the null on gains speaks to this training recipe, not to GVT, yet the Abstract and Conclusion state it as a finding about self-training",
+    "quote": "On a held-out exam, the first answer is no: on the four measures fixed in advance",
+    "explanation": "Limitation J.12 (and the last sentence of §6) says no arm in any design improves on its round 0, training on reference solutions included, so 'we have no positive reference showing that this recipe can help a 1.5B model at all; the declines may partly reflect the recipe rather than self-training.' The data back this up strongly. Train-on-gold, which has no verifier and no self-generated data, loses about 20 points (Table 5), more than any GVT arm. The no-filter arm trains on mostly wrong solutions (sample accuracy is about 30%, so roughly 70% of its 1,400 examples per round are wrong) and declines about as much as the verified arm (−8.2 vs −8.3 at seed 1). At 10^−5 the adapter barely changes behaviour (J.4). So at low rates the recipe does nothing, and at high rates every arm gets worse whatever its data: correct, wrong, gold or self-generated. Other recipe-level causes the paper lists elsewhere point the same way: loss over the prompt, a 512-token training limit that truncates a quarter of the kept pool (J.9), and possible contamination with forgetting of memorised items (J.11). Under these conditions, 'no detectable gain' and 'declines at high LR' cannot be credited to the generate–verify–select loop, because the design cannot tell apart 'GVT does not help' and 'this LoRA-SFT recipe cannot help regardless of data'. The limitation names the problem but does not bound the conclusions. The Abstract still says 'Nor does it improve' directly after the GVT result. The Conclusion answers the research question ('the first answer is no') as a statement about GVT iterations. §5.1 answers 'Not detectably' without the qualification. The same gap affects the r_t null (see separate issue): a recipe that cannot raise accuracy may also be unable to adapt to the verifier. Suggested fix: state the answer as conditional on this recipe in the Abstract, §5.1 and §7 (e.g., 'under a recipe for which we have no positive reference, ...'), and say plainly that every arm declining, gold and no-filter included, points first to the training procedure. The positive control (K) should be presented as a prerequisite for reading the null, not as optional future work.",
+    "comment_type": "logical",
+    "confidence": "high",
+    "source_section": "7 Conclusion",
+    "related_sections": [
+      "Abstract",
+      "5.1 Answer to the Research Question",
+      "6 Limitations",
+      "J Limitations in Full",
+      "4.4 Higher Learning Rates",
+      "K Future Work"
+    ]
+  },
+  {
+    "title": "The direction-free r_t test has no shown power: it is unclear that the gold-storage rejection is avoidable by the model or learnable by SFT, and r_t is confounded by problem mix",
+    "quote": "it rules out strong adaptation to this defect, not weak adaptation or adaptation",
+    "explanation": "The paper's headline positive claim is 'the model does not adapt to this defect' (Abstract; Conclusion: 'that share does not fall, so the model does not learn to avoid it'). For a flat r_t to be evidence against adaptation, three things must hold, and none is shown. (a) Avoidability. Appendix B describes the defect as a property of how the gold is stored: a compound gold kept without a delimiter is parsed to its first number, so a correct \\boxed prediction fails. Whether the rejection happens is then mostly set by which problem it is, and the paper never shows that on these problems some alternative correct form exists that V accepts (e.g., an unboxed or differently written answer). If no such form exists, r_t cannot fall whatever the model learns, and the test has zero power for this defect. (b) A learning signal. Rejection-sampling SFT never sees the rejected forms. Adaptation could only come from those problems being under-represented in the pool, which with restart-from-base and two to four rounds is a weak signal. (c) Problem-mix confounding. r_t is a ratio over V'-accepted generations, so it moves when the set of solved problems changes. Compound-answer problems are plausibly harder, so falling accuracy could lower r_t without any adaptation, or a change could cancel a real effect. No interval is given on r_t, it rests on three runs (§5.3), and it also assumes V' makes no false accepts (App B). Two different quantities are also both reported as 'the share': 15.5–18.4% over all generations, and 17%/20% 'as a share of re-scored pass@1' on the exam (§5.3). The 20% at 10^−5 lies outside the headline range, which will confuse readers. Even 'rules out strong adaptation' therefore goes further than the evidence. Without a positive control (e.g., a synthetic defect with a known avoidable alternative, where r_t is shown to fall), the Abstract's categorical 'the model does not adapt to this defect' should be softened to 'we observed no fall in r_t', with the avoidability and power caveats stated alongside.",
+    "comment_type": "logical",
+    "confidence": "high",
+    "source_section": "5.3 A Proposed Audit for GVT with a Biased Verifier",
+    "related_sections": [
+      "Abstract",
+      "7 Conclusion",
+      "5.1 Answer to the Research Question",
+      "I.1 Answer to the Research Question",
+      "B The Verifier in Full"
+    ]
+  },
+  {
+    "title": "'Restart-from-base leaves compounding little room' contradicts the data-mediated compounding the paper itself argues for in Design P, and I.2 says the shrinking-pool mechanism has 'no support'",
+    "quote": "round leaves compounding little room, so the absence of compounding is",
+    "explanation": "J.7 and §6 present restart-from-base as limiting compounding. That holds only for parameter-level compounding. In the loop as described (§3.1), the round-t pool is generated by the round-(t−1) model, which was itself trained on a pool from the round-(t−2) model, so selection effects can still compound through the data. Appendix D says exactly this: dose 'explains at most the level of the decline, not its time course' (the largest drops come from the smallest pools), and 'Something carried through the data, such as pool composition or style, fits this acceleration better.' That is the self-reinforcing shrinking-pool mechanism, or close to it. Yet I.2 says 'The data give it no support, but they do not rule it out either', and §5.2 says they 'neither support nor rule it out'. The appendix offers some support (accelerating decline with shrinking pools, falling \\boxed share, rising $-spans), even if it is not causal evidence, while the Discussion denies any support. Separately, if compounding through data is possible, the 'absence of compounding' in Design I cannot be put down to the restart design. It reflects the short loop (2–4 trained rounds), the small changes at 10^−5, and the lack of a frequent varied defect. Suggested fix: make §5.2/I.2 and App D say the same thing ('weakly consistent with but not tested'), and rewrite J.7 to separate parameter compounding (removed by the design) from data compounding (still possible, and suggested by Design P).",
+    "comment_type": "logical",
+    "confidence": "high",
+    "source_section": "J Limitations in Full",
+    "related_sections": [
+      "6 Limitations",
+      "5.2 Interpretation",
+      "I.2 Interpretation",
+      "D Design P in Full"
+    ]
+  },
+  {
+    "title": "The 2.2-point 'no gain' bound is on a scale known to be shrunk by about 0.75 and omits seed variance of comparable size; §5.1, §6 and §7 state it without these corrections, and 150 problems give little power on the pre-set measures",
+    "quote": "sample-accuracy intervals exclude gains above about 2.2 points",
+    "explanation": "The paper credits itself correctly for calling the bound 'loose', but several quantified weaknesses are left out of the main-text answer. (1) Appendix B shows that the original verifier understates every change by a factor of about 0.73–0.78 and says the 2.2-point bound 'on the re-scored scale is nearer 3 points'. §5.1, §6 and the Conclusion still report 2.2, and §6 does not list the understatement. (2) I.1 says training-seed variance is 'of the same size' (a replicate ends 3.2 points away). An interval that included it would be wider, perhaps around 5 points, so the bound is loose by a known order of magnitude, not just in principle. (3) Power. The exam has 150 problems, of which 11–18 per partition have unparseable gold and are always unsolved (App B), so the effective n is about 132–139. pass@1 is a single draw per problem (J.3 mentions this only in passing). The resulting pass@1/pass@k intervals are about ±7 points wide (upper ends +8.0 and +7.3). On the pre-set measures, gains that would count as substantial in the self-improvement literature could not be detected. Exam size and power appear nowhere in the limitations list as a limit on the 'no gain' conclusion. Since 'no gain' is one of the paper's two headline results, the Conclusion should give the corrected bound (about 3 points on the re-scored scale, wider with seed variance) and say plainly that on the pre-set pass@1/pass@k a gain of up to about 7–8 points cannot be excluded.",
+    "comment_type": "technical",
+    "confidence": "high",
+    "source_section": "5.1 Answer to the Research Question",
+    "related_sections": [
+      "6 Limitations",
+      "7 Conclusion",
+      "I.1 Answer to the Research Question",
+      "B The Verifier in Full",
+      "J Limitations in Full"
+    ]
+  },
+  {
+    "title": "Missing or understated limitations: the learning-rate comparison is confounded with k, pool size and number of rounds, and there is only one model family (Qwen2.5), the family where spurious-reward gains are known to appear",
+    "quote": "The learning-rate grid is coarse, with three",
+    "explanation": "§6 and J.4 call the higher-rate grid 'coarse' with three rounds and k = 4, but leave out the consequence. Rate is not the only thing that changes across the grid. At 10^−5 the runs use k = 8 and five rounds (round-0 pool 872, about 436 steps). At the higher rates they use k = 4 and three rounds, R0–R2, which is only two trained adapters (pool about 440, about 220 steps), and 'last round' is R4 in one case and R2 in the other (Table 5). So the higher-rate arms have about half the dose and half the training rounds of the 10^−5 arms. The pass@k measure also differs (pass@8 vs pass@4), so ∆pass@k is not comparable across rates. This matters for I.1 and App D, which use 'stronger training produces larger declines' across rates as indirect support for a dose explanation of the Design P collapse: across the grid, rate and dose move in opposite directions. J.7's 'at most five rounds' also hides that most conditions have two trained rounds, which limits any compounding test (see related issue). On scope, §6 says 'one model size in Design I' but not 'one model family'. The paper motivates itself with Shao et al.'s finding that random rewards raise accuracy (§1, §5.3), a result widely reported to depend strongly on Qwen2.5 models. Contamination of MATH-500/GSM8K (J.11) is also a known concern for Qwen2.5 specifically. Whether a sub-2B model 'learns mathematics or the verifier' under GVT may well depend on the family, so this belongs in the scope limitation, next to a note that the across-rate dose-response argument is confounded.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "6 Limitations",
+    "related_sections": [
+      "J Limitations in Full",
+      "4.4 Higher Learning Rates",
+      "I.1 Answer to the Research Question",
+      "D Design P in Full",
+      "3.4 Models, Data, Training, Metrics"
+    ]
+  },
+  {
+    "title": "The verifier conclusions skip what the no-filter arm and the r_t null say about Egashira et al.; 'no consistent difference' undersells a filter that never helps",
+    "quote": "The defensible statement about the verifier is narrow: removing a format",
+    "explanation": "§5.2/I.2 settle on 'removing a format defect present in under 1% of generations, or removing the filter entirely, made no consistent difference', and say that whether systematic false negatives are harmless 'as Egashira et al. find for RLVR, our data cannot say'. Two points make this reasoning incomplete. (1) Removing the filter is not a false-negative manipulation. It turns roughly 70% of training examples into false positives (wrong answers), the error type Egashira et al. find can cause plateau or collapse. The no-filter arm is never better than the filtered arm and is worse at seed 2 (sample accuracy −10.2 vs −4.7; pass@4 lower at both seeds). With 3–4× the dose this cannot be attributed causally, but 'no consistent difference' is a flat summary of a one-sided pattern. The fact that training mostly on wrong solutions does about as well as training on verified ones is itself informative: either the filter adds nothing at this dose, or the recipe dominates (see the positive-reference issue). Neither reading is discussed. (2) The r_t result is the paper's one measurement bearing on a systematic false negative, and it is qualitatively in line with Egashira et al.'s finding that systematic FNs act like noise and are not exploited. The Discussion says the data 'cannot say' anything about this while the Abstract claims 'the model does not adapt to this defect'. The paper should either explain why the r_t null does not bear on Egashira's FN finding (e.g., different paradigm, untested avoidability), or note the consistency with suitable hedges. It should also discuss the no-filter result as a false-positive manipulation.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "I.2 Interpretation",
+    "related_sections": [
+      "5.2 Interpretation",
+      "4.4 Higher Learning Rates",
+      "2 Related Work",
+      "A Related Work in Full",
+      "Abstract"
+    ]
+  },
+  {
+    "title": "Some practical suggestions are unsupported or contradicted by the paper's own evidence, and the most important lessons are left out",
+    "quote": "0.5% of the pool cannot be detected with 150 problems",
+    "explanation": "I.3 rightly says that some suggestions are general good practice, but several are still written as findings. (1) 'A treatment that changes 0.5% of the pool cannot be detected with 150 problems' is a quantitative power claim with no power analysis behind it. The patch null shows non-detection, not undetectability: a small pool change could in principle have a large effect if those examples are influential. (2) 'Check that the training step changes the model (loss and output statistics after one round)' sits awkwardly with J.4, which reports that at 10^−5 'its loss does fall' while outputs barely change. On the paper's own evidence, loss is not a valid check, and only output statistics are. (3) The list leaves out the lessons the paper's evidence supports most directly: run a positive control (or at least a gold-SFT reference that improves) before reading a null (J.12, K); set the training sequence limit to at least the generation cap plus the prompt, since 24–26% of the kept pool is truncated (J.9), which plausibly teaches unfinished outputs; and give an equivalence margin in advance (J.10). (4) 'Hold out evaluation items and keep one adapter per dataset' is offered as a remedy for the Design P artefact, but App D argues selection-set scoring did not hide a decline and may have enlarged one, so the suggestion's basis is ordinary good practice, not the paper's data. Suggested fix: label each suggestion as finding-backed or general practice, and replace the loss check with output statistics.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "I.3 Practical Suggestions",
+    "related_sections": [
+      "J Limitations in Full",
+      "K Future Work",
+      "D Design P in Full"
+    ]
+  },
+  {
+    "title": "The main text presents redundant measures as extra evidence: added/lost counts restate pass@k, and the 'four pre-set measures' include non-gain measures",
+    "quote": "500 run but one, the problems lost equal or outnumber those gained.",
+    "explanation": "§5.1 lists 'the problems lost equal or outnumber those gained' as a separate supporting fact. §3.4 and I.1 both note that added minus lost equals 150×∆pass@k, so this 'restates the sign of the pass@k change rather than adding evidence'. That caveat appears in the appendix but not in the main-text answer, where the sentence reads as corroboration. Likewise, the Conclusion says 'on the four measures fixed in advance no run improves detectably'. Of the four pre-set measures (pass@1, pass@k, style counts, added/lost; §3.4), style is not a gain measure and added/lost duplicates pass@k, so the null actually rests on two measures: pass@1, a single draw, and pass@k. Presenting four suggests a broader and more independent null than the data give. This is a case where a main-text summary of an appendix drops a qualifier that changes how strong the evidence looks. Suggested fix: add the 'restates pass@k' caveat to §5.1 (or drop the sentence), and in §7 name the gain measures (pass@1 and pass@k) rather than 'the four measures'.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "5.1 Answer to the Research Question",
+    "related_sections": [
+      "7 Conclusion",
+      "I.1 Answer to the Research Question",
+      "3.4 Models, Data, Training, Metrics"
+    ]
+  }
+]

@@ -1,0 +1,100 @@
+[
+  {
+    "id": "x2-01",
+    "severity": "moderate",
+    "title": "Sec 4.3 B-minus-A at seed 1 (+0.0) disagrees with Table 2 (-0.7)",
+    "quote": "is −0.7 [−3.3, +2.0] points of pass@1 at seed 0 and +0.0 [−2.7, +2.7] at seed 1",
+    "comment": "Table 2 (10^-5, pass@1) gives A,1 = -3.3 and B,1 = -4.0, so B minus A at seed 1 is -0.7 (one problem), not +0.0. The seed-0 value is consistent (-3.3 minus -2.7 = -0.6, i.e. -0.67 = one problem). The interval [-2.7, +2.7] is centred on 0.0, so the text's seed-1 figure is internally coherent but not the table's. The Table 2 caption admits six values off by one problem, but this one is not listed and both numbers are used to argue 'no consistent effect'. Reconcile (and make the sign statement 'pass@1 flips sign between seeds' in the Conclusion rest on the recomputed value)."
+  },
+  {
+    "id": "x2-02",
+    "severity": "moderate",
+    "title": "The 15.5-18.4% range for the gold-storage defect does not match Table 4",
+    "quote": "this defect rejects 15.5–18.4% of the",
+    "comment": "In Table 4 the self-training 'all' rows have R0 = 18.3, 18.1, 18.3 and last-round = 15.7, 15.5, 16.8 (gold arms: 18.2/18.0 at R0, 21.5/20.2 last). The lower end 15.5 is a last-round value (A, seed 2), and 18.4 appears nowhere in Table 4 (R0 max is 18.3). The range therefore mixes round-0 and last-round values and one number not shown. The Summary/abstract 'about one in six' (16.7%) is fine, but the quoted range should be either 18.0-18.3 at round 0 or 15.5-18.3 across all rounds, with the source stated."
+  },
+  {
+    "id": "x2-03",
+    "severity": "minor",
+    "title": "'About a fifth' pool enlargement (440 -> 542) implies 18.8% / +23%, outside the quoted 15.5-18.4%",
+    "quote": "It would enlarge the round-0 kept pool by about a ﬁfth",
+    "comment": "542/440 = +23.2% enlargement; the share of V'-accepted examples that V rejects is 102/542 = 18.8%, above both the stated maximum 18.4% and Table 4's R0 values (18.0-18.3, computed over all 500 problems rather than the 350 selection problems). The difference is probably the selection-set vs all-500 basis, but the text never says so, and the same '(440 -> 542)' is repeated in Sec 5.3(iii) as 'about a fifth of the pool'. State the basis or give '+23%'."
+  },
+  {
+    "id": "x2-04",
+    "severity": "moderate",
+    "title": "Optimizer-step count (~195) inconsistent with pool sizes and 'steps = half the pool'",
+    "quote": "single adapter (about 195 optimizer",
+    "comment": "Sec 3.4 and the Table 3 caption say optimizer steps are half the pool size. The round-2 model is trained on the round-1 pool, which Table 3 gives as 326 (seed 1) and 350 (seed 2) for Run A at 5x10^-4, i.e. about 163 and 175 steps. 195 steps would need a pool of ~390; the round-0 pool (440) would give 220. None of the stated numbers yields 195. Either the pool sizes in Table 3 or the step count is wrong (or the step count includes something not described)."
+  },
+  {
+    "id": "x2-05",
+    "severity": "moderate",
+    "title": "'Replicate pair 3.2 points apart' matches no pair in Tables 1-2 and understates same-seed spread",
+    "quote": "ends 3.2 points of sample accuracy apart",
+    "comment": "No same-configuration pair in Table 2 differs by 3.2 on sample accuracy: A,0 vs A,1 at 10^-5 are -2.4 vs -1.5 (0.9); B,0 vs B,1 are -3.2 vs -1.2 (2.0); 10^-4 seeds range -1.0 to -3.7 (2.7); the 5x10^-4 A seeds are -8.3 vs -4.7 (3.6). Moreover the paper treats same-seed A/B as near-replicates (Sec 4.4), and at 5x10^-4 seed 2 A and B differ by 4.5 points of sample accuracy (-4.7 vs -9.2; 7.3 points of pass@1), larger than the 3.2 'the one replicate pair'. Identify which pair gives 3.2 and note that near-replicates already exceed it; this matters because the 2.2-point bound and the 3.5-5.5 MDE are both smaller than the observed run-to-run spread."
+  },
+  {
+    "id": "x2-06",
+    "severity": "moderate",
+    "title": "2.2-point exclusion bound sits uneasily with the quoted 3.5-5.5 detectable effect and the observed seed spread",
+    "quote": "sample-accuracy intervals exclude gains above about 2.2 points",
+    "comment": "The 2.2 comes from the largest upper ends in Table 2 (+2.2 for A,1 and A,3 at 10^-4); every other MATH-500 row is lower. But those rows are k=4 runs whose half-widths (3.3-3.9) imply an MDE of about 4.6-5.6 by the paper's own 2.8h/1.96 rule, and the abstract/intro/conclusion present both '3.5-5.5 could have been missed' and 'gains above 2.2 excluded' without reconciling them: the bound is small only because the point estimates are negative (-1.0 to -3.7), not because the design is precise. Add that the bound is conditional on observed negative estimates and is dwarfed by the 3.2-4.5 point same-seed spread (see x2-05)."
+  },
+  {
+    "id": "x2-07",
+    "severity": "minor",
+    "title": "Quoted MDE ranges only roughly reproduce from Table 2 half-widths (controls and k=4/k=8 mixed)",
+    "quote": "of pass@k and 3.5–5.5 of sample accuracy on MATH-500",
+    "comment": "Recomputing 1.43*h from Table 2 (h = half-width): pass@1 gives 8.6-10.5 for the self-training rows but 11.9 for Gold,1 (h=8.35); pass@k gives 8.6-10.4 (11.4 for Gold); sample accuracy gives 3.4-3.8 for the four 10^-5 rows (k=8), 4.6-5.4 for 10^-4/2x10^-4 and 5.0-5.7 for 5x10^-4 (k=4), and 7.1-7.9 for the two Gold rows. So '3.5-5.5' is really 3.4-5.7 excluding Gold and the lower end applies only to the k=8, 10^-5 runs; the k=4 rates, which carry the main decline claims, have MDE about 4.6-5.7. Say which rows define the range and that k differs."
+  },
+  {
+    "id": "x2-08",
+    "severity": "minor",
+    "title": "Cap-hit range '41-48%' conflicts with Table 1 round-0 values (43.0-48.2%)",
+    "quote": "The untrained model already hits the cap in 41–48% of MATH-500 generations,",
+    "comment": "Table 1 caption gives round-0 cap-hit as 43.0-43.2% (seeds 1-2) and 48.2% (seed 3). The lower bound 41% does not appear in Table 1; it may come from the 10^-5 runs, which are not tabulated for cap-hit. Cite the source or use 43-48%."
+  },
+  {
+    "id": "x2-09",
+    "severity": "minor",
+    "title": "Table 2 caption points to Sec 3.4 for material not found there",
+    "quote": "except six round values that diﬀer by one problem (Section 3.4)",
+    "comment": "Section 3.4 contains no discussion of recomputation differences, the six one-problem discrepancies, or a 'separate re-scoring' behind the matched column (the matched measure is introduced in Sec 4.5). The example given (B, seed 1 pass@8 58.0% vs 58.7%) also cannot be traced to any text number, and the six affected values are not identified, so the reader cannot tell whether headline numbers such as Sec 4.3's B-minus-A (x2-01) are among them."
+  },
+  {
+    "id": "x2-10",
+    "severity": "minor",
+    "title": "Decomposition percentages (12-30% seed 1, 52-72% seed 2) cannot be reproduced from main-text numbers",
+    "quote": "attributes 12–30% of the decline to the cap share in the three original seed-1 runs",
+    "comment": "Rough check with Table 1 (cap-hit R0 43.0-43.2% vs R2 46.2% at seed 1, 51.2% at seed 2) and sample accuracy (A: 33.7 -> 25.3 at seed 1, 30.8 -> 26.2 at seed 2): treating cap-hit generations as wrong, the cap part is about 1.8 of 8.4 points (about 21%) at seed 1, consistent with 12-30%, but about 4.3 of 4.6 points (above 90%) for A at seed 2, outside 52-72%. Using the matched-finished column instead (-9.1 and -5.5, scaled by the finished share) gives roughly 40% cap at both seeds. The paper does not say which formula or which three runs are in each range, and the Table ?? it defers to is not in the main text. Low confidence because the exact formula is in the supplementary; but the 'seed 1 vs seed 2' contrast is a headline claim (intro, 5.3(ii), conclusion) and is not checkable here."
+  },
+  {
+    "id": "x2-11",
+    "severity": "minor",
+    "title": "'94-98%' rejection on affected problems vs Table 4 affected-parseable values (87.2-95.1%)",
+    "quote": "it rejects 94–98% of correct",
+    "comment": "Table 4's 'affected, parseable' rows for the three self-training runs show rt of 92.8 -> 87.2, 95.1 -> 93.5 and 92.3 -> 92.0, so 87-95%, partly below 94%. This is probably reconciled by the 29-34 unparsable-gold problems being at about 100% (which pulls the 54-62 total up), but that is never stated, and '94-98% in every round' is not checkable from Table 4. State the weighting or give the two subsets separately."
+  },
+  {
+    "id": "x2-12",
+    "severity": "minor",
+    "title": "Patch pool difference '3-4 examples (under 0.5%)' vs '0-4' elsewhere, and base unclear",
+    "quote": "kept pools diﬀer by 3–4 examples (under 0.5%)",
+    "comment": "Sec 3.2, 5.3(iii) and Limitations say 0-4 examples (against a round-0 pool stated as 440 in Sec 3.2/Table 3), and 3-4 of 440 is 0.7-0.9%, not under 0.5%. The 0.5% is true only for the 10^-5, k=8 pool (872, Sec 4.1; 3-4/872 = 0.34-0.46%), which is never named here. Sec 4.4 then says 0-3 at 5x10^-4. Name the pool each fraction refers to."
+  },
+  {
+    "id": "x2-13",
+    "severity": "minor",
+    "title": "Bootstrap resample count: Sec 3.4 says 10,000 for every within-run change, Table 4 uses 2,000",
+    "quote": "95% interval from a paired problem-level bootstrap (10,000 resamples of the",
+    "comment": "Table 4 (the within-run changes in r_t) and the Table 2 matched column are stated to use 2,000 resamples, contradicting the blanket 'for every within-run change ... 10,000 resamples' in Sec 3.4. Not consequential for the numbers but the blanket statement is inaccurate."
+  },
+  {
+    "id": "x2-14",
+    "severity": "minor",
+    "title": "Intro contribution quotes 5.5-10.6 'at the highest rate' but omits Gold and Run C, which Table 2 shows at the same rate",
+    "quote": "generations lose 5.5–10.6 points against the untrained model on the same",
+    "comment": "The 5.5-10.6 range covers A, B and no-filter at 5x10^-4 (six runs, Table 2 matched column). At the same rate Table 2 also lists Gold (-25.6, -25.9) and Run C (-12.1), outside this range; Sec 4.5 handles Gold separately ('Train-on-gold is different') but the intro, conclusion and Summary state it as a property of 'the highest rate' without the restriction. Add 'in the verifier-filtered and no-filter MATH-500 runs'."
+  }
+]

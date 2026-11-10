@@ -1,0 +1,142 @@
+[
+ {
+  "title": "Audit presented as contribution while admitted not new and unvalidated",
+  "quote": "A post hoc per-round false-reject audit of one",
+  "explanation": "Contribution 2 claims the audit as a contribution, yet Related Work states the measurement is the per-step tracking of Egashira et al. and TinyV, Sec 5.3 says the four checks are 'not tested methods', and the audit has no positive control and low power. The only novelty is transplanting a known measurement to offline SFT, with a null result that cannot distinguish adaptation from no adaptation. An unvalidated protocol (checks iii-iv are generic advice: dose-matching, check the dose of a control) does not justify a contribution; it should be moved to discussion or validated with a synthetic positive control (e.g. injected defect with known adaptation pressure).",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "Introduction",
+  "related_sections": [
+   "Related Work",
+   "Discussion 5.3",
+   "Conclusion"
+  ]
+ },
+ {
+  "title": "Self-contradictory novelty statement for the audit",
+  "quote": "of Section 5.3 is not new either: it is the per-step tracking of Egashira et al.",
+  "explanation": "Related Work says the per-round measurement is not new, while the Introduction contributions list and Conclusion present it as the paper's second contribution ('carried over from RLVR'). The remaining distinct piece (a gold-storage defect of the authors' own pipeline) is a pipeline bug, not a property of verifiers in general, which weakens the generality of the claimed audit.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Related Work",
+  "related_sections": [
+   "Introduction",
+   "Conclusion"
+  ]
+ },
+ {
+  "title": "Proposed protocol offered without validation",
+  "quote": "protocol for future studies, not as tested methods.",
+  "explanation": "Sec 5.3 recommends four checks as a protocol and the Conclusion says the audit 'asks part of that question whether accuracy rises or falls', yet the authors concede no positive control exists, so the audit's sensitivity is unknown. The recommendation to apply it to public RLVR checkpoints extrapolates from a null that the authors say cannot rule adaptation out; this is a hypothesis, not a finding.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Discussion 5.3",
+  "related_sections": [
+   "Conclusion",
+   "Limitations"
+  ]
+ },
+ {
+  "title": "Closest-work (Xu et al.) lessons not applied by the paper",
+  "quote": "draw and sampling, not training-seed variance; several conditions have one seed,",
+  "explanation": "Related Work says Xu et al. [15], the closest study, found that uncontrolled training-seed variance (among seven failures) can invert a finding, and cites this as motivation. The paper then reports single-seed conditions with intervals that omit training-seed variance, including the final round (one seed) that carries the strongest claim (-4.8 points, interval excluding zero). Standards demanded by the cited work are not met, and the 'difference' from [15] is mostly scale and verifier type.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "Limitations",
+  "related_sections": [
+   "Related Work",
+   "Introduction"
+  ]
+ },
+ {
+  "title": "Distinctness from Xu et al. is thin; decomposition overlaps their finding",
+  "quote": "A decomposition of an accuracy decline under a",
+  "explanation": "Related Work credits Xu et al. [15] with identifying a fixed token cap under style drift as a measurement failure and says this is why finished accuracy is separated from termination. Contribution 3 then lists the finished-accuracy/cap-share decomposition as new. It is an application of an already-reported failure mode, and Sec 5.3 itself calls the split 'descriptive'. The novelty claim should be scoped accordingly.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Introduction",
+  "related_sections": [
+   "Related Work",
+   "Discussion 5.3"
+  ]
+ },
+ {
+  "title": "Overbroad statement about prior self-training work",
+  "quote": "None measures how the",
+  "explanation": "The claim that STaR, ReST, ReST-EM and RFT do not measure how filter errors depend on answer form is stated as a universal negative about four works with no supporting search described; the authors' own later sentence ('We found no multi-round study...') is hedged but this one is not. Also later cites TinyV and Huang et al. on verifier errors that relate to the same dependence.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "Related Work",
+  "related_sections": []
+ },
+ {
+  "title": "Characterisation of Wang et al. inconsistent and overgeneralised",
+  "quote": "report only 8.6 of their 37.6 points as lying beyond it, but the studies mostly do",
+  "explanation": "The Introduction says the one-example gain has 'only 8.6 points beyond format correction'; Related Work says 'the studies mostly do not ask what the rest consists of' immediately after crediting Wang et al. and Shao et al. with asking exactly that. The 8.6/37.6 figures are not verifiable from the text (37.6 is the difference of 73.6 and 36.0) and the attribution of this decomposition to Wang et al. should be checked against the source. Also the claim that Wang separates format correction is used to motivate a verifier-adaptation question that Wang does not address.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "Related Work",
+  "related_sections": [
+   "Introduction"
+  ]
+ },
+ {
+  "title": "Kim et al. comparison is speculative and ill-matched",
+  "quote": "on-gold control shows a similar surface signature.",
+  "explanation": "Kim et al. study self-distillation conditioned on ground truth, where degradation is tied to suppressed uncertainty expression/shortened reasoning. The paper's train-on-gold arm loses 32 points (and 30.5 at an earlier gate) which, given the failed gate and the authors' own concern about recipe (loss over prompt, truncation), is more plausibly a pipeline artefact. Claiming a 'similar surface signature' without showing response-length statistics borrows legitimacy from [7] and may mask a bug; the cited work does not predict a drop of this magnitude for a 1.5B SFT.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Related Work",
+  "related_sections": [
+   "Discussion 5.1",
+   "Conclusion"
+  ]
+ },
+ {
+  "title": "TinyV described as tracking false negatives across steps - unverifiable and doubtful",
+  "quote": "TinyV likewise tracks the share of false",
+  "explanation": "TinyV is principally a verifier-augmentation method (LLM fallback to reduce false negatives); the text attributes to it per-step tracking of false-negative share and uses [4,16] jointly as the source of the audit. This characterisation is not supported in the paper by any figure or quote and, if inaccurate, undercuts the claim that the audit is 'carried over' from two sources. Also, 'Xu et al.' is ambiguous because refs 15 (Xu, C.) and 16 (Xu, Z.) both begin with Xu.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "Related Work",
+  "related_sections": [
+   "Introduction",
+   "Discussion 5.3"
+  ]
+ },
+ {
+  "title": "Huang et al. math-verify recall not reconciled with own measurements",
+  "quote": "and 0.95 for math-verify on their MATH subset.",
+  "explanation": "Related Work cites 0.95 recall for math-verify on MATH, but Sec 3.2 measures a 7.8% false-negative rate (recall about 0.92) on MATH-500 and a gold-storage defect rejecting about one in six accepted generations. The discrepancy is not discussed; either the pipeline defect, not the verifier, explains it (so the cited verifier-error literature is not directly relevant to the paper's headline 'verifier' framing) or the cited benchmark differs. Readers cannot tell whether results speak about math-verify or about the authors' storage bug.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Related Work",
+  "related_sections": [
+   "Setup 3.2",
+   "Conclusion"
+  ]
+ },
+ {
+  "title": "Title/framing promises a verifier question the data leave open, with a pipeline bug as the verifier defect",
+  "quote": "The second question stays open: our pre-set rule",
+  "explanation": "The title and abstract frame the study around 'Mathematics or the Verifier?', and cite the verifier-bias literature, but the paper concludes the verifier question is open and the only substantive 'verifier' defect examined is the authors' own gold-storage choice, which is an implementation error rather than math-verify behaviour. The relation to Egashira (systematic false negatives behave like noise) and TinyV (verifier error) is thus weaker than the Related Work implies; the contribution reduces to a null result for a specific recipe whose positive control fails.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Conclusion",
+  "related_sections": [
+   "Introduction",
+   "Related Work"
+  ]
+ },
+ {
+  "title": "Heavy reliance on single-author or very recent preprints, cannot be verified",
+  "quote": "Strozzi, I.L.: Teacher-Free Self-Training",
+  "explanation": "Several load-bearing references are 2026 arXiv preprints (Egashira 2605.02909, Qiao 2606.13732, Strozzi 2606.07856, Xu 2608.20290, Kim 2603.24472), including a single-author one whose phrase 'amplifies but does not compound' is quoted to support the narrative and an Xu et al. paper described as 'closest to ours' and used as the main standard. I could not verify these; flagging low confidence that titles, IDs and the characterisations (e.g. 'seven measurement failures', Egashira 'first unlearns') match the sources, since the claimed positioning depends on them.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "References",
+  "related_sections": [
+   "Related Work"
+  ]
+ }
+]

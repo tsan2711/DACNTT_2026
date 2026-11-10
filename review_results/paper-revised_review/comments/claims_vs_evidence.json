@@ -1,0 +1,83 @@
+[
+  {
+    "title": "Categorical \"the model does not adapt to this defect\" in abstract/intro/conclusion/§3.2/App B is stronger than the §5.3 hedge and than the evidence supports",
+    "quote": "the model does not adapt to this defect",
+    "explanation": "The abstract (\"the model does not adapt to this defect\"), the introduction (\"the model does not learn to avoid it\"; Contribution 1 \"for that defect the model does not adapt\"), §3.2, App B and the conclusion (\"so the model does not learn to avoid it\") all state the r_t result as a flat negative. §5.3(i), the only place the test is defined, says something weaker: \"it rules out strong adaptation to this defect, not weak adaptation or adaptation to others\", with \"no interval on r_t\". The data behind the result are thin, and the headline claims leave this out. (a) Three runs, all Run A on MATH-500: one at 10−5, which the paper itself says \"changed the outputs little\" (§1, §4.2, §4.4), so a flat r_t there is expected whether or not adaptation pressure exists; and two seeds at 5×10−4 with rounds R0–R2, where R0 is the untrained base, so each run has only two trained checkpoints. (b) There are no intervals and no trend test. A 15.5–18.4% band is about 3 points wide, which is not obviously narrower than the sampling noise of a share computed on a few hundred V′-accepted generations whose count also falls as accuracy falls. (c) The denominator (V′-accepted generations) changes with training: as accuracy falls the mix of solved problems shifts, and if compound-answer problems (where the defect bites) are lost at a different rate than others, a change in the mix can hide or fake a trend. The paper does not report r_t on a fixed problem set. (d) Under restart-from-base each round trains a fresh LoRA adapter for one epoch on a few hundred examples, so the room for cumulative adaptation is limited by design. That bears on whether a flat r_t says anything about GVT in general. (e) App B notes that r_t assumes V′ accepts no wrong answer, which was not measured. Given (a)–(e), the honest headline is the §5.3 wording: \"no evidence of strong adaptation to this one defect in three runs\". The abstract should use that wording, not \"does not adapt\". The abstract follows this with \"Nor does it improve\", which presents both branches of the research question as settled negatives. The introduction's own framing (\"the pre-set rule is silent\") and §5.1 (\"The data cannot settle this\") say the second branch is open.",
+    "comment_type": "logical",
+    "confidence": "high",
+    "source_section": "Abstract",
+    "related_sections": ["1 Introduction", "7 Conclusion", "5.3 A Proposed Audit for GVT with a Biased Verifier", "5.1 Answer to the Research Question", "3.2 The Verifier and Its Directional Bias", "B The Verifier in Full"]
+  },
+  {
+    "title": "Title and Contribution 1 headline a post hoc, unvalidated test; its power, its learnability condition and its confounds are not shown",
+    "quote": "A Direction-Free Test of Verifier Adaptation",
+    "explanation": "The title, the abstract (\"We propose a test that separates the two\") and Contribution 1 present the r_t test as the paper's main methodological contribution, and say it \"separates\" mathematics from verifier learning and \"applies to RLVR as well as to SFT\". §5.3 itself says the four checks \"were defined post hoc here; we offer them as a protocol for future studies, not as tested methods\", and \"We have not run it on RL checkpoints.\" Nowhere does the paper show the test can detect adaptation. There is no positive control: no run, synthetic or real, in which the model is known to learn a verifier-accepted form and r_t falls. So a flat r_t cannot be told apart from a test with no power. Two validity conditions are also left open. (1) Learnability: r_t can fall only if V accepts some correct form on the problems the defect affects. For the gold-storage defect the bare gold is parsed to its first number (App B), so it is not shown that any correct form V accepts exists for those problems. If none does (as with the 51 unparseable golds, which \"never enter the training pool\"), the defect cannot be learned and a flat r_t is guaranteed. (2) Separating adaptation from drift: the re-score wraps the gold only \"when the prediction contains\" \\boxed, so any general move away from \\boxed lowers r_t mechanically. The test then has the same imitation-versus-drift ambiguity the paper uses to set aside the \\boxed measure (§4.4, App G). It is also fragile to accuracy-driven changes in the problem mix, so \"direction-free\" holds only to a first approximation. Applying it to public RLVR checkpoints needs a known, frequent defect in *their* verifier. The defect used here is a bug in this pipeline's gold storage, not a property of math-verify, so it does not carry over. A title, abstract and contribution list that lead with this test should say plainly, at least in the abstract and Contribution 1, that it is a post hoc proposal with untested sensitivity. The defensible headline is the negative empirical result (no detectable gain, declines at high LR) together with a proposed audit.",
+    "comment_type": "logical",
+    "confidence": "high",
+    "source_section": "Title / 1 Introduction (Contributions)",
+    "related_sections": ["Abstract", "5.3 A Proposed Audit for GVT with a Biased Verifier", "B The Verifier in Full", "G Higher Learning Rates in Full", "7 Conclusion"]
+  },
+  {
+    "title": "The falling \\boxed share is a plausible sign of adapting to the gold-storage defect, and the paper does not reconcile it with \"no adaptation\"",
+    "quote": "A model imitating its less-boxed training data would move the same way",
+    "explanation": "By App B and §3.2, the gold-storage defect rejects only correct *boxed* predictions: math-verify fully parses LaTeX only inside \\boxed{}/$…$, and the re-score wraps the gold only when the prediction is boxed. So the training verifier V specifically penalises \\boxed answers on compound-gold problems, and the V-filtered pool is depleted of exactly those answers. App G finds that the finished generations' \\boxed share falls from above the pool's level to below it (95.6%→69.7%, 98.5%→82.9%), \"which imitation of the pool and drift would both produce\". Imitating a pool that V has stripped of boxed answers *is* learning what V accepts. So the paper's own style measure is consistent with adaptation to this very defect, while the abstract and conclusion state that the model does not adapt to it. The two can be reconciled: a flat r_t alongside a falling \\boxed share would mean the drop in boxing is not concentrated on defect-affected answers. But the paper does not make that argument. It also does not say how much of the pool's lower \\boxed share comes from the gold-storage defect rather than from truncated or cap-hit examples, as App G assumes. Without this, the conclusion's pairing of \"cannot separate imitation from drift\" with \"does not learn to avoid it\" is internally loose. Suggested check: report the \\boxed share separately on compound-gold versus other problems over rounds.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "G Higher Learning Rates in Full",
+    "related_sections": ["Abstract", "7 Conclusion", "4.4 Higher Learning Rates", "B The Verifier in Full", "5.1 Answer to the Research Question"]
+  },
+  {
+    "title": "\"Finished solutions become 5–11 points less accurate\" drops the matched-metric caveats and mixes run types",
+    "quote": "5–11 points less accurate",
+    "explanation": "The abstract states as fact, without marking it post hoc, that at the highest rate finished solutions become 5–11 points less accurate. Contribution 4 says \"finished generations lose 5.5–10.6 points against the untrained model on the same problems\". The evidence (Table 5 \"Finished, matched\", Table 11, App H) carries caveats that neither statement keeps. (a) The metric is post hoc and \"conditions on an outcome of training and is descriptive, not a causal effect\" (App H). (b) It is not \"on the same problems\": 22–45 of the 150 problems with no finished last-round sample drop out, the rest are reweighted, and for 6–21 problems the baseline is replaced by all-sample accuracy, which biases it. (c) The 5.5–10.6 range covers six runs, including the two no-filter runs. Those have no verifier in the loop and 3–4× the optimizer steps, and the top value (−10.6) is no-filter seed 1. Verifier-filtered self-training alone gives 5.5–9.1. The replicate and 1,024-limit runs at the same rate (App H: −5.0, −5.7) are left out. (d) One of the six intervals (A seed 2, [−11.7, 0.1]) includes zero. (e) The abstract places the phrase right after \"accuracy falls in every run\", which includes GSM8K Run C (−12.1 matched) and train-on-gold (−25.6/−25.9), both outside 5–11. So the scope of \"5–11\" is unclear. (f) Table 7's \"Finished\" decomposition part, a different quantity, is only −2.7 to −6.0 at the same rate. Readers may mix the two up, and the abstract does not say which one it reports. Suggested wording: \"in a post hoc matched comparison, finished generations of verifier-filtered runs at the highest rate are 5.5–9.1 points less accurate (one of four intervals reaching zero)\".",
+    "comment_type": "technical",
+    "confidence": "high",
+    "source_section": "Abstract",
+    "related_sections": ["1 Introduction (Contributions)", "4.5 Anatomy of the Decline", "H Anatomy of the Decline in Full", "4.4 Higher Learning Rates"]
+  },
+  {
+    "title": "Introduction and Contribution 4 present the cap-hit rise without the conclusion's \"clearly only at one seed\" caveat",
+    "quote": "the cap-hit share rises only at that rate",
+    "explanation": "The introduction says what appears at the highest rate is lower finished accuracy \"and more generations that run out of tokens\". Contribution 4 says \"the cap-hit share rises only at that rate\". Both read as a finding that holds across runs at 5×10−4. App H and Table 7 show otherwise: at seed 1 the rise in A (+3.0 [−1.7, 7.7]) and no-filter (+2.3 [−2.5, 6.8]) has an interval including zero, \"about the size of two samplings of the untrained model\", and the replicate (−0.2) and the 1,024-limit run (+0.7) \"do not rise at all\". Termination contributes \"clearly only at one seed\", and the cap-share part ranges from 12–30% to 52–72% depending on seed/partition. The conclusion and App H state this correctly. The introduction and Contribution 4 should carry the same caveat (e.g. \"rises clearly only at the highest rate and at one of two seeds\"). Otherwise the front matter suggests a robust termination effect that the evidence does not support.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "1 Introduction",
+    "related_sections": ["4.5 Anatomy of the Decline", "H Anatomy of the Decline in Full", "7 Conclusion", "5.3 A Proposed Audit for GVT with a Biased Verifier"]
+  },
+  {
+    "title": "\"Nor does it improve\" and \"negative on the first branch\" treat a failure to detect a gain as evidence of absence, and quote the 2.2-point bound on the scale the paper says is shrunk",
+    "quote": "Our answer is negative on the first branch.",
+    "explanation": "The abstract (\"Nor does it improve.\") and the introduction (\"Our answer is negative on the first branch\") state a negative. The evidence supports only \"no gain detected\". §5.1 and the conclusion say so (\"Not detectably\"; the bound is \"not an equivalence test\"), and on pass@1 and pass@k the upper interval ends reach +8.0 and +7.3, so moderate gains on the pre-registered measures are not excluded. The abstract's 2.2-point bound has three problems. It uses sample accuracy, which was chosen as primary after the runs. It is read off observed intervals. And it is on the original-verifier scale, which App B says shrinks \"every original-verifier difference and interval, including the 2.2-point bound on gains, which on the re-scored scale is nearer 3 points\". The abstract mentions only training-seed variance. A reader of the abstract would take 2.2 points as a calibrated upper bound on the true effect. The abstract should say \"no detectable gain\", mark sample accuracy as post hoc, and give the bound as ≈3 points on the corrected scale, or at least flag that the verifier defect shrinks it. The 0.73–0.78 understatement factor is itself estimated from three self-training runs only (App B: \"an extrapolation from these three\").",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "1 Introduction",
+    "related_sections": ["Abstract", "5.1 Answer to the Research Question", "7 Conclusion", "B The Verifier in Full"]
+  },
+  {
+    "title": "\"On the four measures fixed in advance no run improves detectably\": two of the four measures have no notion of improvement or no interval",
+    "quote": "no run improves detectably",
+    "explanation": "The four pre-set measures (§1) are pass@1, pass@k, \\boxed style share, and per-problem transitions. Only pass@1 and pass@k have bootstrap intervals (Table 5), so \"detectably\" is defined only for them. Style is not a measure of mathematical improvement at all. Transitions are reported as raw added/lost counts with no interval, and §5.1 states that \"In every MATH-500 run but one, the problems lost equal or outnumber those gained\". For example, Run A seed 3 at 10−4 has 16 added / 14 lost (Table 4), a net gain on that measure. The conclusion's sentence extends a claim established for two measures to all four. It should say \"neither pass@1 nor pass@k improves detectably in any run, and transitions are net-negative in all but one MATH-500 run\".",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "7 Conclusion",
+    "related_sections": ["1 Introduction", "5.1 Answer to the Research Question", "4.4 Higher Learning Rates"]
+  },
+  {
+    "title": "Abstract calls both controls \"underpowered\"; the no-filter control is dose-confounded, not underpowered, and shows a directional result",
+    "quote": "that patch a rarer defect or remove the filter are underpowered and show",
+    "explanation": "\"Underpowered\" fits the \\dfrac patch, whose treatment changes 0–4 training examples (§4.3, App F). It does not describe the no-filter control. That control changes the training data massively (1,400 unfiltered examples against about 440 filtered, 3–4× the optimizer steps), so its problem is a dose/data confound, not a weak treatment (App G: \"dose and data differ at once\"). It is also not simply \"no consistent difference\": removing the filter lowers pass@4 at both seeds (−2.0, −5.3), and one sample-accuracy interval excludes zero in favour of the filter (−5.5 [−9.2, −1.8] at seed 2). The conclusion describes this more accurately (\"removing the filter lowers pass@4 at both seeds, within noise; single-seed intervals sometimes exclude zero\"). The abstract should say the no-filter control is confounded by dose and weakly favours the filter on pass@4.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "Abstract",
+    "related_sections": ["4.4 Higher Learning Rates", "G Higher Learning Rates in Full", "7 Conclusion", "4.3 The Patch Control Could Not Detect an Effect"]
+  },
+  {
+    "title": "Three different figures for the defect's rejection share (15.5–18.4%, \"about one in six\", 17%/20% of pass@1) rest on different denominators",
+    "quote": "20% throughout at 10−5",
+    "explanation": "The abstract and §3.2 give 15.5–18.4% of V′-accepted generations over all 500 problems. The introduction and conclusion round this to \"about one in six\". §5.3 and App B then add that, as a share of re-scored exam pass@1, the defect rejects 17% at seed 1 but \"20% throughout at 10−5\". That is one in five, outside the 15.5–18.4% band quoted as \"every round\" of the same runs. The difference comes from denominators: all samples on 500 problems versus first-sample pass@1 on the 150-problem exam. The paper does not say this, and §5.3 puts the two figures side by side as if they measured the same r_t. This matters because r_t's flatness is the main evidence for the \"no adaptation\" claim. The paper should state which denominator defines r_t, give r_t per round and per run in a table, and explain why the exam share differs.",
+    "comment_type": "technical",
+    "confidence": "low",
+    "source_section": "5.3 A Proposed Audit for GVT with a Biased Verifier",
+    "related_sections": ["Abstract", "1 Introduction", "7 Conclusion", "B The Verifier in Full", "3.2 The Verifier and Its Directional Bias"]
+  }
+]
