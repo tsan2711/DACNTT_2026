@@ -99,7 +99,8 @@ can only fire when accuracy rises (Section~\ref{sec:answer}). Only these
 measures and the rule were fixed in advance. The higher learning rates, the
 controls, the round count and $k$ at those rates, sample accuracy as primary
 measure, the termination measures and the re-scoring for a second verifier
-defect were all chosen after seeing earlier runs; we mark them as post hoc.
+defect, and the final 500-problem round
+(Section~\ref{sec:final}) were all added after seeing earlier runs; all are post hoc.
 
 Our answer is negative on the first branch, within the power of the design:
 we detect no improvement on held-out problems at any learning rate we tried,
@@ -248,7 +249,7 @@ generations $V'$ accepts. It would enlarge the round-0 kept pool by about a
 fifth to a quarter ($440\to542$, $+23\%$), against $0$--$4$ examples for the \verb|\dfrac| patch, and
 it lowers absolute pass@1 by $4.7$--$8.0$ points in self-training. It is bound
 to the problem, not to the answer: on the $54$--$62$ problems where it ever
-fires, it rejects $94$--$98\%$ of correct answers in every round, and $29$--$34$
+fires, it rejects $94$--$98\%$ of correct answers in every round ($87$--$98\%$ where $V$ parses the gold), and $29$--$34$
 of these problems have a gold the original verifier cannot parse at all, so no
 answer form avoids it there. Re-scored, sample accuracy still falls in all five
 runs we re-scored; the original-verifier changes are $0.73$--$0.85$ of the
@@ -546,11 +547,8 @@ Train on gold         & 350  & 31.3 & 8.7 & 10.0 & 51.3 & 28.7 & 30.7 \\
 This subsection is post hoc and descriptive. Sample accuracy mixes whether a
 finished solution is right with whether the model finishes within the
 $512$-token cap at all. Re-tokenising the saved text, we call a generation
-\emph{cap-hit} at $\ge508$ tokens. The untrained model already hits the cap in
-$41$--$48\%$ of MATH-500 generations, so the cap binds from the start. An
-earlier character-length proxy for unfinished generations overstated
-termination, because drifting prose crosses its threshold within the same token
-budget. At $5\times10^{-4}$, compared with the untrained model on the same
+\emph{cap-hit} at $\ge508$ tokens. At the rates where the share does not rise, $40$--$46\%$ of round-2 MATH-500 generations
+already hit the cap (Table~\ref{tab:lrseries}), so the cap binds from the start. At $5\times10^{-4}$, compared with the untrained model on the same
 problem mix, finished generations lose $5.5$--$10.6$ points, with intervals
 excluding zero in five of six runs (the six include two same-seed A/B pairs,
 which are close to replicates), while the cap-hit share rises $2$--$14$ points.
@@ -562,11 +560,8 @@ three original seed-1 runs (and $-2$ and $5\%$ in the replicate and the
 $1{,}024$-limit run) and $52$--$72\%$ at seed~2 (Table~\ref{tab:decomp}, Supplementary Appendix~\ref{app:anatomy}). At
 $10^{-4}$ and $2\times10^{-4}$ the cap-hit share does not rise and finished
 accuracy carries the whole change. Train-on-gold is different: responses
-shorten by more than half and finished accuracy collapses. Retraining without
-truncated examples changes little within the noise of single runs; re-scoring
-adapters at a $1{,}536$-token cap leaves their deficit in place, and the
-character proxy there points to generations that do not stop rather than to
-less accurate finished ones (Supplementary Appendix~\ref{app:anatomy}).
+shorten by more than half and finished accuracy collapses. Retraining without truncated examples, or re-scoring at a $1{,}536$-token
+cap, leaves the deficit in place (Supplementary Appendix~\ref{app:anatomy}).
 
 \subsection{A Final Round with a Corrected Recipe}
 \label{sec:final}
@@ -643,15 +638,13 @@ cannot say whether pooling, selection-set scoring or dose produced it.
 
 An earlier version explained the Design~P curves by a self-reinforcing
 shrinking pool shaped by the biased verifier. The data neither support nor rule
-it out: the patch tests how strong a rare bias is, not whether a frequent bias
-compounds, and the no-filter control declines without any verifier but with more
-dose. The defensible statement is narrow: \emph{removing a format defect present
+it out: the patch tests a rare bias, not a frequent one, and the no-filter
+control declines without any verifier but with more dose. The defensible statement is narrow: \emph{removing a format defect present
 in under $1\%$ of generations, or removing the filter entirely, made no
 consistent difference at the resolution of this setup}. The frequent
-gold-storage defect was never varied, and the no-filter control admits
+gold-storage defect was not varied in the main runs, and the no-filter control admits
 unstructured wrong answers, not the systematic false positives Egashira et
-al.\ find harmful, so neither tests their findings for RLVR. Untested practices
-are listed in Supplementary Appendix~\ref{app:discussion}.
+al.\ find harmful, so neither tests their findings for RLVR.
 
 \subsection{A Proposed Audit for GVT with a Biased Verifier}
 \label{sec:audit}
@@ -681,7 +674,7 @@ answers enter only the denominator, and the fall matches the falling
 $5\times10^{-4}$). On boxed answers alone $r_t$ is flat (changes $-0.4$ to
 $+0.7$ points). The defect is also bound to the problem: it fires on only
 $54$--$62$ of the $500$ problems, where it rejects $94$--$98\%$ of correct
-answers in every round, and $29$--$34$ of them have a gold that $V$ cannot
+answers in every round ($87$--$98\%$ where $V$ parses the gold), and $29$--$34$ of them have a gold that $V$ cannot
 parse, so no answer form could escape it there. On the $24$--$28$ affected
 problems where some form could, $r_t$ moves by $-5.5$, $-1.6$ and $-0.2$
 points, with intervals $10$--$26$ points wide. A model adapting to the
@@ -767,21 +760,20 @@ cover only problem draw and sampling,} not training-seed variance; several
 conditions have one seed, and no multiplicity correction is applied. \emph{The
 learning-rate grid is coarse} and changes $k$, rounds, dose and metric along
 with the rate. \emph{The power is limited:} with $150$ exam problems only
-gains of about $10$ points of pass@1 would be detected ($6$ with the $500$ of
+only gains of about $10$ points of pass@1 would be detected (about $6$ with the $500$ problems of
 Section~\ref{sec:final}, a single seed at one rate with $k=2$ and two rounds).
 \emph{The adaptation audit is weak:} $24$--$28$ problems, $2$--$12$ training
 examples per round that could teach the avoidance, and no positive control.
 \emph{The verifier audit} used other models' solutions and inspected only
 rejections; the gold-storage defect was measured afterwards and ran unvaried
-through every run, and every headline number is graded by the biased verifier
+through every run before the final round, which normalised the gold, and every headline number is graded by the biased verifier
 that also selects the data. \emph{Truncation:} the $512$-token cap binds from
 the start and truncates a quarter of the pool in the main runs. \emph{Scope:}
 one model family and size, one verifier, a restart-from-base design that leaves
 compounding little room, and possible test-set contamination. \emph{No arm
 improves on round~0, and the gate on reference solutions failed even with the
 corrected recipe,} so we have no positive reference showing that any recipe
-can help a 1.5B model here. Supplementary Appendix~\ref{app:limitations} gives
-the full list.
+can help a 1.5B model here. The Supplement lists the rest.
 
 \section{Conclusion}
 \label{sec:conclusion}
@@ -789,7 +781,7 @@ the full list.
 We asked whether generate--verify--select--train iterations make a 1.5B model
 better at mathematics or only teach it to write what a rule-based verifier
 accepts. On held-out exams the first answer is no gain that this design could
-detect: no run improves pass@1 or pass@$k$, though gains below about $10$ and
+detect: no run shows a pass@1 or pass@$k$ gain whose interval excludes zero, though gains below about $10$ and
 $8$--$10$ points could have been missed ($6$ in a final $500$-problem round,
 where pass@1 falls $4.8$ points), and the sample-accuracy bound of about $2.2$
 points is loose because it omits training-seed variance. No arm improves, and
@@ -804,10 +796,10 @@ about $25$ affected problems, a handful of training examples per round and no
 positive control it cannot rule such learning out. Most clearly at the highest
 rate the model becomes less accurate on the solutions it does finish, and more
 generations hit the token cap, clearly at one of two seeds. Patching a rare
-verifier defect and removing the filter made no difference of consistent sign,
-neither control could have detected a small effect, and a frequent defect in our
-gold storage, which rejects about one in six correct solutions, ran unvaried
-through every experiment. A sharp decline seen in an earlier pooled design does
+verifier defect made no difference of consistent sign across seeds, removing the
+filter gave no gain, neither control could have detected a small effect, and a
+frequent defect in our gold storage, which rejects about one in six correct
+solutions, ran unvaried through every run before the final round. A sharp decline seen in an earlier pooled design does
 not reproduce under isolation, and because that design also trained several
 times longer per round we leave its cause open.
 
