@@ -816,3 +816,6 @@ Trước: thân bài hết trang 16, references trang 17–18 (tổng 39 trang).
 - Bỏ ghi chú lịch sử phiên bản đầu file, thay đường dẫn nội bộ bằng tên script trong repo.
 - Related Work: nêu rõ khác biệt so với Xu et al. (quy mô, verifier rule-based có lỗi đo được, kiểm toán pool).
 - Còn lại (chờ số liệu mới): rút bài từ 17 xuống ≤15 trang, tiêu đề/abstract, thống nhất điểm các bảng bằng một pipeline.
+
+## Chốt số r_t (2026-11-10)
+Script chuẩn là `experiments/viec3/review_cpu/rt_audit.txt` (Bảng 4). Khoảng đúng: **15.5–18.3%** (R0 18.3/16.8/15.7). Con số 18.4 ở các mục trên đến từ script `scored/`+`patched/` cũ, lệch 1–2 mẫu, không dùng nữa. `paper_main.tex` và `supplementary.tex` đã dùng 18.3; `paper_revised.tex` là bản cũ, giữ nguyên.
