@@ -1205,8 +1205,9 @@ of pass@$k$ and $3.5$--$5.5$ of sample accuracy (Section~\ref{sec:config}).
 Section~\ref{sec:audit} was defined after the runs, covers one defect class
 whose effect is bound to $54$--$62$ problems (only $24$--$28$ of them escapable
 by any answer form), rests on $2$--$12$ training examples per round that could
-teach the avoidance, and has no positive control showing it would detect
-adaptation that did occur.
+teach the avoidance, and its one positive control (a 30\% injected
+\verb|\boxed| bias, one seed, Section~\ref{sec:final} of the main paper) showed
+no selective avoidance, so we do not know it would detect adaptation.
 \item \emph{Confounded learning-rate grid and one model family.} The higher
 rates also use $k=4$, three rounds and smaller pools, so only comparisons among
 them isolate the rate. All runs use Qwen2.5 models, whose behaviour under RL
