@@ -1,0 +1,150 @@
+[
+ {
+  "title": "Identity treated as explanation, yet the boxed-share fall is the very adaptation channel",
+  "quote": "an identity, not a test, which does not",
+  "explanation": "r_t = r_boxed x (boxed share) is an algebraic decomposition that holds under every hypothesis, adaptation or not, so it cannot 'account for' the fall; it only re-expresses it. Worse, the only way a policy can escape the gold-storage defect on a problem with parseable gold is to stop writing \\boxed there, so a falling boxed share is precisely the mechanism by which adaptation would show up. Attributing the fall to the share and then calling it 'no evidence of adaptation' treats the main adaptation route as a nuisance factor. The honest reading is that the data do not identify non-selective unboxing (generic SFT damage, shorter/capped outputs) versus selective avoidance; 'accounted for' overstates, and the evidence is the (weak) r_boxed term, whose intervals (about +-3) contain the whole fall.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "5.3 A Proposed Audit",
+  "related_sections": [
+   "Abstract",
+   "1 Introduction",
+   "Table 5"
+  ]
+ },
+ {
+  "title": "r_boxed 'flat' is not a usable reference: the gold arm shows r_boxed drifting by as much as the effect",
+  "quote": "rt drifts as much as the falls we observe",
+  "explanation": "The argument needs r_boxed to be a stable quantity so that the fall can be assigned to the boxed share. But the train-on-gold arms (no verifier in the loop) move r_boxed by +2.8 and +1.7, comparable to the self-training changes (-0.4 to +0.7 on boxed, -1.5 to -2.6 overall). Together with intervals of +-3 this means r_boxed's change is unresolved in both directions; the decomposition cannot be closed. Also, the denominator (V'-accepted set) changes composition as accuracy falls, which moves r_t independent of both factors; neither a composition-adjusted nor a fixed-problem-set version is reported.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "5.3 A Proposed Audit",
+  "related_sections": [
+   "Table 5"
+  ]
+ },
+ {
+  "title": "'Affected, parseable' subset is defined by the outcome and regresses to the mean",
+  "quote": "problems where some form could, rt moves by −5.5, −1.6 and −0.2 points",
+  "explanation": "The subset (problems where the defect 'ever fires') is selected using the same generations in which r_t is later measured; a problem enters only if a boxed correct answer was produced and rejected in some round. This conditioning forces r_t on this subset near its ceiling at round 0 (92-95%) and makes later values fall back by construction (regression to the mean), independent of any learning. Likewise the headline 'rejects 94-98% of correct answers in every round' on problems where it ever fires is a selection-induced rate, not an estimate of the defect's per-problem hit rate. A subset fixed from round 0 only, or from an independent sample, is needed.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "5.3 A Proposed Audit",
+  "related_sections": [
+   "3.2 The Verifier and Its Directional Bias",
+   "Table 5"
+  ]
+ },
+ {
+  "title": "The studied 'verifier bias' is a harness integration defect, yet conclusions are framed about rule-based verifiers",
+  "quote": "so a correct boxed prediction can fail against a bare gold",
+  "explanation": "The dominant defect arises because the authors store the gold without delimiters; math-verify used as documented (gold parsed with delimiters) would not exhibit it, and V' is simply the correct call. The 29-34 of 54-62 affected problems with unparseable gold are a different cause (parser limits) folded into the same count. The title question ('Mathematics or the Verifier?'), the RLVR framing, and the claim that bias in 'a rule-based verifier' was studied overreach: the experiment shows what a mis-wired pipeline does, not what verifier bias does. The 4.7-8.0 point pass@1 'cost' is a scoring artefact of the defect, not evidence of biased selection pressure, and V' itself has no false-accept check (only rejections were audited).",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "3.2 The Verifier and Its Directional Bias",
+  "related_sections": [
+   "Abstract",
+   "1 Introduction",
+   "5.3 A Proposed Audit"
+  ]
+ },
+ {
+  "title": "Gate failure is read as 'null belongs to this recipe', but the failed control makes the null uninformative",
+  "quote": "gate failed, the null belongs to this recipe",
+  "explanation": "A positive control that fails shows that the experiment cannot discriminate a gain from no gain; the logical consequence is that the null is uninformative about the recipe, not that it is a finding about the recipe. The paper's own gate text says the recipe 'cannot be called corrected' and the failure may be a pipeline defect. If the pipeline is defective, the loop's null inherits that defect. Scoping the claim to 'this recipe' then converts an inconclusive experiment into a recipe-specific negative. The scope restriction is a hedge on generality, not a licence to call the result a null for the recipe; the title 'A Null Result for One Recipe' presupposes that the recipe was fairly tested.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "5.1 Answer to the Research Question",
+  "related_sections": [
+   "Abstract",
+   "4.6 A Final Round",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "Gate failure is plausibly a measurement artefact of the grader, and gold SFT is not a valid positive control for an instruct model",
+  "quote": "That style carries no \\boxed answer, which both graders read,",
+  "explanation": "The prompt requires \\boxed; the gold arm teaches $-delimited reference style with no \\boxed, and both graders only read \\boxed. A model trained this way scores near zero regardless of mathematical competence, so the -32 point 'collapse' may simply be unscorable output (the authors note both graders depend on \\boxed but do not grade by last $-span / last number). Separately, off-policy terse reference solutions are not expected to raise accuracy of an already-instruction-tuned model (the cited Kim et al. result is that such SFT can lower it), whereas the loop trains on on-policy samples; so the gate may not be a positive control for the loop at all. In either case the failed gate does not bear on whether the self-generated-data arm could help, and the 'recipe passes if gate passes' criterion is unjustified. Earlier 1e-5/k=8 runs (Table 2, the bulk of the evidence) never had a gate at their settings; the 5e-4 gold arms came with different loss/targets.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "4.4 Higher Learning Rates",
+   "5.1"
+  ]
+ },
+ {
+  "title": "No filter-free/random-data control in the final round: loop decline cannot be separated from generic SFT damage, yet is hedged inconsistently",
+  "quote": "it costs accuracy, and we did not isolate the cause",
+  "explanation": "All three loop seeds fall and the t-interval [-6.1,-2.1] excludes zero, yet the text refuses to claim a cost. The simplest alternative explanation (any SFT under this pipeline lowers accuracy: repetition penalty, fp16, unmasked or capped formats, style shift) is untested because the final round has no no-filter or shuffled-label arm; the gate failing in the same pipeline points the same way. The paper therefore cannot distinguish 'verifier-filtered self-training does not help' from 'this training stack harms', which is what 'null belongs to the recipe' needs to settle but cannot. Also inconsistent standards: a CI excluding zero is discounted here, whereas intervals that exclude zero are used to support the 5.5-10.6 finished-accuracy loss at 5e-4.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "5.1",
+   "Limitations"
+  ]
+ },
+ {
+  "title": "Cap-share decomposition is unstable and non-unique, but is promoted to a headline finding",
+  "quote": "attributes 12–30% of the decline to the cap share in the three original seed-1",
+  "explanation": "The cap share ranges from -2% to 72% across runs, i.e. the decomposition does not replicate and its sign changes; yet the contribution list and introduction present 'lower accuracy on the solutions the model does finish' as what 'appears most clearly'. A three-part decomposition with an interaction term has an order-dependent apportionment, so the percentages are not uniquely defined. The matched measure conditions on which problems finish post-training (selection into the finished set), which the paper concedes is only descriptive, and the cap-hit proxy (re-tokenised >=508) is approximate. With 40-50% of generations already capped at baseline and 24-26% of training examples truncated of their final answer and EOS, the cap may also be the cause of finished-accuracy loss (training on truncated, answer-less targets), not a separable component. Same-seed A/B pairs are replicates and B-A flips +5.3 to -7.3 from 0-3 example differences, so interval-based claims at problem level understate run-to-run variance.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "4.5 Anatomy of the Decline",
+  "related_sections": [
+   "1 Introduction",
+   "5.3 (ii)",
+   "Table 2"
+  ]
+ },
+ {
+  "title": "'Finished accuracy carries the whole change' at lower rates rests on point estimates whose intervals include zero",
+  "quote": "At 10−4 and 2 × 10−4 the cap-hit share does not",
+  "explanation": "The claim that the cap share plays no role at 1e-4 and 2e-4 is drawn from cap-hit shares at round 2 only; Table 2's matched column at those rates is mostly consistent with zero (e.g. -4.3 [-9.6,1.1], -3.5 [-9.2,2.3], -0.6 [-6.0,4.7]). Sample accuracy falls 3-4 points at 1e-4 and 5e-4 seed 2 alike (3.7 vs 4.7) while cap-hit share differs; this shows the decline is not explained by the cap share, but also that the rate-dependence of the 5e-4 'finished-accuracy' loss is not established. The narrative of a rate-driven, finished-accuracy decline mixes a well-supported seed-1 pattern with a flat seed-2 pattern.",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "4.5 Anatomy of the Decline",
+  "related_sections": [
+   "4.4 Higher Learning Rates"
+  ]
+ },
+ {
+  "title": "Pooled-vs-isolated confound list is incomplete; 'absent in isolated runs' is overstated",
+  "quote": "decline is absent in the isolated runs at 10−5,",
+  "explanation": "The paper names dose and pooling, but Design P also differs in: evaluation on the selection problems themselves (selection == eval, so lost problems drop out of the pool and the pool shrinks as a function of what is evaluated), no held-out set, two datasets with very different solution lengths (Run C alone declines 12.7), a 0.5B/1.5B pair, and an accelerating pool-shrinkage feedback that the isolated runs, with a separate exam, cannot reproduce. Isolated runs do decline (pass@1 -2.7 to -12.7 at 1e-5, up to -22 on GSM8K at 5e-4), so 'absent' is a statement about magnitude only. The shrinking-pool hypothesis is also said to be neither supported nor ruled out, yet the no-filter arm (constant pool) declines too, which actually argues the shrinkage is not necessary for decline. No dose-matched isolated run exists (they could have trained Run A at 5e-4 for 5 rounds on the pooled dose), so the confound is never reduced.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "4.1 Design P: An Apparent Collapse",
+  "related_sections": [
+   "7 Conclusion",
+   "5.2 Interpretation",
+   "3.3"
+  ]
+ },
+ {
+  "title": "Injected-bias controls: content rule is 'visible' only in the gold, not to the model, and a one-round test cannot calibrate multi-round adaptation",
+  "quote": "every \\boxed answer is rejected when the gold contains \\frac",
+  "explanation": "The model sees the problem, not the gold, so the rule is learnable only insofar as problem text predicts a \\frac gold. Moreover the control runs a single adapter on 49 penalised problems for one round at k=2, while the real audit spans several rounds, a different dose (2-12 avoidance examples) and a different penalty (a rejected correct answer, not a blanket rule). The negative result (+2.8 in the wrong direction) is thus evidence that this setting does not elicit avoidance at all, which is itself informative about the expected adaptation to the real defect (probably none), yet the paper says both are uninformative and 'expects weak pressure (untested)'. The framing as 'intended positive controls' that 'turn out not to be' is therefore too pessimistic in one place and the audit's detectability remains unquantified in another.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "5.3",
+   "Limitations"
+  ]
+ },
+ {
+  "title": "Null-for-gains is asserted with no equivalence test while point estimates are consistently negative",
+  "quote": "Not detectably. No run raises pass@1",
+  "explanation": "'Not detectably' is a power-limited statement (about 10 points at 150 problems, 6 at 500), not support for a null; the design could not rule out gains of 8-10 points and, for pass@1, almost all estimates are negative. The paper's own bounds use h that omits training-seed variance, which it says is as large as 7 points. Calling the study 'A Null Result' and writing the conclusion around 'no gain at any rate' blends absence of evidence with evidence of absence; combined with the failed gate, the study supports neither 'self-training helps' nor 'self-training does not', yet the title and flow suggest a negative finding about the recipe.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "5.1 Answer to the Research Question",
+  "related_sections": [
+   "Abstract",
+   "Title",
+   "3.4 Uncertainty"
+  ]
+ }
+]

@@ -1,0 +1,156 @@
+[
+ {
+  "title": "Detectable-effect thresholds are optimistic yet presented as the design's sensitivity; seed variance is not estimated",
+  "quote": "these are optimistic thresholds, not bounds:",
+  "explanation": "The 2.8h/1.96 rule (z_0.975+z_0.8 = 2.8) is correct, but h comes from a problem-level bootstrap on a fixed 150-problem exam and omits training-seed variance. The paper's own evidence says that omitted term is larger than h: B-A flips from +5.3 to -7.3 (a 12.6-point swing, versus a stated pass@1 threshold of about 10), and the only 'gauge' is one replicate pair 3.2 points apart that is never identified (which runs, which round) and mixes partition and training variance. One pair gives a variance estimate with 1 degree of freedom, so the true minimum detectable effect is unquantified and plausibly much larger than 10 (pass@1) or 3.5-5.5 (sample accuracy). Yet the Contributions and Section 4.2 say the design reports 'the smallest effects the design could detect' and that 'a gain of the size the design could detect' is not seen. That sentence is only meaningful if the threshold is real; as written it is a lower bound on the MDE, so the null is weaker than the framing suggests. A seed-level variance estimate (>=3 seeds per cell, or a mixed model with seed as a random effect) is needed to state a usable MDE.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "3 Setup 3.4 Uncertainty / Detectable effects",
+  "related_sections": [
+   "4.3 Patch control",
+   "4.4 Higher Learning Rates",
+   "1 Introduction (Contributions)"
+  ]
+ },
+ {
+  "title": "'Seed' semantics contradict the fixed trainer seed",
+  "quote": "gradient clipping 1.0 and trainer seed 42",
+  "explanation": "Section 3.3 defines a seed as setting the exam partition, selection set and training randomness at once, and 3.4 says Python and torch seeds are set from the run seed. But the trainer seed is listed as fixed at 42. In HF Trainer/TRL the trainer seed calls set_seed at initialisation and controls data shuffling (and any init performed after it), so it can override the run-seed torch seeding and make data order identical across 'seeds'. If so, what is called seed variation is mostly partition variation, the 'replicate' gauge and the 3-seed t-intervals do not measure training variance as claimed, and the statement 'which we see only across two or three seeds' is not accurate. The paper should state which RNGs (LoRA init, data order, sampling) actually vary with the run seed.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "3 Setup 3.4 Models, Data, Training, Metrics",
+  "related_sections": [
+   "3.3 Two Experimental Designs"
+  ]
+ },
+ {
+  "title": "Non-standard pass@1 and post hoc switch of primary metric",
+  "quote": "so after the runs we chose it as the primary accuracy measure.",
+  "explanation": "pass@1 is defined as correctness of the first of k samples, a single Bernoulli draw per problem. The standard pass@1 (Chen et al.) is the expected single-sample accuracy, which here is exactly the 'sample accuracy' mean over k samples. The preregistered metric is therefore a deliberately noisy estimator of the quantity of interest, which is why its detectable effect is about 10 points, and the headline 'no pass@1 gain detectable' is largely a property of that choice. The more sensitive measure was then adopted after seeing results, and Section 4.4 and later claims about declines ('intervals exclude zero in all four A/B runs') rest on it while the pre-set pass@1 intervals mostly include zero. The disclosure is honest, but the post hoc switch is unequal to the standard applied elsewhere (no multiplicity correction yet decline claims read off the metric that gives exclusion), and 'pass@1' should be renamed (e.g. single-draw accuracy) to avoid confusion with the usual metric. The '2.2-point bound' mentioned here is also not defined in this section.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "3 Setup 3.4 Metrics",
+  "related_sections": [
+   "5.1",
+   "4.4"
+  ]
+ },
+ {
+  "title": "Measurement attenuation by the verifier is not carried into the detectable-effect claims",
+  "quote": "an observed ratio that we do not use to rescale other numbers or intervals",
+  "explanation": "All reported accuracies and thresholds are in units of V, yet V (i) can never accept 51/500 golds (10.2%; 11-18 of 150 exam problems, i.e. 7-12% of the exam is structurally unsolvable and differs by up to 7 problems across partitions), and (ii) rejects 15.5-18.3% of correct boxed answers. The paper's own re-scoring shows V changes are only 0.73-0.85 of V' changes. A true gain of size x would therefore appear as roughly 0.75-0.85x (and only on solvable problems), so the true-effect MDE is larger than the V-unit thresholds in 3.4 by a factor of about 1.2-1.4. Declining to rescale is defensible for descriptive numbers, but the 'a gain of the detectable size is not seen' conclusion and the 80%-power statement are about true capability, so the attenuation should be folded into the MDE or the main results should be re-reported with V'. Also, the statement that the 51-gold offset 'cancels in within-run differences only if those problems would not otherwise change, which we did not check' is checkable from the saved generations and should be checked.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "3 Setup 3.2 The Verifier and Its Directional Bias",
+  "related_sections": [
+   "3.4 Detectable effects",
+   "5.1",
+   "5.3"
+  ]
+ },
+ {
+  "title": "Denominators of the defect/false-reject statistics (r_t) are unclear and not reconciled",
+  "quote": "this pool covers only the 350 selection problems,",
+  "explanation": "The false-reject share is reported as 15.5-18.3% 'over all 500', then 18.8% for the round-0 pool (102/542, which is above the stated range), then 94-98% / 87-98% 'of correct answers' on the 54-62 firing problems, and 29-34 'of these problems' with unparseable gold. These use different units (generations vs problems), different populations (500 problems, 350 selection problems, exam), different runs/rounds (k=4 pool of 440 vs k=8 pool of 872 is not stated; 440 is a k=4 seed-1 number appearing in a section that otherwise describes k=8 runs), and r_t / r_boxed are never formally defined here although the later identity r_t = r_boxed x boxed share depends on them. Saying the pool differs because it covers 350 rather than 500 problems does not explain why the share is higher than every all-500 figure; the exam 150 would have to be much lower. A single table with numerator, denominator, set, run and round for each figure is needed to reproduce them. Note that since V' only differs from V on boxed predictions, r_t is by construction proportional to the boxed share, which the paper acknowledges later.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "3 Setup 3.2 The gold-storage defect",
+  "related_sections": [
+   "5.3 Table 5"
+  ]
+ },
+ {
+  "title": "Probe false-negative rate (7.8%) is not reconciled with the loop-level rejection rate (15.5-18.3%)",
+  "quote": "the false-negative rate is 7.8% (10 of 128; Wilson interval",
+  "explanation": "The probe is used to characterise V's bias, but it measures 7.8% false negatives on 128 solutions from a different model (Qwen2.5-7B), while the 1.5B loop generations show about twice that rate (15.5-18.3% of V'-accepted) from what is described as the same defect. The reference label ('judged correct by a scripted normalised comparison') is itself unvalidated and could share failure modes with the verifier; the number of GSM8K cases behind '0%' is not given; and 'probably largely the gold-storage defect' is a guess based on 'compound answers'. Without reconciling the two rates (different model, answer-length distribution, or partial overlap with the 51 unparseable golds), the probe cannot be used to support the magnitude of V's bias, and a reader may take 7.8% as the verifier's FN rate when the loop sees twice that.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "3 Setup 3.2 The Verifier and Its Directional Bias",
+  "related_sections": [
+   "5.3"
+  ]
+ },
+ {
+  "title": "'Directional bias' is asserted although only false rejections were measured",
+  "quote": "so it gives no false-positive rate.",
+  "explanation": "The section title and the motivating question rest on V being directionally biased (it under-accepts correct answers), but the audit examined only rejections, so false accepts (e.g. wrong answers matched by loose extraction of the last number or a LaTeX equivalence quirk) are unmeasured. The same V both selects data and scores the results, so false accepts could carry exactly the 'learn what the verifier accepts' effect the paper asks about; with FP unknown the sign of the net bias is unknown. Either rename (e.g. 'a measured false-reject defect') or report a false-accept check on a sample of accepted answers (the independent grader of 5.1 covers this only for the final round).",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "3 Setup 3.2",
+  "related_sections": [
+   "5.1",
+   "Abstract"
+  ]
+ },
+ {
+  "title": "Table 2 point estimate for B at seed 1 conflicts with the recomputed B-A difference",
+  "quote": "Table 2 lists run-log values",
+  "explanation": "Section 4.3 gives B minus A at seed 1 as +0.0 [-2.7, +2.7] from saved generations, but Table 2 (A,1 = -3.3; B,1 = -4.0) implies -0.7 and the text says this is because Table 2 lists run-log values. The Table 2 caption says the intervals are from bootstrap_ci.py recomputation while six point values come from the logs and differ by one problem, so a single row mixes log point estimates with recomputed intervals (e.g. B,1 pass@8 58.0 vs 58.7). Point estimates and intervals in the same table should come from one source; otherwise intervals are not centred on the reported values and readers cannot verify differences between rows.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "3 Setup 4.3 / Table 2",
+  "related_sections": [
+   "3.4 Uncertainty"
+  ]
+ },
+ {
+  "title": "Matched finished-accuracy measure and cap-hit threshold are underspecified",
+  "quote": "Re-tokenising the saved text, we call a generation cap-hit at ≥508",
+  "explanation": "'Finished, matched' is the accuracy of sub-cap generations minus the untrained model's accuracy 'on the same problem mix'. It is not stated whether the baseline is the untrained model's accuracy on all samples or only its own finished samples, nor how 'same mix' is weighted (by post-training finished counts per problem?). If the baseline includes the untrained model's capped (never accepted) generations, the difference mixes in the cap effect it is meant to remove; if it uses only finished ones, a conditional-on-finishing bias remains. The bootstrap for a ratio-like conditional statistic (2,000 resamples) is also not described (empty resamples, percentile vs BCa). The cap-hit rule re-tokenises decoded text with threshold 508 instead of using the generation-time token count or the EOS flag, and the 4-token margin is unjustified, so a generation ending naturally at 508-511 tokens is counted as capped and re-tokenisation can drift. The three-part decomposition in 4.5 is only pointed to the appendix.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "3 Setup 3.4 / 4.5",
+  "related_sections": [
+   "4.5 Table 2 caption"
+  ]
+ },
+ {
+  "title": "The 512-token cap binds for ~43% of baseline generations, so the loop's selector is also a length filter",
+  "quote": "so the cap binds from the start.",
+  "explanation": "At round 0, 40-46% of exam generations hit the cap and cannot be accepted. The kept pool is therefore selected for brevity as well as correctness, 24-26% of kept solutions are further truncated in training because the sequence limit includes the prompt, and loss is also taken on the prompt. These are design choices (cap, 512 limit, repetition penalty 1.1, temperature 0.8) given no rationale, they depress base accuracy (about 33% on MATH-500) and make the 'verifier vs mathematics' question partly a 'termination' question. The paper partly acknowledges this in 4.5 and the revised recipe, but the Section 3 framing (the verifier is the selector, 'Mathematics or the Verifier?') omits the cap as a second selector, and the Section 3 definition of 'correct' conflates unfinished with wrong. A stated justification, or an uncapped/larger-cap baseline in the main design, is needed to interpret the nulls as being about mathematics.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "3 Setup 3.4 / 4.5",
+  "related_sections": [
+   "4.5",
+   "4.6"
+  ]
+ },
+ {
+  "title": "Bootstrap and inference procedure details missing; multiple-comparison stance cuts one way",
+  "quote": "95% interval from a paired problem-level bootstrap (10,000 resamples of the",
+  "explanation": "The interval type (percentile vs BCa), the random seed, and how the paired B-A intervals are built are unspecified, and the 2,000 resamples for matched/audit columns give coarse tails. All inference conditions on one fixed 150-problem exam per seed, so generalisation to other problems rests on 2-3 overlapping partitions; the paper says the runs are not independent and results 'descriptive', yet many statements are phrased as decline findings (e.g. 'every A/B run declines', 'excluding zero in five of six'). With about 5 metrics x 15 rows x several rates and no correction, some exclusions of zero are expected by chance, and the metric that excludes zero was selected after the runs. The paper says it applies the same reading to declines and gains, but the text still counts and compares exclusions as evidence.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "3 Setup 3.4 Uncertainty",
+  "related_sections": [
+   "4.2",
+   "4.4",
+   "4.5"
+  ]
+ },
+ {
+  "title": "Patch specification and its effect size are ambiguous",
+  "quote": "removing the 100%-rejection class and nothing else",
+  "explanation": "It is not said whether \\dfrac/\\tfrac is rewritten in predictions only or also in stored golds. MATH golds often contain \\dfrac, and the paper reports 51 golds unparseable by V; if the rewrite applies to golds it would change the pool by far more than the 0-4 (3.2), 3-4 (4.3) and 0-3 (4.4) examples quoted (three different ranges for what looks like one quantity), and if predictions only, the 'nothing else' claim and the null of the control are unaffected but the probe's '100% rejected' refers to golds. The patch should be specified exactly (which strings, which side) and the example differences tabulated once per run.",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "3 Setup 3.2 The patch",
+  "related_sections": [
+   "4.3",
+   "4.4"
+  ]
+ },
+ {
+  "title": "Selection step and training-data construction under-described; 1e-5 'default' rate gives a near-null intervention",
+  "quote": "this value was the default of our training code and was not tuned",
+  "explanation": "'Select: accepted solutions are kept' leaves open whether all accepted samples per problem are kept (duplicates and over-representation of easy problems; 440 of 1400 and 872 of 2800 are both about 31%), whether identical solutions are removed, and the shuffle order. The 10^-5 rate for rank-16 LoRA on q/v is roughly 10-20x below common LoRA rates and the paper itself says the adapter 'did little'. Using an untuned code default for the primary 5-round design means that the lengthy 10^-5 null is close to a foregone conclusion, and the later grid changes k, rounds and pool size together with rate (acknowledged), so no rate comparison is clean. The rationale for the chosen rates and the choice not to equalise optimizer steps across runs should be given.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "3 Setup 3.1 / 3.4",
+  "related_sections": [
+   "4.2",
+   "4.4"
+  ]
+ }
+]

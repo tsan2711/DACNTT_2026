@@ -1,0 +1,168 @@
+[
+ {
+  "title": "Failed positive gate removes the meaning of both the null and the power statement",
+  "quote": "diagnose (a pipeline defect would also produce it), so the null concerns",
+  "explanation": "The paper says the gate must raise accuracy for the recipe to count as able to help; it falls 49.2 to 17.0, and the 5e-4 gold arms fall about 20-26 points. The 'detectable gain of ~10 (6) points' is therefore a statement about a pipeline that has never been shown able to register any gain. A null from an instrument with no demonstrated sensitivity is uninformative, not a null 'for the recipe'; the title and 'Null Result' framing overstate this. The authors admit the collapse could be a pipeline defect yet leave it undiagnosed, although cheap diagnostics exist (inspect gold-arm generations, regrade $-span answers, train on gold rewritten into the model's own \\boxed format). Until a gate passes, the honest label is 'inconclusive / no detectable gain from an unvalidated pipeline', and the sub-claim that the result concerns the recipe presupposes the pipeline works.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "Abstract",
+  "related_sections": [
+   "4.6 A Final Round with a Revised Recipe",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "Gate confounded with grader: reference-style outputs carry no \\boxed and both graders read \\boxed",
+  "quote": "That style carries no \\boxed answer, which both graders read,",
+  "explanation": "The gate trains on reference solutions that use $-delimited spans and no \\boxed; the model adopts that style (60 to 1,577 of 1,600). Both math-verify (as used here) and the independent string-match grader read the last \\boxed, so a format shift alone predicts a collapse of the size seen. The second grader therefore cannot arbitrate for the gate (-30.0 matches -32.2 by construction). The gate as built tests 'does the model keep emitting \\boxed' rather than 'can this recipe improve mathematics'. A fair gate would make the positive arm use the same output format as the evaluated arms. This also asymmetrically handicaps the gold arm relative to the self-training arms, whose data are in the evaluated format, so cross-arm comparison to the gold arm is unfair.",
+  "comment_type": "technical",
+  "confidence": "high",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "5.1 Answer to the Research Question"
+  ]
+ },
+ {
+  "title": "Significant, consistent decline in the final round coexists with a 'null' headline and is treated asymmetrically",
+  "quote": "The loop does not help; the point estimates are negative in all three seeds",
+  "explanation": "The pooled loop result is -4.1 pass@1 with a t-interval [-6.1,-2.1] and -4.5 sample accuracy [-8.1,-1.0], both excluding zero (I verified the t-interval arithmetic for n=3). The paper simultaneously says 'we do not claim that it costs accuracy' and lists intervals reaching zero as 'no evidence' elsewhere. The paper states it applies 'the same reading to declines and to gains', but the abstract and title foreground 'no gain', while a replicated decline is the only reliably non-null effect in the study. Either the three-seed interval is credible (then the decline is a finding, with the gate-failure caveat) or it is not (then the paper should say what the three seeds do establish). Note also that the three seeds share one 500-problem exam draw and a common pipeline, so the t-interval omits exam-draw variance and is not the independent-replicate estimate it resembles.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "Abstract",
+   "5.1 Answer to the Research Question"
+  ]
+ },
+ {
+  "title": "Power analysis presented as 80% power but is optimistic, derived per-run, and ignores that the controls were never validated",
+  "quote": "even with h as the whole error, a gain at that size is missed 20% of the time,",
+  "explanation": "The 2.8h/1.96 rule uses the bootstrap half-width of a single run, which omits training-seed variance. The paper's own gauge (replicate pair 3.2 pts apart; B-A flipping +5.3 to -7.3; per-seed sample-accuracy swings of a few points) implies true minimum detectable effects well above 10 pts pass@1, yet the abstract, Intro and Conclusion repeat 'about 10 (6)' as the design's sensitivity, with 'likely more' in small print. The paper criticises others for ignoring seed variance (Xu et al.) but its headline sensitivity does the same; a seed-variance-inclusive estimate (e.g., pooling the 3 seeds at 1e-4 in Table 2 or the 3 final-round seeds) is available and should replace the optimistic figure. Further, pass@1 uses one sample per problem, so its detectability is far worse than that of sample accuracy, which was nevertheless chosen post hoc as primary.",
+  "comment_type": "technical",
+  "confidence": "high",
+  "source_section": "3.4 Models, Data, Training, Metrics",
+  "related_sections": [
+   "Abstract",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "Inconsistent sensitivity figures: 3.5-5.5 detectable vs a 2.2-point 'bound'",
+  "quote": "is the largest upper limit among observed intervals",
+  "explanation": "Section 3.4 says sample-accuracy gains below about 3.5-5.5 points could be missed; Section 5.1 reports a ~2.2-point figure that is the maximum of the upper limits of observed intervals. The latter is a maximum over a selected, post hoc statistic across non-independent runs, not a bound on any effect; its natural reading ('gains above 2.2 are excluded') contradicts the 3.5-5.5 detectability threshold stated earlier. Using a max-of-upper-limits is also a form of selecting the most favourable summary and, as intervals omit seed variance, understates uncertainty. It should either be removed or reconciled with the power statement.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "5.1 Answer to the Research Question",
+  "related_sections": [
+   "3.4 Models, Data, Training, Metrics",
+   "1 Introduction"
+  ]
+ },
+ {
+  "title": "Learning-rate 'grid' conflates rate with k, rounds, pool size and metric, so 'no gain at any learning rate' is not a clean claim",
+  "quote": "so only 10−4 to 5 × 10−4 isolates the",
+  "explanation": "The 1e-5 arm (k=8, 5 rounds, pass@8) and the 1e-4..5e-4 arms (k=4, 3 rounds, pass@4) differ in more than rate, and the final round changes seven things at once (k=2, 1 adapter, new pool, loss, LoRA targets, cap). pass@k values for different k are not comparable, and pass@1 compares a single draw. Neither is the 1e-5 arm a low-dose match of the higher-rate arms. 'No gain at any learning rate' is thus a union of non-comparable null tests, each with different sensitivity, and the headline sentence reads as a rate sweep that was not performed. The authors state the confound but still headline the conclusion at rate level; moreover the best-case design for finding a gain (more rounds at the intermediate rate with k held fixed) was not run.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "4.4 Higher Learning Rates",
+  "related_sections": [
+   "Abstract",
+   "1 Introduction"
+  ]
+ },
+ {
+  "title": "No multiplicity or family-wise reading although the conclusion is a universal 'no gain at any rate'",
+  "quote": "We make no multiplicity correction and the runs are not independent (they share",
+  "explanation": "The central claim 'No pass@1 or pass@k gain has an interval excluding zero' is effectively an intersection null over ~20 runs x 4 metrics, while many cells share exam partitions and round-0 draws. Not correcting is conservative for a claim of 'no gain' (it makes false positives more likely), but the paper then uses uncorrected 95% intervals to highlight subsets that do exclude zero (5e-4 decline in 'four A/B runs', 'five of six' matched intervals) and builds the 'lower accuracy on finished solutions' headline on them. The treatment is inconsistent: multiplicity is waved away in the null direction yet the same uncorrected intervals support the one positive claim in the abstract/Introduction. The 'descriptive not tests' disclaimer does not stop these being headline claims.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "3.4 Models, Data, Training, Metrics",
+  "related_sections": [
+   "4.4 Higher Learning Rates",
+   "4.5 Anatomy of the Decline"
+  ]
+ },
+ {
+  "title": "Dose-response reading from two seeds sits inside the paper's own noise floor",
+  "quote": "at seed 1 sample accuracy falls 1.5, 3.5 and 8.3 points",
+  "explanation": "The paper says a replicate pair differs by 3.2 points and B-A flips by 12.6 points, then describes a rate-dependent decline ('may grow with the rate on one seed') and an 'appears most clearly at the highest rate' headline. With seed 2 flat (3.7, 3.8, 4.7) and intervals per cell +/-3-4, one seed trend is not distinguishable from trajectory noise; the seed that supports the claim also determines the exam partition. The matched 'finished accuracy' measure that gives the highest-rate result conditions on post-training outcomes (the authors say it is descriptive), and cap-share explains -2 to 72% depending on run, i.e. the decomposition itself varies by more than its signal. The headline statement overstates what a 2-seed, partition-confounded contrast supports.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "4.4 Higher Learning Rates",
+  "related_sections": [
+   "4.5 Anatomy of the Decline",
+   "1 Introduction"
+  ]
+ },
+ {
+  "title": "Controls not dose-matched although a dose-matched version was cheap; cross-arm inferences are therefore unfair",
+  "quote": "takes 3–4× Run A’s optimizer steps",
+  "explanation": "The no-filter arm trains on 1,400 examples versus 326-440 for filtered, and gold on 350, so the three arms differ in steps, truncation rate (62.4% vs 24.5%) and content. The paper then reports 'no filter is lower on pass@k' in the abstract and Discussion, while asserting that it cannot be attributed. A random subsample of the no-filter pool to the filtered size (or a size-matched random selection) would have been a direct, cheap fix and is exactly the 'check the dose first' protocol the paper recommends in 5.3(iii) to others. Since the same lesson was identified post hoc and deferred to 'first thing next', the claim 'removing the filter makes no consistent difference' is neither a null nor a difference; and a no-filter arm is missing altogether from the final round, where the loop declines.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "4.4 Higher Learning Rates",
+  "related_sections": [
+   "5.3 A Proposed Audit",
+   "6 Limitations",
+   "Abstract"
+  ]
+ },
+ {
+  "title": "Round-0 baselines and comparisons: untrained rows differ per seed and the gate has one seed against a single baseline",
+  "quote": "round-0 pass@1 is 49.2, 46.8,",
+  "explanation": "Round-0 pass@1 differs by 2.4 points between seeds from sampling alone at k=2, a sizeable fraction of the -3.2 to -4.8 effects. The decline of each seed is measured against its own noisy round 0, and the table reports one 'Untrained (seed 1)' row. The gate (-32.2) is one seed, and there is no frozen/untrained re-sampled control (the Xu et al. recommendation cited by the authors) to estimate sampling-only variation at the final-round setting; bootstrap intervals omit this because round-0 draws are treated as fixed. Replicate round-0 draws (cheap: generation only) would give a direct noise-floor for the loop effect and would show whether -4.1 is distinguishable from re-sampling variation.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "3.4 Models, Data, Training, Metrics"
+  ]
+ },
+ {
+  "title": "Grader and verifier regime differs across arms and rounds, undercutting cross-round comparisons",
+  "quote": "normalised gold answers, and a pool of 300 problems from",
+  "explanation": "Earlier runs are graded by V with the gold-storage defect (which rejects 15-18% of correct answers and zeroes 10% of problems), whereas the final round uses normalised gold and a second string-match grader that reads only the last \\boxed. It is unclear whether the gold-storage defect and the 51 unparseable golds persist in the final round; if they were fixed, the final-round round-0 accuracy and selection pool are measured differently from every earlier run (round-0 ~49% on 500 vs ~31-33% on 150), so the 'detectable 6 vs 10 points' and the sign-consistent decline are not comparable to the earlier null. Conversely, if not fixed, selection still has the defect. The paper also never reports whether the independent grader agrees with V at the problem level (only differences), so agreement of aggregate deltas is weak evidence of validity.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "3.2 The Verifier and Its Directional Bias",
+   "5.1 Answer to the Research Question"
+  ]
+ },
+ {
+  "title": "Injected-bias interpretations are applied selectively despite being declared uninterpretable",
+  "quote": "more than in the unbiased seeds, which we do not interpret",
+  "explanation": "The rule-visible control is a single run with no r_t, and the paper calls both controls invalid. Yet it draws directional conclusions ('a shift in the direction opposite to avoidance', -3.7/-2.7/-5.5 comparison) from an interval [-2.8,+8.3] that includes zero, and declines to interpret a pass@1 drop of 7.0 [-11.2,-3.0] that excludes zero and is larger than in the unbiased seeds. The same standard (n=1, CI) is applied in opposite directions: the non-significant shift is read, the significant one is not. Also the rule affects only 35 of 298 kept examples (263 vs 298), so the intervention is too weak to induce avoidance and cannot discriminate, which is the reason it is not a valid control; reporting the comparison against unbiased seeds adds apparent evidence it cannot carry.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "5.3 A Proposed Audit",
+   "Abstract"
+  ]
+ },
+ {
+  "title": "Audit and Table 5: intervals mostly include zero yet drift in the control arm is used to dismiss; no multiplicity across 15 intervals",
+  "quote": "so rt drifts as much as the falls we observe, unrelated to the veriﬁer.",
+  "explanation": "Table 5 reports 15 intervals; the 'all' self-training falls (-2.6,-2.6,-1.5) have intervals touching zero, and the gold arm rises (+3.3,+2.1) with intervals including zero. Claiming that r_t 'drifts as much as the falls' treats non-significant point estimates in a single-seed pair as a baseline and compares them to other non-significant estimates; no contrast (self-training minus gold) with its own interval is given. The identity r_t = r_boxed x boxed share is correct, but it means the audit is designed so the main quantity is largely determined by a non-adaptation variable (boxed share), which the authors acknowledge. The conclusion is therefore sound but the evidence is not an audit with calibrated power, and the proposal is labelled as a 'protocol' despite no demonstration that it can detect anything (no positive control).",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "5.3 A Proposed Audit for GVT with a Biased Verifier",
+  "related_sections": [
+   "Table 5",
+   "4.6 A Final Round with a Revised Recipe"
+  ]
+ },
+ {
+  "title": "Unparseable-gold problems and partition differences affect fairness of paired/cross-seed comparisons",
+  "quote": "11–18 such problems per exam partition",
+  "explanation": "V cannot score 7-12% of each 150-problem exam partition, so these problems contribute zero to both rounds and can never be in the pool, limiting headroom and varying by partition (11 to 18). Cross-seed comparisons (A vs B 'flip', replicate gauge, 'seed 2 differs from seed 1') mix partition difficulty, unparseable count and training variance, and the paper does not stratify or restrict to parseable-gold problems, although it offered that analysis (46 of 51 become parseable under V'). The statement that offsets cancel 'only if those problems would not otherwise change, which we did not check' leaves a known, cheap check undone while headline sensitivity depends on it.",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "3.2 The Verifier and Its Directional Bias",
+  "related_sections": [
+   "3.4 Models, Data, Training, Metrics"
+  ]
+ }
+]

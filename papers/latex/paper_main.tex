@@ -38,7 +38,7 @@ SFT, on Qwen2.5-1.5B-Instruct with the rule-based verifier
 in a final round) at four learning rates on MATH-500 and two on GSM8K. No
 pass@1 or pass@$k$ gain has a problem-level bootstrap interval excluding zero;
 in the final round, with a revised (not validated) recipe, pass@1 falls $3.2$--$4.8$ points
-in each of three seeds (mean $-4.1$; two of three intervals exclude zero). The design detects only gains of about $10$ points of
+in each of three seeds (mean $-4.1$; two of three intervals exclude zero), about the size of the fall in the \verb|\boxed| share that both graders read. The design detects only gains of about $10$ points of
 pass@1 ($6$ in the final round; $80\%$ power, intervals without seed
 variance, so likely more). A positive gate fails: training on reference solutions
 lowers pass@1 by $32.2$ points, which we did not diagnose (a pipeline defect would also produce it), so the null
@@ -343,7 +343,7 @@ isolated MATH-500 run ($3{,}962$ against $872$ at round~0); no run separates the
 
 On the held-out exam (Fig.~\ref{fig:isolated} and Table~\ref{tab:isolated} in Supplementary Appendix~\ref{app:isolated}) pass@8
 ends within $4$ points of round~0 in every run. On MATH-500, pass@1 is
-$2.7$--$4.0$ points lower at round~4, with every interval including zero
+$2.7$--$4.0$ points lower at round~4 (run-log values, see Table~\ref{tab:ci}), with every interval including zero
 (Table~\ref{tab:ci}); sample accuracy falls $1.2$--$3.2$ points, with an
 interval excluding zero only for B at seed~0 (A at seed~0 reaches $0.0$), and
 matched finished accuracy $1.1$--$4.2$, with intervals that only just exclude
@@ -363,7 +363,7 @@ did little (Supplementary Appendix~\ref{app:isolated}).
 Runs A and B differ only in the \verb|\dfrac|/\verb|\tfrac| patch. At round~4,
 B minus A is $-0.7$ [$-3.3$, $+2.0$] points of pass@1 at seed~0 and $+0.0$
 [$-2.7$, $+2.7$] at seed~1 (recomputed from the saved generations; Table~\ref{tab:ci} lists run-log values, $-0.7$ at seed~1). This null is uninformative: \verb|\dfrac| appears
-in $0.50$--$0.73\%$ of generations, so the kept pools differ by $3$--$4$
+in $0.50$--$0.73\%$ of generations, so the kept pools differ by at most $4$
 examples (under $0.5\%$ of the $872$-example pool), and at $10^{-5}$ the adapter changes the outputs
 little anyway, so a null is what prevalence alone predicts; the frequent gold-storage defect is in both arms.
 
@@ -656,7 +656,7 @@ zero. The fall is accounted for by the falling
 \verb|\boxed| share among correct answers ($91\to76\%$ and $93\to78\%$ at
 $5\times10^{-4}$): an identity, not a test, which does not exclude
 adaptation. On boxed answers alone the changes ($-0.4$ to $+0.7$ points) have intervals
-($\approx\pm3$) that contain the overall fall of the same run ($-2.6$, $-2.6$, $-1.5$), so ``flat'' means not detected. The defect is bound to the problem: it fires on $54$--$62$
+(half-widths $1.6$--$3.6$) that contain the overall fall of the same run ($-2.6$, $-2.6$, $-1.5$), so ``flat'' means not detected. The defect is bound to the problem: it fires on $54$--$62$
 problems, rejecting $94$--$98\%$ of correct answers, and $29$--$34$ of them have an unparseable gold, so no answer
 form escapes it. On the $24$--$28$ affected
 problems where some form could, $r_t$ moves by $-5.5$, $-1.6$ and $-0.2$
@@ -744,7 +744,7 @@ better at mathematics or only teach it to write what a rule-based verifier
 accepts. The design detected no pass@1 or pass@$k$ gain at any rate (it could see only gains of about
 $10$ and $8$--$10$ points; $6$ in a final $500$-problem round, where pass@1 falls $3.2$--$4.8$ points in
 all three seeds). Because training on reference solutions lowers pass@1 by about $30$ points even with a
-revised recipe, this is a null for the recipe and says little about self-training, and since scores are
+revised recipe, this is an inconclusive null for the recipe and says little about self-training, and since scores are
 graded by the selecting verifier (apart from one string-match check), neither branch of the question is answered. The post hoc false-reject audit is uninformative about
 adaptation: its fall is tied to the falling \verb|\boxed| share by an identity, and it has little power (about $25$
 affected problems, a handful of avoidance examples per round, no valid positive control). At the highest rate the model is less accurate on the

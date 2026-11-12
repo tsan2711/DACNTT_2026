@@ -1,0 +1,86 @@
+[
+ {
+  "title": "Gate failure is probably a measurement/format artefact, so it neither validates nor refutes the recipe",
+  "quote": "That style carries no \\boxed answer, which both graders read,\nand a collapse of this size from 300 reference solutions is also what a pipeline\ndefect would produce.",
+  "explanation": "The authors themselves note the gold-trained model drops \\boxed (1,577 of 1,600 generations in $-style) and both graders score only the last \\boxed. A 32-point pass@1 collapse is then exactly what a boxed-only grader yields without any loss of mathematical ability; the 'normalised gold' change (one of seven) is the most plausible cause, and nothing tests it (no boxed-share/answer-extraction fallback, no check of what the gold targets contain, no minimal run with unnormalised gold). A rerun at 2e-5 reaching the same style shows the failure follows the data format, not the rate. Consequently the gate is failing by construction, cannot serve as a positive control for 'the recipe can help', and the paper correctly says it cannot validate, but it then still uses the gate to define the scope of the null ('the null belongs to this recipe'). Also, even a passing gate (SFT on reference solutions) would not establish that SFT on self-generated, verifier-filtered samples can help, since the data distribution and style differ; a positive control closer to the loop (e.g. samples from a stronger model rewritten in the model's own style) is not attempted. Credit: the authors report the failure rather than hiding it.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "5.1 Answer to the Research Question",
+   "6 Limitations"
+  ]
+ },
+ {
+  "title": "Loop decline of about 4 points matches the boxed-share drop; grader cannot separate lost ability from lost formatting",
+  "quote": "It reads only\nthe last \\boxed, so a falling boxed share lowers both graders, and it does not\nrule out a format artefact in the gate.",
+  "explanation": "Section 5.3 reports boxed-share falls of roughly 3-5 points in the same recipe (-3.7, -2.7, -5.5 for the unbiased seeds), which is the same size as the pass@1 (-3.2 to -4.8) and sample-accuracy (-2.9 to -5.4) declines. Since correct answers without \\boxed score zero under both graders, the whole decline could be produced by a format shift rather than any change in mathematics, and the paper's own identity makes this explicit for r_t. The 'independent' string-match grader adds no independence on this axis (same \\boxed extraction, same gold normalisation, same generations); its agreement (-3.6, -2.2, -4.6) shows only that math-verify is not the source, not that the drop is real. The caveat is given for the gate but not applied to the loop headline. A boxed-free answer extractor, or accuracy conditional on a boxed answer being present, is needed.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "5.1 Answer to the Research Question",
+  "related_sections": [
+   "4.6 A Final Round with a Revised Recipe",
+   "5.3 A Proposed Audit"
+  ]
+ },
+ {
+  "title": "Seven simultaneous recipe changes (incl. single round, disjoint pool) confound the final round and change what is being tested",
+  "quote": "Because no earlier arm improved, we ran one last round with several recipe\nchanges made at once, aimed at the suspected causes (no ablation of any single\none)",
+  "explanation": "Completion-only loss, all-linear LoRA, 1,024 cap, normalised gold, a new 300-problem MATH-train pool, k=2, one adapter and LR 1e-4 all change together. Moreover the final round is a single round with selection problems disjoint from the exam, whereas the earlier collapse story (shrinking pool shaped by the biased verifier, selection==eval in Design P) needs multiple rounds and overlap. So the final round cannot confirm or deny any earlier explanation, and a null/negative here is not comparable with Tables 1-3. 'Aimed at suspected causes' is also unsupported: the paper elsewhere says the cause is not identified. Further, the pool of 300 'MATH training split' problems has no overlap check against MATH-500 (stated), which could bias the loop and the gate in either direction, and the paper does not say whether the three seeds redraw the pool.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "3.3 Designs",
+   "5.2 Interpretation"
+  ]
+ },
+ {
+  "title": "t-interval with n=3 seeds on a shared exam and base model is fragile and mislabelled as covering seed variance",
+  "quote": "The mean pass@1 change over the three seeds is\n−4.1 (t interval [−6.1, −2.1]), and −4.5 for sample accuracy ([−8.1, −1.0]).",
+  "explanation": "Arithmetic checks out: mean -4.07, sd 0.81, t(2)=4.30 gives [-6.1,-2.1]; sample accuracy likewise gives [-8.05,-1.0]. But the interval rests on two degrees of freedom, so its width is dominated by an sd estimated from three points (pass@1 sd 0.8 vs per-seed bootstrap half-widths of about 4, an implausibly small ratio that is probably luck). All seeds share the same 500 exam problems (and probably the same 300 pool; unspecified), so the interval covers loop/sampling randomness only, not problem-draw variance; it cannot support a population-level claim about the recipe. The post-training pass@1 values are 44.4, 43.6, 44.0, a tight cluster while round-0 pass@1 varies 46.8-49.2 from sampling noise alone, so part of the 'seed' variance in the change is baseline sampling noise. A sign test over three seeds (p=0.125 one-sided) is not significant. Nine intervals are examined (3 metrics x 3 seeds) with no multiplicity correction.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "6 Limitations",
+   "3.4 Models, training, metrics and uncertainty"
+  ]
+ },
+ {
+  "title": "Inconsistent standard: interval excluding zero is described as a 'null' and hedged away",
+  "quote": "The\nloop does not help; the point estimates are negative in all three seeds, but the\nsample is three seeds with one exam draw and one rate, so we do not claim that\nit costs accuracy, and we did not isolate the cause.",
+  "explanation": "The paper's own t-interval for the mean excludes zero on the negative side for pass@1 and sample accuracy, and the headline calls the result a 'null result'. A decline with an interval excluding zero is not a null; it is a (modest, uncertain-in-cause) negative effect. The hedge is reasonable given n=3, but then the same caution should apply to the language 'null', 'no gain detectable', and to using 'the detectable effect is about 6 points' (computed from a single-seed bootstrap half-width, 2.8h/1.96 with h about 4.2) as the resolution of a three-seed design; the three-seed mean has a different (and by the paper's own interval, smaller) half-width, and the 6-point figure omits seed variance that the paper just measured. Sample-accuracy intervals exclude zero in two of three seeds; 'two intervals exclude zero' for pass@1 is also stated while claiming only absence of benefit.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "5.1 Answer to the Research Question",
+   "Abstract"
+  ]
+ },
+ {
+  "title": "Injected-bias controls have no stated expected effect, and the 'opposite direction' reading rests on an interval containing zero",
+  "quote": "The share on those\nproblems stays at 95.0% and on the others goes from 90.2% to 87.4% (diﬀerence\n+2.8, [−2.8, +8.3]), against −3.7, −2.7 and −5.5 for the same split in the three\nunbiased seeds, a shift in the direction opposite to avoidance",
+  "explanation": "The interval [-2.8,+8.3] includes zero, so the data do not show a shift in the opposite direction; they show nothing. The comparison to the unbiased seeds gives point values without intervals, and it is unclear whether -3.7, -2.7, -5.5 are the affected-minus-other difference or the change on one subset (the biased run's +2.8 is a difference). The exam subset has only 70 problems, one run, one seed, with a CI of width 11 points against effects of a few points, so the control could not have detected the effect it was meant to elicit; the authors say so but then state 'neither validates the audit' as though a validation attempt had been informative. For the hash arm the paper concedes it cannot elicit avoidance by design, so it is not a positive control at all. No prior prediction of the expected size (e.g. from how many kept examples remain on affected problems) is given. Separately, the injected run's pass@1 -7.0 [-11.2,-3.0] lies well outside the three unbiased values (-3.2 to -4.8) and outside the mean's t-interval; though attributed to one run and 'not interpreted', it is the only evidence in the section that the selection verifier matters and bears directly on the paper's central question (mathematics or verifier).",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Injected bias (Section 4.6)",
+  "related_sections": [
+   "5.3 A Proposed Audit",
+   "6 Limitations"
+  ]
+ },
+ {
+  "title": "'About 2.2 points' sample-accuracy bound does not correspond to any interval in the final round and is described ambiguously",
+  "quote": "The sample-accuracy\nﬁgure of about 2.2 points is the largest upper limit among observed intervals, a\npost hoc ﬁgure that omits seed variance, not a power statement",
+  "explanation": "In Section 4.6 the sample-accuracy upper limits are 0.0, -2.4, -2.4 (and the mean interval's upper limit is -1.0), none near 2.2, so the 2.2 must come from earlier runs; the sentence sits in a paragraph about the final round and cites no table. The bound is also in tension with the earlier-stated detectable sample-accuracy effect of 3.5-5.5 points (Section 3.4/Intro). A reader cannot reproduce it, and 'largest upper limit among observed intervals' is a selection over runs after seeing them; as a statement about what 'could have been missed' it is neither a power nor a confidence statement.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "5.1 Answer to the Research Question",
+  "related_sections": [
+   "3.4 Models, training, metrics and uncertainty",
+   "Introduction"
+  ]
+ }
+]

@@ -1,0 +1,106 @@
+[
+ {
+  "title": "Gate failure may be a measurement artefact, undermining 'null for the recipe'",
+  "quote": "rule out a format artefact in the gate. Earlier runs are not independently graded.",
+  "explanation": "Section 5.1 and the Conclusion argue that because the positive gate failed (49.2 -> 17.0) the null 'belongs to this recipe'. But Section 4.6 says the reference style carries no \\boxed answer, which both graders read, that a collapse of this size from 300 solutions is what a pipeline defect would produce, and 5.1 concedes the independent grader does not rule out a format artefact in the gate. If the gate drop is a grading/format artefact, the gate neither validates nor invalidates the recipe, so 'this is a null for the recipe' (rather than 'the study cannot interpret the recipe at all') is not established; the conclusion needs one reading or the other. The authors honestly state the gate cannot validate the recipe, but the Conclusion still draws a positive scoping inference from it.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "5 Discussion",
+  "related_sections": [
+   "4.6 A Final Round with a Revised Recipe",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "Train-on-gold used as a 'drift' control although its accepted set is collapsed and the effect is opposite in sign",
+  "quote": "so rt drifts as much as the falls we observe, unrelated to the",
+  "explanation": "Table 5 gold runs rise by +3.3 and +2.1 with intervals [-1.2,8.1] and [-2.2,6.7], both including zero. Concluding that r_t 'drifts as much as the falls we observe' treats two noisy, opposite-sign changes as a noise-floor estimate. Further, the gold arms are a different regime (accuracy collapsed, outputs shift to a reference style per 4.6, so the V'-accepted set is a small, selected survivor subset whose composition and size are not reported), so they do not calibrate the sampling drift of r_t in the self-training runs. The boxed share among accepted answers implied by Table 5 even rises in gold runs (about 91% -> 94%), at odds with the stated style shift away from \\boxed. Also 'unrelated to the verifier' is asserted without a matched control. The inference about drift magnitude is therefore weaker than stated; denominators (#V'-accepted per round) should be given.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "5.3 A Proposed Audit",
+  "related_sections": [
+   "Table 5",
+   "4.6"
+  ]
+ },
+ {
+  "title": "Affected-problem counts mix exam and selection problems, overstating the adaptive-pressure set",
+  "quote": "The adaptation audit is weak: 24–28 problems, 2–12",
+  "explanation": "Table 5 is computed over all 500 problems with selection problems included, so the 'affected, parseable' subset (24-28 problems, intervals up to 26 wide) includes exam problems that never enter the training pool in Design I (150 of 500 are exam). Only selection problems can exert pressure to avoid the defect, yet the power statement in the Limitations and Conclusion ('about 25 affected problems') pairs this count with the pool counts (2-12 examples), which come from selection problems only. The effective number of problems that can teach avoidance is smaller (roughly 70% of 24-28), and the numerator/denominator populations of the audit and of the pressure are inconsistent. Separately, defining the subset by problems where the defect 'ever fires' (over all rounds, including the last) conditions on the outcome and can bias R0 vs last differences by regression to the mean.",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "6 Limitations",
+  "related_sections": [
+   "5.3 A Proposed Audit",
+   "Table 5"
+  ]
+ },
+ {
+  "title": "Cap-share range reported selectively in the audit section",
+  "quote": "at 5 × 10−4 the cap share accounts for 12–30% of the decline in the",
+  "explanation": "Section 4.5 reports the cap share as 12-30% in three seed-1 runs, 52-72% at seed 2 and also -2% and 5% in two further runs. Section 5.3(ii) and the summary drop the -2/5% runs, so the quoted spread understates the heterogeneity (range -2% to 72%). Together with the Conclusion's flat statement that 'at the highest rate the model is less accurate on the solutions it finishes' (a post hoc, descriptive measure that conditions on which problems finish, and which at seed 2 explains under half of the decline), the headline reads stronger than the decomposition supports.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "5.3 A Proposed Audit",
+  "related_sections": [
+   "4.5 Anatomy of the Decline",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "Conclusion states finished-accuracy loss flatly despite descriptive/post hoc status",
+  "quote": "At the highest rate the model is less accurate on the solutions",
+  "explanation": "Section 4.5 says the matched finished-accuracy measure conditions on which problems finish after training, so it is descriptive, and the cap-share decomposition attributes up to 52-72% of the decline at seed 2 to the cap. The Conclusion presents the finished-solution accuracy loss as a finding without the caveat or the dose/rate confound (5e-4 is the dose-heavy arm).",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "7 Conclusion",
+  "related_sections": [
+   "4.5 Anatomy of the Decline"
+  ]
+ },
+ {
+  "title": "Final-round decline is consistent in sign, two graders and the mean interval, yet discussion treats it as 'not detectable'/uninterpreted",
+  "quote": "loop does not help; the point estimates are negative in all three seeds,",
+  "explanation": "The mean pass@1 change is -4.1 with t-interval [-6.1,-2.1] and sample accuracy -4.5 [-8.1,-1.0] (I recomputed both from the seed values; they are right), two of three per-seed pass@1 intervals exclude zero, and the independent grader agrees in sign and size. Elsewhere the paper reads intervals excluding zero as evidence; here the Discussion (5.1, 5.2) only says 'not detectably better' and declines to say the loop costs accuracy, and never uses the decline to discuss mechanisms (format drift, boxed share falling, truncation). The authors' own threshold (about 6 points) exceeds the observed 4.1, so the null framing is a power statement, but then the consistent negative direction in an under-powered design deserves explicit treatment as suggestive evidence of harm, particularly since the identity in 5.3 shows the boxed share is falling, which lowers both graders (acknowledged) and could itself explain the whole decline.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "5.1 Answer to the Research Question",
+  "related_sections": [
+   "4.6 A Final Round with a Revised Recipe"
+  ]
+ },
+ {
+  "title": "Recommending r_t as a per-round audit contradicts the paper's own finding that it is non-diagnostic",
+  "quote": "From post hoc analyses we propose four checks for",
+  "explanation": "Section 5.3 shows the headline statistic r_t is mechanically tied to the boxed share (identity), its fall is matched by the gold control's drift, and the two injected-bias runs could not validate it ('neither can tell us whether the audit would detect it'). Proposing it as protocol (i) is framed as 'not tested methods', but the refined version (restrict to answers/problems where V and V' can differ and an accepted form exists) has not been computed with any usable power (intervals 10-26 wide) nor validated. Items (iii) and (iv) concern dose matching and are not audit checks derived from the r_t analysis. The section title and the protocol framing overstate what the data support.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "5.3 A Proposed Audit",
+  "related_sections": [
+   "5.1",
+   "Injected bias"
+  ]
+ },
+ {
+  "title": "Boxed-only interval width stated as about +-3 though one run is about +-1.6",
+  "quote": "have intervals (≈±3) that contain the overall fall of the same run (−2.6, −2.6,",
+  "explanation": "Table 5 boxed-only intervals are [-2.9,4.3], [-2.8,3.4] and [-2.0,1.2], i.e. half-widths about 3.6, 3.1 and 1.6. For the 1e-5 run the 'flat means not detected' argument rests on an interval whose half-width is half that stated, and the overall fall (-1.5, [-2.9,0.0]) is nearly outside it. Minor, but 'flat means not detected' should be run-specific. Also the overall-fall intervals touch zero, so the comparison 'interval contains the overall fall' does not establish equivalence.",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "5.3 A Proposed Audit",
+  "related_sections": [
+   "Table 5"
+  ]
+ },
+ {
+  "title": "Possible train/exam overlap for the 300 MATH-train pool is unchecked and absent from Limitations",
+  "quote": "We report no overlap check of the 300 pool problems",
+  "explanation": "The final-round pool is 300 MATH training problems evaluated on all MATH-500. No overlap or near-duplicate check is reported, and the Limitations section (which lists contamination of Qwen2.5 on MATH/GSM8K) omits this item. Overlap would inflate loop and gate accuracy in the final round, which is the paper's strongest evidence round; it should be checked or listed.",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "6 Limitations",
+  "related_sections": [
+   "4.6 A Final Round with a Revised Recipe"
+  ]
+ }
+]

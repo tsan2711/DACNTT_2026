@@ -1,0 +1,175 @@
+[
+ {
+  "title": "Failed positive gate turns the 'null' into an inconclusive result; Conclusion is firmer than Section 4.6",
+  "quote": "this is a null for the recipe",
+  "explanation": "Section 4.6 concedes that the -32 point gate collapse 'is also what a pipeline defect would produce', that the recipe 'cannot be called corrected', and that the decline 'cannot be attributed to self-training or to the verifier'. If the failure is a pipeline or grader defect, it equally contaminates the loop arms, so the data are not a null for the recipe; they are uninterpretable for both recipe and method. The Conclusion (and Abstract 'the null concerns this recipe only') nonetheless attributes the failure to 'even with a revised recipe', which presupposes the recipe, not the pipeline, is at fault. Also every arm declines (no-filter, patch, gold, loop), which is not what a null looks like; a positive control that fails means power to detect a true gain is unestablished. The title 'A Null Result' and 'the null concerns this recipe only' overstate what survives the stated limitation. Note also that SFT on 300 human reference solutions to an instruct model is a weak positive gate for self-distillation (the paper cites Kim et al. showing such SFT degrades), so even a valid failure would not diagnose the recipe's ability to help self-training.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "7 Conclusion",
+  "related_sections": [
+   "Abstract",
+   "4.6 A Final Round with a Revised Recipe"
+  ]
+ },
+ {
+  "title": "Gate and train-on-gold collapse may be a grader artefact; earlier 'unlikely verifier error' claim contradicts 4.6",
+  "quote": "That style carries no \\boxed answer, which both graders read",
+  "explanation": "In 4.6 the gold-trained model writes $-delimited solutions with no \\boxed in 1,577/1,600 generations, while both graders (math-verify and the string match) read only \\boxed. A 32-point 'drop' is then largely what the grader would give for any correct-but-unboxed output, i.e. a measurement artefact, and the paper's own admission 'a pipeline defect would also produce it' fits. Section 4.4, however, says of the earlier train-on-gold arm 'we think this fall is unlikely to be mainly verifier error', and Section 4.5 states 'ﬁnished accuracy collapses' as a fact; these are stated without the boxed-agnostic check (e.g. grading the last $-span or last number) that would settle it, and the 4.4 bound covers only boxed answers. The cheap diagnostic that decides whether the gate really failed was not run, yet the whole scoping of the study rests on that gate.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "4.4 Higher Learning Rates",
+   "4.5 Anatomy of the Decline"
+  ]
+ },
+ {
+  "title": "Truncation mitigation rests on an appendix whose outputs were not saved; truncated training targets are a pipeline defect affecting every arm",
+  "quote": "Retraining without truncated examples, or re-scoring at a 1,536-token cap",
+  "explanation": "Section 3.4 says 24-26% of the round-0 pool (62.4% for no-filter) is cut in training and so loses its final answer and end-of-sequence token; this directly teaches the model not to finish, the very effect (cap-hit share rising, 40-46% of generations hitting the cap even at round 0) that the paper later decomposes. The only mitigation, 'leaves the deficit in place', is given with no rates, seeds, numbers or counts and is deferred to Supplementary Appendix H, while the Code availability paragraph admits 'the 1,536-token re-scoring outputs were not saved'. The claim therefore cannot be checked from the paper or the released artefacts. The Limitations merely list 'Truncation: the 512-token cap binds from the start' and do not tie it to the headline null (a gain via learning to finish within 512 tokens is the most plausible first-order effect of this filter, and is exactly what the setup can mask or reverse). Also unclear is whether the 'retraining without truncated examples' used the same runs/rates.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "4.5 Anatomy of the Decline",
+  "related_sections": [
+   "3.4 Models, Data, Training, Metrics",
+   "6 Limitations",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "Conclusion drops the seed-2 cap-share caveat stated in Intro and Section 4.5",
+  "quote": "At the highest rate the model is less accurate on the solutions",
+  "explanation": "Section 4.5 reports that the cap share explains 52-72% of the decline at seed 2 and only 12-30% at seed 1, that the A seed-2 matched interval is [-11.7, 0.1] (includes zero), and the Intro hedges 'on one seed the cap share carries more of it'. The Conclusion states without qualification that the model is less accurate on finished solutions, and also does not say that 'ﬁnished accuracy' is a conditional (post-selection) quantity that the paper itself calls descriptive. Separately, 4.5 gives the decomposition for two 'further runs' only as '-2 and 5%' without naming which runs, and says that at 1e-4/2e-4 'ﬁnished accuracy carries the whole change' while Table 2 shows matched finished changes (e.g. -4.3 at 1e-4 seed 1) larger than the total sample-accuracy change (-1.5), which the decomposition cannot be 'whole'.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "7 Conclusion",
+  "related_sections": [
+   "1 Introduction",
+   "4.5 Anatomy of the Decline"
+  ]
+ },
+ {
+  "title": "Baseline is depressed by a 512-token cap and repetition penalty; the caveat is one clause in Limitations and is not carried to the headline",
+  "quote": "a default repetition penalty (1.1) that",
+  "explanation": "Round-0 cap-hit share is 43% (Table 1) and round-0 pass@1 is about 33% at the 512 cap versus 49% at the 1,024 cap in Section 4.6, far below commonly reported MATH accuracy for this model. So most earlier runs measure a model whose baseline is truncated or degenerating (repetition penalty 1.1 is known to induce rambling in long derivations). The Limitations mention this in half a sentence ('may depress the baseline') and the Abstract and Conclusion state 'no pass@1 or pass@k gain at any rate' without it; the detectability analysis does not include this effect and no run varies the penalty. Generalisation from this setting to 'a 1.5B model' (title) is therefore weaker than the Limitations section's scope list conveys, and the ceiling of what SFT on its own correct solutions could add in this regime is unexamined.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "6 Limitations",
+  "related_sections": [
+   "Abstract",
+   "3.4 Models, Data, Training, Metrics",
+   "4.5 Anatomy of the Decline"
+  ]
+ },
+ {
+  "title": "Re-scoring with V' and the independent grader do not address the dependence on \\boxed, so 'decline in place' is weaker than it reads",
+  "quote": "with V ′ leaves the decline in place",
+  "explanation": "V' differs from V only on boxed predictions and the second grader reads only the last \\boxed (acknowledged only for the latter). A model that boxes less (boxed share falls 91 to 76% at 5e-4, 14% unboxed at round 2, 1577/1600 $-spans in the gate arm) is penalised by both V and V', so 'decline in place' shows only that the gold-storage defect is not the sole cause, not that the model became less accurate. The V' rescoring covers just five of the runs (two rates), the independent grader only the final round, and neither is applied to the no-filter, patch (B) or GSM8K runs; the independent grader gives no intervals ('same sign and size' compares -2.2 with -3.2 for seed 2 without uncertainty). The reference 'Section 3' is also not specific (the analysis is in 3.2 and Supplementary Appendix B), so a reader cannot locate the re-scoring. A boxed-agnostic answer extraction would be needed to separate loss of accuracy from loss of format.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "5.1 Answer to the Research Question",
+  "related_sections": [
+   "3.2 The Verifier and Its Directional Bias",
+   "Table 5"
+  ]
+ },
+ {
+  "title": "Injected-bias result is interpreted as 'opposite to avoidance' despite an interval compatible with avoidance and a design that cannot elicit it",
+  "quote": "a shift in the direction opposite to avoidance",
+  "explanation": "The paper declares both injected-bias runs invalid as positive controls, yet interprets the second one's difference (+2.8, [-2.8, +8.3]) as 'opposite to avoidance'. The interval includes -2.7, which is the unbiased-seed value the paper compares with (-3.7, -2.7, -5.5), so it does not exclude a difference of the unbiased size, let alone avoidance. The design is also one adapter, one round, k = 2, with only 49 of 300 selection problems affected and 35 examples removed; the only training signal for avoidance on those problems is the absence of boxed examples (about 5% of those answers are unboxed to begin with), which is an extremely weak pressure. 'No selective avoidance' therefore carries almost no information, which the Abstract partly concedes but the 'opposite direction' wording does not.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "Abstract",
+   "5.3 A Proposed Audit for GVT with a Biased Verifier"
+  ]
+ },
+ {
+  "title": "Status of the gold-storage defect in the final round is unclear and conflicts with 'no run varies' it",
+  "quote": "no run varies the frequent gold-storage defect",
+  "explanation": "Section 4.6 lists 'normalised gold answers' among the seven simultaneous recipe changes, and the Abstract says 'Scores before the ﬁnal round use the veriﬁer with the defect', implying the final round does not. If normalisation removes the defect (a bare-gold problem), then the final round does vary it, in conflict with this sentence and with the Limitations, and it is confounded with six other changes, so the second branch (does it learn the verifier's style) has some evidence the paper does not use; if it does not, the Abstract sentence is wrong. The text never says whether the selecting verifier and the exam verifier in 4.6 still store the gold bare, whether the 298/263 kept counts and the injected-bias runs are under V or V', or whether Table 5's audit could be applied to the final round. This cannot be resolved from the paper.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "5.1 Answer to the Research Question",
+  "related_sections": [
+   "4.6 A Final Round with a Revised Recipe",
+   "Abstract"
+  ]
+ },
+ {
+  "title": "Probe false-negative rate (7.8%) is not reconciled with the 15.5-18.3% gold-storage rejection; no upper bound on verifier error",
+  "quote": "inspected only rejections; the gold-storage defect ran unvaried through every",
+  "explanation": "The probe finds a 7.8% false-negative rate (10/128, on Qwen2.5-7B solutions) and attributes most of it to the gold-storage defect, but the same defect is later said to reject 15.5-18.3% of what V' accepts in the 1.5B loop, plus 10.2% of golds are unparseable. The two figures differ by about 2x, and the 128 vs 200 sample is restricted to 'judged correct by a scripted normalised comparison', so the audit may under- or over-state the 1.5B loop. Moreover the audit 'inspected only rejections, so it gives no false-positive rate', and Section 4.4 says its checks bound verifier error 'from below only'. For a paper whose second question is whether the model learns what the selecting verifier accepts, an unbounded false-positive rate and self-grading by that verifier (Limitations: headline numbers are graded by the same verifier) mean the Conclusion's 'neither branch is answered' is appropriate, but the Intro's and Section 4.4's 'we think this fall is unlikely to be mainly veriﬁer error' is not supported.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "3.2 The Verifier and Its Directional Bias",
+  "related_sections": [
+   "4.4 Higher Learning Rates",
+   "6 Limitations"
+  ]
+ },
+ {
+  "title": "Interval-based claims of decline lean on intervals the paper says are optimistic",
+  "quote": "intervals excluding zero in ﬁve of six runs",
+  "explanation": "Sections 4.4-4.5 and the Intro use 'sample-accuracy intervals exclude zero in all four A/B runs' and 'intervals excluding zero in ﬁve of six runs' as evidence of decline at 5e-4, while Section 3.4 and the Limitations say the intervals omit training-seed variance, runs share exam partitions and round-0 draws, no multiplicity correction is applied, and a replicate pair ends 3.2 points apart (B minus A flips from +5.3 to -7.3). The text half-concedes this ('closer to two replicates than four'), but the effective number of independent observations at 5e-4 is closer to two seeds, so 'every A/B run declines' and the sharper statement in the Intro ('What appears, most clearly at the highest rate') are stronger than the stated limitation allows. The same standard (seed variance, independence) is applied to declare gains undetectable but not to declare declines present.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "4.5 Anatomy of the Decline",
+  "related_sections": [
+   "3.4 Models, Data, Training, Metrics",
+   "6 Limitations"
+  ]
+ },
+ {
+  "title": "The '2.2-point bound' and 'about 2 points' verifier bound are confusable and conflict with the stated 3.5-5.5 detectability",
+  "quote": "is the largest upper limit among observed intervals",
+  "explanation": "Section 5.1 reports a sample-accuracy figure 'of about 2.2 points' as the largest upper limit among intervals, while Section 3.4 states that gains below 3.5-5.5 sample-accuracy points could have been missed and the Intro repeats this. A reader can take 2.2 as saying gains above 2.2 are excluded, contradicting 3.5-5.5; the text says it is 'not a power statement', but then it carries no inferential meaning and it is also used as a 'bound' (Section 3.4). Section 4.4 separately uses 'about 2 points of sample accuracy' for a verifier-error lower bound, a different quantity. Three different roles for a number around 2 invite misreading.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "5.1 Answer to the Research Question",
+  "related_sections": [
+   "3.4 Models, Data, Training, Metrics",
+   "4.4 Higher Learning Rates"
+  ]
+ },
+ {
+  "title": "Cross-reference to Section 4.5 does not resolve; several Section references are non-specific",
+  "quote": "(24–26% of the round-0 pool; Section 4.5)",
+  "explanation": "Section 3.4 sends the reader to Section 4.5 for the 24-26% truncated share of the round-0 pool, but Section 4.5 contains no such figure (the 24.5% vs 62.4% appears in Section 4.4 and the 24-26% only here). Section 5.1 cites 're-scoring ﬁve runs ... Section 3' (the analysis is 3.2 and Appendix B), the 1e-5 default is 'not tuned (Section 4.4)' though 4.4 only motivates higher rates, and the Conclusion says 'a second grader come ﬁrst (Supplementary Appendix K)' although a string-match second grader was already used in Section 5.1 (presumably a different, e.g. model-based, grader is meant, which is not stated). These make it hard to check claims against their evidence.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "3.4 Models, Data, Training, Metrics",
+  "related_sections": [
+   "5.1 Answer to the Research Question",
+   "7 Conclusion",
+   "4.4 Higher Learning Rates"
+  ]
+ },
+ {
+  "title": "Key supporting analyses are only in unseen appendices with no numbers in the main text",
+  "quote": "Supplementary Appendix B gives the full",
+  "explanation": "Claims that carry the study's logic are given a pointer only: the defect analysis (Appendix B), the comparison with prior work and novelty claims (Appendix A), detectability and the six one-problem recomputation differences (Appendix C), Design P's decline and its tables S2-S3 (Appendix D, with 'Design P's training logs ... not saved'), Run C (Appendix G), the truncation-free retraining and 1,536-token rescoring (Appendix H), Table S9 for the decomposition and future work (Appendix K). Several cited statements ('Retraining without truncated examples ... leaves the deﬁcit in place', 'Length and cap-hit share barely change ... weak evidence that the adapter did little') give no figure, run, seed or interval in the main paper, so the stated mitigations cannot be audited from the manuscript; where outputs were not saved they cannot be audited at all.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "3.2 The Verifier and Its Directional Bias",
+  "related_sections": [
+   "4.1 Design P: An Apparent Collapse",
+   "4.5 Anatomy of the Decline",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "Scope caveats (instruct-tuned, one model/verifier, contamination) are not reflected in Abstract or Conclusion generalisation",
+  "quote": "possible Qwen2.5 contamination",
+  "explanation": "The Limitations list one model family and size, instruction-tuned only (no base model), one verifier, restart-from-base, possible unquantified contamination and a possibly depressing repetition penalty. Qwen2.5-Instruct has already been post-trained on math with verifier-style rewards, which makes headroom for further self-SFT small and a null unsurprising independent of the loop; none of these appear in the Abstract, and the Related Work contrast 'These studies improve accuracy, which our SFT loop does not' compares a loop that failed its positive gate with RLVR studies on base/distilled models. The Conclusion's 'says little about self-training' is appropriate, but the Contributions' 'no gain is detectable ... at any learning rate we tried' is presented as if informative about the grid rather than about the saturation and truncation of this setting.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "6 Limitations",
+  "related_sections": [
+   "Abstract",
+   "2 Related Work",
+   "7 Conclusion"
+  ]
+ }
+]

@@ -1,0 +1,130 @@
+[
+ {
+  "title": "Round-0 sampling noise drives the spread of per-seed final-round changes",
+  "quote": "round-0 pass@1 is 49.2, 46.8, 48.2 at seeds 1–3, from sampling",
+  "explanation": "Round-0 pass@1 of the same untrained model differs by 2.4 points across seeds (49.2, 46.8, 48.2) purely from sampling, and each loop change is measured against its own noisy round 0. The round-1 values are 44.4, 43.6, 44.0, almost identical (spread 0.8). So the per-seed range '3.2-4.8' quoted in the abstract, Discussion and Conclusion is largely round-0 sampling noise (against the pooled round 0 of 48.07 the changes would be -3.7, -4.5, -4.1), and the largest drop (seed 1) coincides with the highest round 0. I recomputed the t-interval: mean -4.07, sd 0.81, se 0.47, t(2)=4.303, giving [-6.08,-2.06], matching the paper, but its width is mostly this round-0 noise rather than 'training-seed variance' as the caption and Limitations describe. The gate (49.2 -> 17.0) is likewise anchored to the highest round 0, so '-32.2' vs the loop's '-4.1' use different baselines (against the pooled baseline the gate would be about -31.1). Headline ranges should use one common baseline and say that the seed-to-seed spread is not shown to include training variance.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "4 Results (4.6 Final round)",
+  "related_sections": [
+   "Abstract",
+   "5.1 Answer to the Research Question",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "Abstract says no-filter 'is lower on pass@k' though the body shows it is within noise",
+  "quote": "is lower on pass@k, at 3–4× the dose",
+  "explanation": "The abstract and Section 5.2 state that no filter 'is lower on pass@k'. Section 4.4 gives the actual evidence: round-2 pass@4 differences of -2.0 and -5.3 with intervals including zero, and says removing the filter 'is not better than keeping it beyond noise'. Table 3 reproduces the point estimates (40.7 vs 42.7; 39.3 vs 44.7). Stating 'lower' next to 'no consistent difference' is a point-estimate claim the paper elsewhere refuses to make for gains (same-reading rule, Section 3.4: 'we apply the same reading to declines and to gains'). Self-consistency of standards: it should say 'no different within noise, point estimates lower'.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Abstract",
+  "related_sections": [
+   "4.4 Higher Learning Rates",
+   "5.2 Interpretation",
+   "Table 3"
+  ]
+ },
+ {
+  "title": "'About one in six' / 15.5-18.3% is a self-training-only figure; Table 5 gold rows exceed it and the range mixes round 0 with last round",
+  "quote": "15.5–18.3%",
+  "explanation": "The headline (abstract: 'about one in six'; Section 3.2: 'rejects 15.5-18.3% of the generations V' accepts') is the range of Table 5 'all' rows for the three self-training runs, and it mixes round-0 values (18.1-18.3) with last-round values (15.5-16.8). It is described as a property of the defect, but the gold arms in the same table reach 20.2-21.5% ('all') and 22.8% (boxed only), outside the range. The comparison in Section 3.2 of the round-0 pool share (18.8%) with '15.5-18.3% over all 500' is also inexact: the round-0 value over all 500 is 18.0-18.3%, the lower bound 15.5 being a post-training value. The range should be stated as round-0 18.0-18.3% and as run-dependent afterward (15.5-21.5).",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "3.2 The Verifier and Its Directional Bias",
+  "related_sections": [
+   "Abstract",
+   "Table 5",
+   "5.3 A Proposed Audit"
+  ]
+ },
+ {
+  "title": "Gold-arm r_t rise is hard to reconcile with the stated identity and the 'no boxed answer' explanation",
+  "quote": "That style carries no \\boxed answer, which both graders read",
+  "explanation": "Section 4.6 explains the gate collapse partly by the reference style carrying no \\boxed. Section 4.4 says the earlier gold arm still has 86% boxed generations (14% without). Section 5.3 states r_t = r_boxed x (boxed share among V'-accepted) as an identity and explains the self-training fall of r_t by a boxed share dropping 91->76%. In Table 5 the gold arms' r_t rises (+3.3, +2.1) with boxed-only r_t also rising (+2.8, +1.7). The paper never reports the boxed share among V'-accepted answers for the gold arms, though the identity would let the reader check it. If the style change removed \\boxed in the final-round gold arm, r_t should collapse rather than rise; if it did not, the explanation for the gate failure (format not read by graders) is weakened. Report the boxed share for gold arms (both 5e-4 and final round) and reconcile.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "4.4 Higher Learning Rates",
+   "5.3 A Proposed Audit",
+   "Table 5"
+  ]
+ },
+ {
+  "title": "Primary measure is inconsistent: sample accuracy declared primary but headlines, detectable effect and abstract use pass@1",
+  "quote": "we chose it as the primary accuracy measure",
+  "explanation": "Section 3.4 says sample accuracy was chosen after the runs as the primary accuracy measure because it has less variance. The abstract, the 'detectable effect' sentence (about 10 points; 6 in the final round), Section 5.1 and the Conclusion all use pass@1 (and pass@k) instead, and give the sample-accuracy figures only as 3.5-5.5 or a 'post hoc' 2.2 bound. Quantitatively the two give very different strength statements (detectable 10 vs 3.5-5.5 points); the abstract's headline 'design detects only gains of about 10 points' is ~2x looser than the measure the authors say is primary. The reader cannot tell which threshold governs the null. State the null on the primary measure (sample accuracy, ~3.5-5.5 detectable) or justify headlining pass@1.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "3.4 Models, Data, Training, Metrics",
+  "related_sections": [
+   "Abstract",
+   "1 Introduction",
+   "5.1 Answer to the Research Question"
+  ]
+ },
+ {
+  "title": "Independent-grader results are given without intervals and with a different range than the headline",
+  "quote": "changes of −3.6, −2.2, −4.6 for the three seeds",
+  "explanation": "The abstract, Discussion and Conclusion headline 'pass@1 falls 3.2-4.8 points in each of three seeds' (verifier-graded). The independent grader, the only non-verifier check, gives -3.6, -2.2, -4.6 (mean -3.47, range 2.2-4.6) and sample-accuracy -2.5, -5.5, -5.3, with no intervals reported. Seed 2 is -2.2 under the string grader versus an already-zero-touching [-6.8,+0.6] interval under the verifier (-3.2), so under the independent grader at least that seed very likely includes zero, and the 't interval' and the 'two of three exclude zero' claim are not reproduced for the second grader. 'Same sign and size' hides that the independent range (2.2-4.6) and mean (-3.5) are lower than the quoted -4.1. Report intervals and the mean/t-interval under the independent grader.",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "5.1 Answer to the Research Question",
+  "related_sections": [
+   "Abstract",
+   "7 Conclusion",
+   "4.6 A Final Round with a Revised Recipe"
+  ]
+ },
+ {
+  "title": "Number of examples differing under the dfrac patch is stated three different ways",
+  "quote": "the patch changes 0–4 training examples",
+  "explanation": "Section 4.3 says kept pools differ by '3-4 examples (under 0.5% of the 872-example pool)'; Section 4.4 says pools differ 'by 0-3 examples' for the seed-flip comparison; Section 3.2, Limitations and 5.3 say '0-4'. These can be different runs, but the text does not say so, and the point (B-A flipping +5.3 to -7.3 on 'near-identical pools') depends on the pool difference for those runs. Specify the pool difference per run pair.",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "6 Limitations",
+  "related_sections": [
+   "3.2 The Verifier and Its Directional Bias",
+   "4.3 The Patch Control Could Not Detect an Effect",
+   "4.4 Higher Learning Rates"
+  ]
+ },
+ {
+  "title": "Cap-hit ranges quoted in text do not match Table 1",
+  "quote": "40–46% of round-2 MATH-500",
+  "explanation": "Section 4.5 says 'at the rates where the share does not rise, 40-46%' of round-2 generations hit the cap, but Table 1 lists 39.7% for 2x10^-4 seed 2 (range is 39.7-45.7). It also says the cap-hit share 'rises 2-14 points' at 5x10^-4, while Table 1 gives rises of only 3.2 (43.0->46.2) and 8.0 (43.2->51.2) for the A runs; the 14 must come from B/no-filter runs shown only in supplementary Table S9. The decomposition percentages (12-30%, 52-72%) cannot be checked from the main text. Minor, but these are the numbers the decomposition rests on.",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "4.5 Anatomy of the Decline",
+  "related_sections": [
+   "Table 1",
+   "4.4 Higher Learning Rates"
+  ]
+ },
+ {
+  "title": "Replicate-pair gauge of 3.2 points is not derivable from the reported tables",
+  "quote": "the replicate pair we use as a gauge ends 3.2 points of sample accuracy apart",
+  "explanation": "The 3.2 gauge is used twice (3.4, and in the argument that thresholds are 'optimistic') to bound training-seed variance. The only same-configuration pairs in Table 2 are A (seed 0 vs 1): sample-accuracy change -2.4 vs -1.5 (diff 0.9), B: -3.2 vs -1.2 (diff 2.0), 1e-4 seeds -1.5/-3.7/-1.0 (range 2.7), 2e-4 -3.5/-3.8, 5e-4 -8.3/-4.7. None gives 3.2 as a change difference. If 3.2 is a difference in levels (not changes) it mixes partition variance, as the text admits, but then it is not a measure of training variance, and the final-round loop (same exam, three seeds) shows round-1 values within 0.8 points. Identify the pair and the quantity.",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "3.4 Models, Data, Training, Metrics",
+  "related_sections": [
+   "Table 2",
+   "4.6 A Final Round with a Revised Recipe"
+  ]
+ },
+ {
+  "title": "Number of affected parseable problems (24-28) not derivable from 54-62 minus 29-34",
+  "quote": "where some form could, rt moves by −5.5, −1.6 and −0.2 points",
+  "explanation": "Section 3.2 and 5.3 say the defect fires on 54-62 problems, 29-34 of which have an unparseable gold. The complement ranges 20-33 (54-34 to 62-29); the audit then uses '24-28 affected problems' and, in the Conclusion, 'about 25'. The pairing per run is never given, so a reader cannot verify that 24-28 follows. Also Table 5's 'affected, parseable' R0 values (92.3-95.5%) are lower than the stated '94-98% of correct answers rejected on firing problems' and the '87-98%' range, which is fine, but 'rejects 94-98%' mixes the unparseable problems (100% rejection by construction) with the parseable ones, inflating the apparent universality of the defect. Provide per-run counts (fires, unparseable, parseable).",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "5.3 A Proposed Audit",
+  "related_sections": [
+   "3.2 The Verifier and Its Directional Bias",
+   "6 Limitations",
+   "Table 5"
+  ]
+ }
+]
