@@ -1,0 +1,111 @@
+[
+ {
+  "title": "Sample-accuracy detectability bound inconsistent across sections",
+  "quote": "points of pass@1 or 3.5–5.5 of sample accuracy could have been missed (intervals",
+  "explanation": "The Introduction states that sample-accuracy gains of 3.5-5.5 points could have been missed. Section 5.1 instead reports a sample-accuracy figure of 'about 2.2 points', the largest upper limit among observed intervals. These are different quantities (a 2.8h/1.96 detectable effect versus an interval upper limit), but both are presented as the resolution of the same measure and are never reconciled. A reader cannot tell which bound characterises the design's power, and the 2.2 figure is not a power statement at all, as 5.1 admits. The Introduction should use one defined quantity.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "Introduction",
+  "related_sections": [
+   "5.1 Answer to the Research Question",
+   "3.4"
+  ]
+ },
+ {
+  "title": "Abstract asserts a pipeline defect that the body says was not diagnosed",
+  "quote": "fect in the pipeline, so the null concerns this recipe only and cannot show",
+  "explanation": "The Abstract says the gate failure 'points to a defect in the pipeline'. Section 4.6 says the authors noticed a shift to reference style ($-spans in 1,577 of 1,600 generations) but 'did not test it as the cause', that a collapse of this size 'is also what a pipeline defect would produce', and the Related Work offers a different explanation (Kim et al.: training on solutions can cut accuracy). No defect was located. A format/style mismatch between reference solutions and the grader, or a genuine harm of SFT on gold at this dose, is equally consistent. The Abstract states as an inference what the body leaves open.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Abstract",
+  "related_sections": [
+   "4.6 Final round",
+   "Related Work"
+  ]
+ },
+ {
+  "title": "Gate failure undermines, rather than scopes, the null; framing as 'null for the recipe' is not warranted",
+  "quote": "solutions, so this is a null for the recipe, not a statement about self-training.",
+  "explanation": "The positive control (training on reference solutions) fails by 32 points. A failed positive control means the pipeline cannot demonstrate improvement even when one is expected, so the 'no gain' results are uninterpretable as evidence about the recipe, not just about self-training in general. The paper itself concedes in 4.6 that 'we have no recipe known to raise accuracy'. Moreover the gate was run for the final-round configuration (one seed) and for dose-confounded 5e-4 arms, not for each learning rate/configuration behind the 'no gain at any learning rate' claim. 'A null for the recipe' therefore overstates what was learned; the honest reading is that the experiments are inconclusive.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Introduction (Contributions)",
+  "related_sections": [
+   "Abstract",
+   "4.6 Final round",
+   "6 Limitations"
+  ]
+ },
+ {
+  "title": "'Null' framing in title and abstract vs consistent, partly significant decline in the final round",
+  "quote": "pass@1 falls 3.2–4.8 points in each of three seeds",
+  "explanation": "The title and abstract frame the study as a null result, but the final round shows a negative effect in all three seeds (mean -4.1, t interval [-6.1,-2.1] excluding zero; two of three bootstrap intervals exclude zero; independent grader agrees in sign). Section 4.6 then says 'we do not claim that it costs accuracy'. The study is therefore neither a clean null nor a claimed decline: the abstract reports the decline yet never states the t-interval that excludes zero, and the 'no gain' headline sits beside an unreconciled hint of harm. Also, 'about 6 points detectable' is claimed for a design that detected a -4.1 mean, which should be explained (three-seed averaging vs per-run power).",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "Abstract",
+  "related_sections": [
+   "4.6 Final round",
+   "5.1"
+  ]
+ },
+ {
+  "title": "Claim that finished-accuracy decline appears 'most clearly at the highest rate' is not robust to the paper's own decomposition",
+  "quote": "generations lose 5.5–10.6 points against the untrained model on the same",
+  "explanation": "The Contributions present the finished-accuracy loss at 5e-4 as the main positive finding. Section 5.3(ii) shows the balance is unstable: the cap share accounts for 12-30% of the decline in the three seed-1 runs but 52-72% at seed 2 (and -2% and 5% for two further runs), i.e. in some runs most of the drop is truncation, not lower finished accuracy. The Introduction's statement that 'what appears ... is lower accuracy on the solutions the model does finish' omits this, and the finished-vs-matched comparison is post hoc with intervals omitting training-seed variance.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Introduction",
+  "related_sections": [
+   "4.5",
+   "5.3"
+  ]
+ },
+ {
+  "title": "'A false reject only removes a training example' understates a systematic, problem-bound selection effect",
+  "quote": "where a false reject only removes a training example, and apply a",
+  "explanation": "The defect is not random: per Section 5.3 it fires on 54-62 problems, rejecting 94-98% of correct answers there, shrinks the round-0 pool by a fifth to a quarter (440 -> 542), and 29-34 of those problems have unparseable gold so no answer form escapes it. Systematically deleting whole problems changes the training distribution and difficulty mix, which is exactly the verifier-bias channel the paper claims to study. Describing the offline setting as one where a false reject 'only' drops an example, in contrast with RLVR's zero reward, trivialises this and sits uneasily with the later claim that no run varies the frequent defect.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "Introduction",
+  "related_sections": [
+   "3.2",
+   "5.3"
+  ]
+ },
+ {
+  "title": "Audit denominator described as 'correct solutions' although verifier false positives are unmeasured",
+  "quote": "rect solutions that a storage defect in our pipeline rejects (about one",
+  "explanation": "r_t is defined over solutions accepted by V', not over truly correct solutions. Section 3.2 states the audit 'inspected only rejections, so it gives no false-positive rate', so V'-accepted solutions may include wrong answers. 'Correct solutions' and 'about one in six' therefore treat V' acceptance as ground truth, and the 7.8% format-probe false-negative rate (on another model's solutions judged by a scripted normaliser) is not the same quantity as the 15.5-18.3% r_t.",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "Abstract",
+  "related_sections": [
+   "3.2",
+   "5.3"
+  ]
+ },
+ {
+  "title": "Analogy to Kim et al. contradicts the paper's own undiagnosed-defect stance",
+  "quote": "Kim et al. [8] show that self-distillation with a teacher",
+  "explanation": "Kim et al. concern self-distillation with a teacher that sees the solution; the paper's train-on-gold arm is plain SFT on reference solutions of the same problems. Presenting the gate failure as 'as our train-on-gold control does' offers a literature-backed cause, while Section 4.6 declares that the cause was not tested and the Abstract attributes it to a pipeline defect. The three accounts (defect, style shift, Kim-type harm) are mutually inconsistent as stated and the related-work claim of equivalence is unsupported.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "Related Work",
+  "related_sections": [
+   "Abstract",
+   "4.6 Final round"
+  ]
+ },
+ {
+  "title": "Headline 'no gain' rests on single-seed 150-problem runs, the very failure the paper cites from Xu et al.",
+  "quote": "Xu et al. [16] audit LoRA self-training of Qwen3-",
+  "explanation": "The paper praises Xu et al. for identifying training-seed variance and uncontrolled token caps as measurement failures that 'each invert a finding', yet its pre-final-round conclusions (no gain at any LR, B-A flips from +5.3 to -7.3, replicate pairs differing by 3.2 points) come from single-training-seed runs on 150 problems with the 512-token cap binding from the start, with no multiplicity correction and a post hoc added set of measures. The authors acknowledge this but still lead the Abstract with 'No pass@1 or pass@k gain has a problem-level bootstrap interval excluding zero' as if informative; the paper does not hold its own earlier runs to the standard it sets.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "Related Work",
+  "related_sections": [
+   "Abstract",
+   "6 Limitations"
+  ]
+ }
+]

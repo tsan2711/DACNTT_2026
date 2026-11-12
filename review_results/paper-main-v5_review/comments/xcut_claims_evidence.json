@@ -1,0 +1,131 @@
+[
+ {
+  "title": "'Null result' framing is not supported: no demonstrated sensitivity, and the data show declines rather than a null",
+  "quote": "No pass@1 or pass@k gain has a problem-level",
+  "explanation": "A null result is informative only if the design could have detected a plausible effect. Here (i) the stated detectable effect is about 10 points of pass@1 (and the authors concede it is a lower bound, since seed variance is omitted), far above the few-point gains that ReST-EM-style self-training typically reports; (ii) the only positive control (the gate) fails, so the pipeline has no demonstrated ability to register any improvement; (iii) the verifier-selected scores are the only scores for the 150-problem runs. Under these conditions the honest label is 'inconclusive', not 'null'. Moreover the evidence is not null: at 5e-4 all four A/B runs have sample-accuracy intervals excluding zero (Section 4.4), 12 of 12 higher-rate A/B rows are negative in sample accuracy, and the final-round loop falls in all three seeds (mean -4.1, t interval excluding zero). The title and the abstract's lead sentence foreground 'no gain' while the body's consistent signal is a decline of unknown cause. The title promises an answer to 'Mathematics or the Verifier?' but the Conclusion says neither branch is answered.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "Abstract / Title",
+  "related_sections": [
+   "4.4 Higher Learning Rates",
+   "4.6 A Final Round with a Revised Recipe",
+   "5.1 Answer to the Research Question",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "Gate failure is read as a pipeline defect and as a recipe-only limitation, but the gate is not a valid positive control for on-policy self-training",
+  "quote": "reference solutions lowers pass@1 by 32.2 points, which points to a de-",
+  "explanation": "The abstract states the gate failure 'points to a defect in the pipeline', while Section 4.6 says only that a collapse of this size 'is also what a pipeline defect would produce' and that the cause was not tested. SFT on 300 off-policy reference solutions (halved response length, different style) is a known way to damage an instruction-tuned model at LR 1e-4, so the gate can fail without any bug; conversely, on-policy filtered data does not carry that distribution shift, so passing or failing the gate says little about whether the self-training loop can help. The inference chain 'gate fails -> null concerns this recipe only' therefore rests on an unstated assumption that gold-SFT and self-SFT share the same failure modes. If instead a real pipeline bug exists, every decline the paper reports (including the loop's -4.1 and the 'finished accuracy' decline in the contributions) may be a bug artefact, yet these are still presented as findings.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "Abstract",
+  "related_sections": [
+   "4.6 A Final Round with a Revised Recipe",
+   "1 Introduction"
+  ]
+ },
+ {
+  "title": "Gate collapse could be a grader/style artefact; this alternative is not checked, and the 'independent' grader does not rule it out",
+  "quote": "the model adopts the reference style ($-delimited spans in 60 of 1,600",
+  "explanation": "The gold-trained model moves almost entirely to $-delimited reference style. Both graders extract the answer from \\boxed (math-verify with a bare stored gold, and the independent grader described as a 'normalised string match of the last \\boxed'). If the gold-trained model stops emitting \\boxed or emits it in another place, both graders would score it near zero for reasons unrelated to mathematics, which would also reproduce the -30.0 under the independent grader. The paper reports no boxed share, no manual inspection of a sample of gate outputs, and states 'We noticed the shift to the reference style but did not test it'. Since the gate's failure underwrites the paper's central scoping claim, an unchecked grader/format explanation weakens both the 'defect in the pipeline' reading and the 'cannot show self-training fails' conclusion.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "5.1 Answer to the Research Question",
+   "Abstract"
+  ]
+ },
+ {
+  "title": "Abstract/Conclusion say all scores are graded by the selecting verifier and a second grader is future work, but Section 5.1 reports an independent grader on the final round",
+  "quote": "every headline number is graded by",
+  "explanation": "Limitations says every headline number is graded by the biased verifier; the Conclusion says 'neither branch of the question is answered' because every score is graded by the selecting verifier and lists 'a second grader' as the first piece of future work. Yet Section 5.1 reports a string-match grader (indep_grade.py) applied to the final-round generations, yielding same-sign declines (-3.6, -2.2, -4.6; gold -30.0). The final-round loop numbers, which the abstract headlines, are thus not graded only by the selecting verifier. The paper should state consistently what the second grader does and does not resolve (it resolves the same-grader circularity for declines in the final round only; it grades with a stricter rule so it cannot test false-negative adaptation). Also, under the independent grader only one of three pass@1 intervals excludes zero versus two of three under math-verify, a weakening that the abstract's 'two of three intervals exclude zero' does not mention.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "6 Limitations",
+  "related_sections": [
+   "5.1 Answer to the Research Question",
+   "7 Conclusion",
+   "Abstract"
+  ]
+ },
+ {
+  "title": "Mixed signalling on whether the final-round loop costs accuracy",
+  "quote": "so we do not claim that",
+  "explanation": "The abstract and conclusion foreground that pass@1 falls in each of three seeds (mean -4.1, t interval [-6.1,-2.1] excluding zero), while Section 4.6 says 'we do not claim that it costs accuracy' and that the cause is not isolated. A reader cannot tell what is asserted. The t interval over three seeds uses 2 degrees of freedom, shares one exam draw and one 300-problem pool across seeds, and uses a recipe declared unvalidated, so it is weak evidence; but the same text elsewhere (Section 5.1, 'in the 500-problem final round pass@1 falls 3.2-4.8 points in each of three seeds') is used as a headline. Either the decline is a result worth reporting at this strength (in which case its sign should be reflected in the 'null' framing) or it is not (in which case it should not be in the abstract).",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "Abstract",
+   "5.1 Answer to the Research Question",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "Power statements are internally inconsistent and optimistic relative to the paper's own seed-to-seed variation",
+  "quote": "these are lower bounds: a null here means no",
+  "explanation": "(a) The Introduction says gains below 3.5-5.5 points of sample accuracy 'could have been missed', while Section 5.1 reports that every observed interval has an upper limit of at most about 2.2 points; these are different quantities (80%-power detectable effect vs. largest upper confidence limit) and presenting both without reconciliation invites the reading that gains above 2.2 were excluded and also that gains up to 5.5 were not. The 2.2 figure is also defined only in Section 5.1 yet cited in Section 3.4. (b) The 10-point (and 6-point) detectable effect is computed as 2.8h/1.96 from interval half-widths that omit training-seed variance, but the paper's own evidence shows seed variance is large: a replicate pair differs by 3.2 points of sample accuracy and B minus A flips from +5.3 to -7.3 pass@1 on near-identical pools (a 12.6-point swing). Taking that into account, the realistic minimum detectable gain is well above 10 points, and 'about 6 in the final round' is not stated with the same caveat in the Conclusion ('it could see only gains of about 10 and 8-10 points; 6 in a final 500-problem round'). (c) The Discussion says the 2.2-point figure is 'not a power statement', but it is used in the Introduction/3.4 as if bounding gains.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "3.4 Models, Data, Training, Metrics",
+  "related_sections": [
+   "1 Introduction",
+   "5.1 Answer to the Research Question",
+   "7 Conclusion",
+   "Abstract"
+  ]
+ },
+ {
+  "title": "Interpretation of the selection result is not matched by 'no selective avoidance' claims: injected-bias control 'learnable from the problem' is overstated",
+  "quote": "rule is visible: every \\boxed answer is rejected when the gold contains \\frac",
+  "explanation": "The abstract describes the second injected-bias run as 'learnable from the problem'. But the rule is conditioned on the gold answer containing \\frac, which the model never sees; it can only be inferred through the model's own answer, i.e., it is correlated with the problem, not visible in it. Only 49 of 300 selection problems are affected and only 35 of 298 examples are removed in one adapter step at 1e-4, so the pressure is small. The text then concludes 'The model does not stop boxing where boxing is penalised', which reads as substantive evidence against verifier-style adaptation, while the same paragraph and the abstract say the runs are uninformative. The tone should be aligned: either the run is a weak negative result (state the dose and effect size it could have seen) or it is not evidence.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "Abstract",
+   "5.3 A Proposed Audit for GVT with a Biased Verifier"
+  ]
+ },
+ {
+  "title": "Title and introduction attribute the verifier defect to math-verify, but the 15-18% false-reject defect is a pipeline artefact, so the 'verifier' side of the question is not about rule-based verifiers",
+  "quote": "it rejects some correct answers written in forms it does not parse (Section 3.2).",
+  "explanation": "The Introduction motivates the study with a general weakness of rule-based verifiers. The quantitatively dominant 'verifier bias' studied in Sections 3.2 and 5.3 (15.5-18.3% of V'-accepted generations rejected, 29-34 of 54-62 affected problems with unparseable gold) comes from the authors' own gold-storage step ('Our pipeline stores the gold without a de-limiter'), fixed by wrapping gold in \\boxed. The abstract acknowledges 'a storage defect in our pipeline', but the title ('Mathematics or the Verifier?'), research question and Conclusion treat the results as about 'a rule-based verifier'. The only defect intrinsic to math-verify that was patched (\\dfrac/\\tfrac) changes 0-4 examples. Consequently no run informs about the behaviour of a correctly configured rule-based verifier, and the 'verifier' branch can neither be affirmed nor refuted for the verifier class named in the title.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "1 Introduction",
+  "related_sections": [
+   "3.2 The Verifier and Its Directional Bias",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "'Pooled decline does not reproduce under isolation' is itself unsupported given the stated dose/pooling confound; and the contribution about finished-accuracy loss at the highest rate overstates what the data isolate",
+  "quote": "isolation, though dose and pooling are confounded.",
+  "explanation": "If dose (about 4.5x examples per round), pooling and in-sample scoring (selection == evaluation in Design P) are all confounded, one cannot say the decline 'does not reproduce'; the isolated run was never a replication of the pooled condition. At 5e-4 the isolated runs decline up to 11 points, and Design P is evaluated on the problems it selects from, so the two declines are not comparable measurements. Relatedly, the contributions state that 'finished generations lose 5.5-10.6 points against the untrained model on the same problem mix' at the highest rate, but (i) the matched measure conditions on which problems finish after training and is described as 'descriptive', (ii) matched deficits at 1e-4 and 2e-4 (-0.6 to -4.7) and even at 1e-5 (-1.1 to -4.2) are of similar size with overlapping intervals, (iii) the no-filter and gold arms show the same pattern 'with no verifier at all', which the paper itself says is consistent with generic SFT damage, and (iv) the recipe is not validated (the gate fails). The claim that the decline is 'most clearly at the highest rate' and a property of finished accuracy is therefore a dose effect of a possibly defective recipe, not a finding about self-training.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "7 Conclusion",
+  "related_sections": [
+   "1 Introduction",
+   "4.1 Design P: An Apparent Collapse",
+   "4.4 Higher Learning Rates",
+   "4.5 Anatomy of the Decline"
+  ]
+ },
+ {
+  "title": "The audit is listed as a contribution/proposed protocol although it is uninformative, lacks any positive control and is dominated by an identity",
+  "quote": "as a protocol for future studies, not as",
+  "explanation": "Section 5.3 recommends r_t as a first check for GVT with a biased verifier, but the paper's own analysis shows (a) r_t equals r_boxed times the boxed share, so its movement mostly tracks a style statistic; (b) the falling boxed share is precisely what avoidance of a boxed-only defect would look like, so the identity does not discriminate adaptation from generic drift; (c) boxed-only changes have intervals about +/-3 that contain the whole -2.6 fall; (d) train-on-gold, with no verifier, moves r_t by +2.1 to +3.3, as large as the observed falls; and (e) both injected-bias controls fail to validate it. A protocol whose sensitivity and specificity are both shown to be unknown is not supported as a recommendation, and the Contributions and abstract devote a bullet to it. The text should present it as a negative/diagnostic finding (this statistic cannot detect adaptation at this scale) rather than as a proposed check, and the 'four checks' (of which (iii) and (iv) are common experimental hygiene) should not be described as derived from the analyses.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "5.3 A Proposed Audit for GVT with a Biased Verifier",
+  "related_sections": [
+   "Abstract",
+   "1 Introduction",
+   "Table 5"
+  ]
+ }
+]

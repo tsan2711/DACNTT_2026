@@ -1,0 +1,144 @@
+[
+ {
+  "title": "Detectable-effect bound is mis-stated: it is not a bound on the true effect and the 80% power miss is dropped",
+  "quote": "gain of at least that size, probably larger",
+  "explanation": "The paper computes 2.8h/1.96 from the half-width h of intervals taken at the observed data, then says a null 'means no gain of at least that size'. Even if h were right, 2.8h/1.96 is the effect that would be detected 80% of the time; a gain exactly that size is missed 20% of the time, and a gain of 0.7 of it is missed about half the time. A non-significant result cannot be turned into an upper bound on the effect this way (that needs the interval's upper limit or an equivalence test). The paper also calls the figures 'lower bounds' on the detectable effect, which is correct only in the sense that true MDE is larger, but then the Abstract and Conclusion headline 'could detect only gains of about 10 points' as if 10 were a ceiling on what was missed. The h values also come from a single-draw pass@1 and a single exam partition; in the paper's own account seed variance is large (B minus A flips +5.3 to -7.3), so the quoted 10 / 6 points are best-case numbers, and the text should say what the MDE would be with the seed variance the authors themselves observed.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "3.4 Models, Data, Training, Metrics (Uncertainty / Detectable effects)",
+  "related_sections": [
+   "Abstract",
+   "1 Introduction",
+   "5.1",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "Seed variance is invoked to weaken the MDE but ignored when it would matter (final-round 6-point claim, replicate evidence)",
+  "quote": "Because h omits training-seed variance",
+  "explanation": "Section 3.4 cites a single replicate pair (3.2 points apart) and a B-minus-A flip of 12.6 points as evidence that seed variance is large. That evidence is n=1 pair and n=1 flip, so the seed SD is essentially unestimated. Yet Section 4.6 reuses the same formula to claim 'about 6 points' of detectable effect, and the three final-round seeds (-4.8, -3.2, -4.2) agree within 1.6 points, which is inconsistent with the large seed spread used to discount the earlier MDE. Either the earlier flip is mostly a pool/partition difference and not seed noise (then the 'probably larger' qualifier is unsupported), or seed variance is large and the three nearly identical final-round seeds are surprising and probably share the pool, partition and problems (then they are not independent evidence). The paper should state one estimate of seed variance and carry it consistently.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "3.4 Uncertainty / 4.6",
+  "related_sections": [
+   "4.4",
+   "4.6"
+  ]
+ },
+ {
+  "title": "'2.2-point bound' contradicts the stated 3.5-5.5 point detectable effect and is a maximum over non-independent runs",
+  "quote": "is the largest upper limit among observed intervals",
+  "explanation": "Section 3.4 and the Introduction say gains below 3.5-5.5 points of sample accuracy could have been missed, while Section 5.1 offers 2.2 points as what the intervals exclude. Both are presented side by side without reconciling them: the CI upper limit says the data are inconsistent with gains above 2.2, the MDE says gains up to 5.5 would often be missed. These can both hold, but a reader gets two incompatible headline sizes. Moreover 2.2 is the largest of ~13 separate 95% upper limits that come from runs sharing exam partitions and round-0 draws, so it is neither a joint bound nor a bound for a pooled effect, and the paper itself says it is 'not a power statement'. It was computed on a measure picked after the runs and omits seed variance. Retaining it as a bound invites exactly the reading the authors disclaim; either drop it or give a pooled, partition-aware interval.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "5.1 Answer to the Research Question",
+  "related_sections": [
+   "3.4",
+   "1 Introduction"
+  ]
+ },
+ {
+  "title": "'No improvement detected' is read as a null even though declines are detected; no equivalence test and title overstates",
+  "quote": "We detect no improvement at any learning rate",
+  "explanation": "The paper states it applies 'the same reading to declines and to gains'. Under that symmetric reading the data do not look null: in Table 2 virtually every non-control point estimate is negative (the only positive pass@1 value is +0.7), sample-accuracy intervals exclude zero in 4 of 4 A/B runs at 5e-4, in B at seed 0, in A seed 2 at 1e-4 and 2e-4, and in two of three final-round seeds on pass@1 (all three on sample-accuracy point estimates). With roughly 50-60 reported intervals, zero detected gains but many detected declines is not what a true-zero effect would produce; a sign test over the A/B rows is lopsided. 'Not significantly positive' is being used as the headline, while the declines, which are the main finding, are demoted to 'descriptive'. No equivalence (TOST) margin is ever pre-specified, so 'null' cannot be asserted in the sense of 'effect within a small margin of zero' either. The title 'A Null Result' therefore does not describe the evidence: the data are an inconclusive/negative result from an unvalidated pipeline.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "Abstract / 5.1",
+  "related_sections": [
+   "Title",
+   "3.4",
+   "4.4",
+   "4.6"
+  ]
+ },
+ {
+  "title": "A failed positive control undermines the label 'null result' and the 'recipe-level' reading of every arm",
+  "quote": "No arm improves, not even training on reference",
+  "explanation": "Because the positive gate (training on reference solutions) fails by -32.2 points and every arm including no-filter declines, the pipeline demonstrably lowers accuracy under any training signal. In that regime a null for gains is expected whatever the verifier or the self-training idea does (floor / harm effect), so the nulls carry no information about the recipe's mathematics-versus-verifier question, which the paper concedes. The paper still frames the Contributions and title as a null result about 'one verifier-filtered self-training recipe', and the 'recipe' is not even one recipe: pre-final runs use loss over the prompt, 512 limit, q/v LoRA with a known gold-storage defect, and the final round changes seven things simultaneously and is itself unvalidated. A null result in the usual sense requires a procedure shown capable of detecting the effect; here the procedure is shown incapable. An honest label is 'failure of a positive control / inconclusive'. Also, the gate is one seed with a verifier that may itself mis-grade the shifted $-delimited style, so even the gate's -32.2 is not cleanly attributed to a pipeline defect rather than to a grading artefact.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "Title / Abstract / 4.6",
+  "related_sections": [
+   "Contributions",
+   "5.1",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "Runs sharing partitions and round-0 draws are tallied as separate evidence",
+  "quote": "sample-accuracy intervals exclude zero in all four A/B runs",
+  "explanation": "Section 3.4 admits runs share exam partitions and round-0 draws, and Section 3.3 says a seed sets partition, selection set and training randomness together. The same A seed-1 and seed-2 setups are reused at 1e-5, 1e-4, 2e-4 and 5e-4, A and B pairs share partitions and near-identical pools, and no-filter / gold arms reuse the same partitions. The text nevertheless counts 'every run declines', 'all four A/B runs', 'five of six runs', and 'in all five runs we re-scored' as if they were independent confirmations, with only parenthetical remarks that A/B are 'closer to two replicates'. Effective independent exam partitions across the whole study are roughly 3-4 (seeds 0-3) with 150 problems each, and the 'dose-response' reading at 5e-4 uses two. Counting rule should be per partition, or partition should be a random effect; otherwise both the 'decline' counts and the 'no gain at any rate' sweep overstate the number of independent looks.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "4.4 Higher Learning Rates",
+  "related_sections": [
+   "3.3",
+   "3.4",
+   "4.5",
+   "3.2"
+  ]
+ },
+ {
+  "title": "t intervals with n=3 shared-exam seeds are presented as inference after declaring the study descriptive",
+  "quote": "(t interval [−6.1, −2.1])",
+  "explanation": "The final-round mean pass@1 interval uses t with 2 degrees of freedom (critical value 4.30), which is arithmetically right for the three values, but the three seeds are evaluated on the same 500 problems, from the same 300-problem pool design, and one rate; the paper itself notes the t intervals omit shared problem-sampling error. The resulting interval is therefore too narrow for any population claim beyond these 500 problems and is not an estimate of seed-to-seed variance of the recipe. A sample SD from three values is also extremely unstable (the interval itself is a function of a 2-df chi-square). The Discussion then says 'we do not claim that it costs accuracy' while Abstract and Conclusion headline that pass@1 'falls ... in each of three seeds', and the sample-accuracy t interval [-8.1, -1.0] has a lower end 8x the upper end. Either use the t interval as a test (and then the decline is established for this exam) or not at all; the paper hedges both ways.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "Abstract",
+   "5.1",
+   "3.4"
+  ]
+ },
+ {
+  "title": "No multiplicity control yet decline intervals are used selectively; the primary measure was chosen after seeing results",
+  "quote": "variance, so after the runs we chose it as the primary accuracy measure.",
+  "explanation": "The pre-set measure (pass@1, first of k draws) is the noisiest and gives h about 6-7 points, so nothing is ever significant on it; the measure chosen after the runs (sample accuracy), with 2-3x narrower intervals, is the one on which declines become significant. The paper says claims resting on it are post hoc, but the Results and Discussion still use sample-accuracy intervals excluding zero to support 'decline at 5e-4' and 'matched finished accuracy loses 5.5-10.6'. Together with the post hoc added learning rates, controls, round counts, k, termination measures, V' re-scoring and a seven-change final round, the number of looks is large, there are about 60 reported 95% intervals, and no correction or even a count of comparisons is given. 'The same reading' for gains and declines is therefore not applied: one-sided significance for declines was obtained through measure selection, whereas the pre-set measure shows nothing in either direction. A table separating pre-set measure results from post hoc ones would show how little of the decline narrative survives on the pre-set measure alone.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "3.4 / 1 Introduction",
+  "related_sections": [
+   "4.4",
+   "4.5",
+   "5.1"
+  ]
+ },
+ {
+  "title": "Dose-response inferred from two seeds across confounded settings",
+  "quote": "at seed 1 sample accuracy falls 1.5, 3.5 and 8.3 points",
+  "explanation": "The paper says the rate comparison 1e-5 vs higher is confounded by k, rounds, pool size and metric, and only 1e-4 to 5e-4 isolates rate. Yet it states 'the decline may grow with the rate' from a monotone seed-1 series (1.5, 3.5, 8.3) while seed 2 is 'almost flat' (3.7, 3.8, 4.7). With seed variance of the size the authors report (replicate 3.2 points apart; B-A flip 12.6), a monotone sequence over three rates on one seed is weak evidence, and two seeds with opposite pictures is no pattern. This is a case where the paper's own standard (seed variance dominates, runs are not independent) is not applied to the author's trend reading. Also, with only an n=2 per rate for 2e-4 and 5e-4 and the same exam partition across rates, rates are not independent either.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "4.4 Higher Learning Rates",
+  "related_sections": [
+   "3.4"
+  ]
+ },
+ {
+  "title": "The 'independent grader' is neither independent of the verifier's style artefact nor consistent with 'all accuracies are graded by the selecting verifier'",
+  "quote": "gives pass@1 changes of −3.6, −2.2, −4.6 for the three seeds",
+  "explanation": "The grader compares the last \\boxed against the gold after normalisation. It shares with math-verify the extraction step that creates the defect of interest: unboxed answers cannot be scored correct by either grader, and the paper's own central finding is that the boxed share falls after training (91 to 76%, and 14% of round-2 generations without boxed). A fall in the boxed share therefore lowers both graders' scores mechanically, so agreement between them is expected and does not validate the declines as real loss of mathematical ability. A stricter grader is also not independent evidence about verifier false-reject bias (it is stricter, not more permissive, so it cannot recover false rejects), and it was written after the results, only for the final round. The paper's own counts also diverge from math-verify: the interval excluding zero for pass@1 is for seed 3 only, vs seeds 1 and 3 under math-verify. Finally, this independent grading contradicts the Abstract, Limitations and Conclusion, which say that all accuracies and every headline number are graded by the selecting verifier. The paper should either state clearly that the final round has a second grader that fixes extraction coupling only partially, or remove the blanket statements.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "5.1 Answer to the Research Question",
+  "related_sections": [
+   "Abstract",
+   "Limitations",
+   "7 Conclusion",
+   "4.6"
+  ]
+ },
+ {
+  "title": "Final-round gate is a single seed and the loop-vs-gate contrast is not a paired test; the gate's failure is read as 'pipeline defect' without a diagnostic",
+  "quote": "a collapse of this size from 300 reference solutions is also what\na pipeline defect would produce",
+  "explanation": "The gate is one run with one seed, yet it carries the whole logical burden of 'recipe cannot be called corrected' and the title. A defect is asserted by plausibility, not tested: no check of the gold-answer normalisation, truncation of the 1,024-token limit, the $-span style shift (60 to 1,577 of 1,600 generations) or whether the verifier mis-reads the shifted style was done. The paper says it 'noticed the shift ... but did not test it'. Because gate-fail is used to downgrade all arms' evidence while loop declines of -4.1 (three seeds) are reported as being 'not attributed to self-training or to the verifier', the paper simultaneously treats the gate as decisive and as undiagnosed. The 300-problem pool also is not checked for overlap with MATH-500 ('We report no overlap check'), which could bias the gate and loop in opposite directions.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "Title",
+   "7 Conclusion"
+  ]
+ }
+]

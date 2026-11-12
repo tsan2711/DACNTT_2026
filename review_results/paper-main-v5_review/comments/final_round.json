@@ -1,0 +1,92 @@
+[
+ {
+  "title": "Gate failure is read as a 'pipeline defect' without any diagnosis, and the gate premise is not justified",
+  "quote": "a collapse of this size from 300 reference solutions is also what\na pipeline defect would produce.",
+  "explanation": "The gate is declared a positive control that 'must raise accuracy', but the paper gives no argument that SFT of an already instruction-tuned 1.5B model on 300 terse human MATH solutions should raise accuracy. A drop from 49.2 to 17.0 with a near-total switch to reference style ($-spans in 60 -> 1,577 of 1,600 generations), repeated at 2e-5 (20.6), is equally what a style/distribution shift (reference solutions are shorter and less step-by-step than the model's own CoT, different format) would produce with a correct pipeline. The text itself says 'We noticed the shift to the reference style but did not test it as the cause', yet the abstract says the failure 'points to a defect in the pipeline'. So the two readings (defect vs. invalid gate premise) are not separated, no check is reported (e.g. inspect training targets, EOS/chat template, completion-only masking, loss curves, a small overfit test), and the abstract is more confident than the body. Because the loop and gate share the same seven-change recipe, an undiagnosed defect could also account for the loop's -4 point decline, which the paper partly acknowledges but then still reports a t-interval that excludes zero as the headline.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "Abstract",
+   "5.1 Answer to the Research Question"
+  ]
+ },
+ {
+  "title": "Seven simultaneous recipe changes make both the loop result and the gate failure uninterpretable",
+  "quote": "we ran one last round with seven recipe changes\nmade at once, aimed at the suspected causes (no ablation of any single one)",
+  "explanation": "Completion-only loss, all-linear LoRA, 1,024 cap, normalised gold, a new MATH-train pool, a 500-problem exam, k=2/one adapter and a new LR all change together, and the pool, exam size, k and rounds also differ from every earlier run. Any of them (or an interaction) could produce the gate collapse and the loop decline; no earlier-recipe run on the new pool/exam is given, so the final-round numbers cannot be compared with earlier tables either (round 0 on the new exam is the only baseline). 'Normalised gold answers' is also not specified (verifier gold only, or training targets as well?), which matters because normalising the gold changes the gold-storage defect that Section 3.2 and Section 5.3 treat as the key verifier flaw. The paper acknowledges 'no ablation', but still describes the round as testing the 'revised recipe' and 'aimed at the suspected causes', and uses the failed gate to argue the null belongs to 'this recipe'; with seven changes the recipe is not a single well-defined object whose null can be reported.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "3.4 Models, Data, Training, Metrics",
+   "Abstract"
+  ]
+ },
+ {
+  "title": "Three-seed t intervals are fragile and the seeds are not independent evidence",
+  "quote": "The mean pass@1 change over the three seeds is\n−4.1 (t interval [−6.1, −2.1]), and −4.5 for sample accuracy ([−8.1, −1.0]).",
+  "explanation": "I reproduced the arithmetic: with n=3, df=2 (t=4.30), pass@1 changes -4.8/-3.2/-4.2 give mean -4.07, sd 0.81, interval about [-6.1,-2.1]; sample accuracy gives mean -4.53, sd 1.42, [-8.1,-1.0]. So the numbers are computed correctly. The concern is what they mean. (a) A standard deviation estimated from three values is extremely unstable (a tiny sd is likely), so the narrow pass@1 interval is not reliable. (b) The seeds share the same 500 exam problems (and presumably the same 300-problem pool), so the interval covers only sampling/training noise, as the caption admits, not problem-sampling error; it is therefore not an inference about the recipe. (c) The per-seed 'changes' differ mainly because round-0 draws differ (49.2, 46.8, 48.2) while implied round-1 pass@1 is almost constant (44.4, 43.6, 44.0), i.e. most between-seed spread is round-0 sampling noise from a single k=1 draw, which is not independent replication of training. (d) The text then says 'we do not claim that it costs accuracy', while the abstract and Section 5.1 repeat 'falls ... in each of three seeds' and an interval excluding zero; the mean -4.1 is also below the paper's own ~6-point detectable effect. The paper is careful here, but the headline framing still leans on this test.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "Abstract",
+   "5.1 Answer to the Research Question"
+  ]
+ },
+ {
+  "title": "Hash-control numbers are internally inconsistent: 4.9 vs 3.1 does not give a difference of -0.1",
+  "quote": "the \\boxed share falls 4.9 points on them and 3.1\non the others (diﬀerence −0.1, [−6.1, 6.0])",
+  "explanation": "If the share falls 4.9 points on affected problems and 3.1 on the others, the difference in change is -1.8 (or +1.8), not -0.1. Either the difference is computed on a different quantity/subset/denominator than the two quoted falls, or a number is wrong. Nothing in the text says which, and the same 'difference' convention is then compared with the content-rule run (+2.8) and the unbiased seeds (-3.7, -2.7, -5.5), where affected-minus-other is evidently the sign convention. The reader cannot tell which quantity the interval refers to, nor the sizes of the hash-selected affected group (30% of 500 exam problems?).",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": []
+ },
+ {
+  "title": "Content-rule control: denominators and counts are ambiguous and the avoidance signal is never quantified",
+  "quote": "(49 of the 300 selection problems, 263 examples kept instead of 298; 70 of the\n500 exam problems, where the shares below are measured)",
+  "explanation": "With k=2 there are up to 600 generations from 300 problems, so '298 kept' must be accepted samples, not problems (otherwise ~99% of a 49%-accuracy model's problems would be solved); the text should say so. Rejecting all \\boxed answers on 49 \\frac problems removed only 35 examples, so the pool still has at most a handful of examples from those problems, and the only avoidance-teaching examples are the unboxed accepted answers on them; their count is explicitly not reported ('no count of avoidance examples'). Without that count one cannot judge whether the control ever exerted pressure to stop boxing. The affected exam group is only 70 problems, and the key estimate +2.8 [-2.8, +8.3] is compatible with substantial avoidance or its absence; comparing it against three unbiased differences (-3.7, -2.7, -5.5) of a different run set adds no inference. The same sentence also mixes training pool (300 train problems) and exam (500 MATH-500) denominators.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "5.3 A Proposed Audit for GVT with a Biased Verifier"
+  ]
+ },
+ {
+  "title": "Conclusion 'The model does not stop boxing where boxing is penalised' overreaches and contradicts the surrounding hedges",
+  "quote": "The model does not stop boxing where boxing is penalised, but neither\nrun shows selective avoidance, so neither validates the audit",
+  "explanation": "The same paragraph says the controls are 'not' valid positive controls (hash: cannot be learned; content rule: single run, no r_t, unreported number of avoidance examples). A single seed, one adapter, 300 examples and ~tens of relevant examples cannot establish that the model 'does not stop boxing where boxing is penalised'; the data show at most that no avoidance was detected at this dose. The wording 'a shift in the direction opposite to avoidance' is likewise interpreting a difference whose interval [-2.8, +8.3] includes zero and avoidance-sized negative values. Also the exam pass@1 fall of -7.0 [-11.2,-3.0] is larger than in unbiased seeds and 'not interpreted', although it could itself be an effect of the bias (fewer boxed training examples on \\frac problems), which is exactly what the control was meant to probe.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "Abstract",
+   "5.3 A Proposed Audit for GVT with a Biased Verifier"
+  ]
+ },
+ {
+  "title": "No overlap/contamination check between the 300-problem MATH-train pool and the MATH-500 exam; the pool also changes the data source",
+  "quote": "We report no overlap check of the 300 pool problems against MATH-\n500.",
+  "explanation": "The authors state the omission. MATH-500 is drawn from the MATH test split, so exact overlap with MATH-train is not expected, but near-duplicate problems exist across splits, and Qwen2.5 was likely trained on MATH-train solutions (the paper itself lists test/train contamination as unquantified). This matters twice: (i) for the gate, training on MATH-train 'reference solutions' that the instruct model may have seen could behave differently from earlier MATH-500-based gold arms, so the gate is not comparable with them; (ii) for the loop, pool accuracy on MATH-train is not comparable to selection-set accuracy before. The change from a held-out partition of MATH-500 to an external train pool also removes the selection==eval confound only if there is no overlap, which is unchecked, and a cheap normalised-text/n-gram check would settle it.",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "3.3 Two Experimental Designs"
+  ]
+ },
+ {
+  "title": "Gate is a single seed on a single exam draw and the Table 4 'untrained' baseline is shared across arms inconsistently",
+  "quote": "The gold arm has one seed.",
+  "explanation": "The gate effect (-32 points) is far outside noise, so a single seed is adequate for 'it fails', but the weight placed on it is large: it is the only evidence for the claim that the null 'concerns this recipe only'. The gate and loop at seed 1 share round-0 49.2, while seeds 2-3 use 46.8/48.2 and no gold arm is run there; Table 4 lists only 'Untrained (seed 1)' and the caption notes the other round-0 values only in prose, with no pass@2 for them. The 2e-5 rerun is likewise single and described only in the text. In addition, Limitations states the 'detectable effect' is ~6 points per run while the headline mean over seeds (-4.1) is below it, so the text should not present a negative mean as a finding of direction beyond 'not detected'.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "4.6 A Final Round with a Revised Recipe",
+  "related_sections": [
+   "6 Limitations"
+  ]
+ }
+]

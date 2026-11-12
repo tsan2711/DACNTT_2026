@@ -1,0 +1,56 @@
+[
+{
+"title": "Hash-bias 'difference -0.1' contradicts the two reported falls (4.9 vs 3.1)",
+"quote": "the \\boxed share falls 4.9 points on them and 3.1",
+"explanation": "The text says the boxed share falls 4.9 points on the affected (hash) problems and 3.1 on the others. The difference in changes is then 4.9 - 3.1 = 1.8 points (-1.8 as affected minus others), not -0.1. The stated interval [-6.1, 6.0] is centred near 0, so it agrees with -0.1 and not with -1.8. In the second bias run the same convention works (95.0 stays, 90.2 -> 87.4 gives +2.8, interval [-2.8, +8.3] centred at 2.75), so the first run is inconsistent with it. Either the falls (4.9, 3.1) or the difference/interval is wrong, or the quantities are on different bases that the text does not say. The conclusion (no selective avoidance) probably survives because the interval spans zero, but a reader cannot reproduce the headline difference from the numbers given.",
+"comment_type": "technical",
+"confidence": "high",
+"source_section": "4.6 A Final Round with a Revised Recipe",
+"related_sections": ["Abstract", "5.3 A Proposed Audit for GVT with a Biased Verifier"]
+},
+{
+"title": "+23% pool enlargement implies a reject share (18.8%) outside the stated 15.5-18.3% range; denominators unclear",
+"quote": "(440 →542, +23%)",
+"explanation": "542 - 440 = 102, so the V'-accepted pool has 102/542 = 18.8% of examples that V rejects. Section 3.2 states the defect rejects 15.5-18.3% of V'-accepted generations, and Table 5 gives round-0 r_t of 18.3% (seed 1) and 18.1% (seed 2). A +23% growth (1/(1-r)) needs r about 18.8%; the stated range 15.5-18.3% would give only +18% to +22%, so the 'fifth to a quarter' wording and +23% sit at or above the top of the range. The two figures plausibly use different denominators (the 350-problem selection pool versus all 500 problems, k=4 versus the Table 5 pooling), but the paper does not say so, and the same figure is reused in 5.3(iii). The abstract's 'about one in six' (16.7%) is a third reading of the same quantity.",
+"comment_type": "technical",
+"confidence": "medium",
+"source_section": "3.2 The Verifier and Its Directional Bias",
+"related_sections": ["5.3 A Proposed Audit for GVT with a Biased Verifier", "Table 5", "Abstract"]
+},
+{
+"title": "Range 5.5-10.6 for finished-accuracy loss at 5e-4 omits other arms at the same rate",
+"quote": "lose 5.5–10.6 points, with intervals excluding zero in",
+"explanation": "The contribution list and Section 4.5 say that 'at the highest rate' finished generations lose 5.5-10.6 points. In Table 2 the matched column at 5e-4 has A,1 -9.1; A,2 -5.5; B,1 -6.8; B,2 -5.9; No filter -10.6 and -6.6 (six runs, matching the range), but also Gold -25.6 and -25.9 and Run C -12.1. The text says only 'six runs' without naming them, so 'at 5x10^-4' reads as covering all arms. The range is also the minimum over a set that includes A,2, whose interval [-11.7, 0.1] includes zero. The scope (A/B/no-filter, MATH-500, excluding gold and GSM8K) should be stated; as written, the headline figure understates the spread at that rate (to -25.9) and the abstract-level reading 'at the highest rate' is ambiguous.",
+"comment_type": "logical",
+"confidence": "medium",
+"source_section": "4.5 Anatomy of the Decline",
+"related_sections": ["1 Introduction (Contributions)", "Table 2"]
+},
+{
+"title": "Cap-share percentages (12-30%, 52-72%) are not reproducible from Table 2 and imply sign problems",
+"quote": "attributes 12–30% of the decline to the cap share in the three original seed-1",
+"explanation": "Table 2 gives, for the same runs, sample-accuracy change and 'finished, matched' change. If the cap-share part were simply (total - finished)/total, then seed 1: A,1 total -8.3, finished -9.1 (negative share, about -10%); No filter 1 total -8.2, finished -10.6 (about -29%); B,1 -6.7 vs -6.8 (about -1.5%). Seed 2: A,2 total -4.7 vs finished -5.5 (about -17%); B,2 -9.2 vs -5.9 (36%); No filter 2 -10.2 vs -6.6 (35%). None of these yields 12-30% at seed 1 or 52-72% at seed 2. The text calls it a 'three-part decomposition' and the matched measure 'conditions on which problems finish', so the third part may absorb the difference, but the main text neither defines the parts nor says which runs make up the 'three original seed-1 runs' or the '-2 and 5%' pair. A reader checking against the main tables finds the stated shares inconsistent with 'finished accuracy' columns that are larger in magnitude than the total decline. The numbers rest entirely on Table S9, which is not in the paper.",
+"comment_type": "technical",
+"confidence": "low",
+"source_section": "4.5 Anatomy of the Decline",
+"related_sections": ["5.3 A Proposed Audit for GVT with a Biased Verifier", "Table 2", "Table 1"]
+},
+{
+"title": "'Seven recipe changes' cannot be reconstructed from the list given",
+"quote": "we ran one last round with seven recipe changes",
+"explanation": "The colon-list names loss on completion only, LoRA on all linear layers, a 1,024-token cap and training limit, normalised gold answers, and a 300-problem MATH-train pool (five items, or six if cap and training limit are separate). The next sentence adds 10^-4, k = 2 and a single adapter. Against Section 4.4 the rate (10^-4) and a single round-2 adapter are not new, while k = 2 and the 500-problem exam are. The count of seven is therefore not derivable: depending on what is counted it is 5, 6, 7, 8 or 9. Since the paper stresses that the changes were made 'at once' with no ablation, the exact set matters for what the gate failure indicts.",
+"comment_type": "logical",
+"confidence": "low",
+"source_section": "4.6 A Final Round with a Revised Recipe",
+"related_sections": ["3.4 Models, Data, Training, Metrics"]
+},
+{
+"title": "'The one same-configuration replicate pair' conflicts with the many same-configuration seeds in Table 2; 3.2-point figure not locatable",
+"quote": "replicate pair we have ends 3.2 points of sample accuracy apart",
+"explanation": "Section 3.4 says training-seed variance is seen only across two or three seeds and that there is 'the one' same-configuration replicate pair, apart by 3.2 points of sample accuracy. Table 2 contains several same-configuration seed groups: A at 10^-5 (seeds 0, 1), A at 10^-4 (seeds 1, 2, 3), A at 2x10^-4 and 5x10^-4 (seeds 1, 2), and the no-filter and gold arms. Because the seed also changes the exam partition, these are not clean replicates, which may be why only one pair is counted, but the paper does not say which pair is meant or on what quantity (end-point level or change). From Table 2 sample-accuracy changes the same-configuration seed gaps are 0.9 (A, 10^-5), 2.2, 2.7 and 0.5 (A, 10^-4), 0.3 (2x10^-4) and 3.6 (5x10^-4), so 3.2 matches none of them. The figure feeds the abstract-level argument that the design's detectable effect is a lower bound, and it is reused (3.2 appears again as the final-round seed-2 pass@1 change), so the source should be identified.",
+"comment_type": "logical",
+"confidence": "low",
+"source_section": "3.4 Models, Data, Training, Metrics",
+"related_sections": ["Table 2", "4.4 Higher Learning Rates"]
+}
+]
