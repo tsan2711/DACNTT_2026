@@ -74,12 +74,8 @@ it does not parse (Section~\ref{sec:verifier}). The training signal is ``was the
 final string accepted'', not ``were the steps right''.
 
 The same gap runs through reinforcement learning with verifiable rewards
-(RLVR), which reports large gains at this scale: GRPO on a single training
-example lifts Qwen2.5-Math-1.5B from $36.0\%$ to $73.6\%$ on
-MATH-500~\cite{ref_oneshot}, a gain whose authors report only $8.6$ points
-beyond format correction, and similar recipes improve
-DeepSeek-R1-Distill-Qwen-1.5B~\cite{ref_openrs} and open base models from
-$0.5$B up~\cite{ref_simplerl}. Yet Shao et al.~\cite{ref_spurious} find that
+(RLVR), which reports large gains at this scale~\cite{ref_oneshot,ref_openrs,ref_simplerl}, though only $8.6$ of one study's
+$37.6$ points lie beyond format correction. Shao et al.~\cite{ref_spurious} find that
 GRPO with \emph{random} rewards raises Qwen2.5-Math-7B by $21.4$ points on
 MATH-500, against $29.1$ with ground-truth rewards. A rising score therefore
 does not by itself show that a model has learned to solve more problems,
@@ -148,9 +144,8 @@ collapse~\cite{ref_selectionbias}.
 \paragraph{RL with verifiable rewards at small scale.}
 RLVR with GRPO reports large gains near our model size: one training example
 lifts Qwen2.5-Math-1.5B on MATH-500 from $36.0\%$ to $73.6\%$~\cite{ref_oneshot},
-about $7{,}000$ examples lift DeepSeek-R1-Distill-Qwen-1.5B on AMC23 from $63\%$
-to $80\%$~\cite{ref_openrs}, and zero-RL works across ten open base models
-including Qwen2.5 from $0.5$B~\cite{ref_simplerl}. These studies improve
+$7{,}000$ examples lift DeepSeek-R1-Distill-Qwen-1.5B on AMC23 from $63\%$
+to $80\%$~\cite{ref_openrs}, and zero-RL works on open base models from $0.5$B~\cite{ref_simplerl}. These studies improve
 accuracy, which our SFT loop does not; of Wang et al.'s $37.6$ points only $8.6$ lie beyond format correction. Shao et al.~\cite{ref_spurious} show that it need not be
 reward learning (random rewards also help, via amplified pre-existing behaviour). We do not compete with RLVR on accuracy; the audit of
 Section~\ref{sec:audit} asks whether a loop has adapted to one
@@ -341,10 +336,10 @@ In the pooled design the 1.5B model declines severely and with acceleration
 on both datasets (Table~\ref{tab:bydataset}); the 0.5B decline is small. The
 accepted pool contracts every round and \verb|\boxed{}| falls from $5{,}608$ to
 $2{,}693$ of $8{,}000$ generations. This design cannot be read causally: one
-adapter trains on both datasets' pools; it scores on the problems it selects
-from; and it trains on about $4.5\times$ as many examples per round as the
-isolated MATH-500 run ($3{,}962$ against $872$ at round~0). No run separates these
-explanations (Supplementary Appendix~\ref{app:pooled}).
+adapter trains on both datasets' pools, it scores on the problems it selects
+from, and it trains on about $4.5\times$ as many examples per round as the
+isolated MATH-500 run ($3{,}962$ against $872$ at round~0); no run separates these
+(Supplementary Appendix~\ref{app:pooled}).
 
 \subsection{Design I at $10^{-5}$: Small Declines, a Larger One on GSM8K}
 \label{sec:isolated}
@@ -360,8 +355,7 @@ possible small decline, not an established one; what we do not see is a gain
 of the size the design could detect. Run~C
 (GSM8K) declines more: pass@1 falls $12.7$ points ($[-21.3,-4.0]$), almost all in
 finished accuracy, but it took about twice Run~A's optimizer steps, so we do not
-attribute this to the dataset alone. On MATH-500 two coarse output statistics,
-length and cap-hit share, barely change, which is weak evidence that the adapter
+attribute this to the dataset alone. Length and cap-hit share barely change on MATH-500, weak evidence that the adapter
 did little (Supplementary Appendix~\ref{app:isolated}).
 
 \subsection{The Patch Control Could Not Detect an Effect}
@@ -374,9 +368,7 @@ B minus A is $-0.7$ [$-3.3$, $+2.0$] points of pass@1 at seed~0 and $+0.0$
 [$-2.7$, $+2.7$] at seed~1 (recomputed from the saved generations; Table~\ref{tab:ci} lists run-log values that differ by one problem and give $-0.7$ at seed~1). This null is uninformative: \verb|\dfrac| appears
 in $0.50$--$0.73\%$ of generations, so the kept pools differ by $3$--$4$
 examples (under $0.5\%$ of the $872$-example pool), and at $10^{-5}$ the adapter changes the outputs
-little anyway. Removing one rare format defect had no detectable effect, which a
-prevalence count alone predicts; the frequent gold-storage defect is present in
-both arms.
+little anyway, so a null is what prevalence alone predicts; the frequent gold-storage defect is in both arms.
 
 \subsection{Higher Learning Rates}
 \label{sec:lrcheck}
@@ -394,7 +386,7 @@ falls $1.5$, $3.5$ and $8.3$ points across the three rates, at seed~2 an almost
 flat $3.7$, $3.8$ and $4.7$. The cap-hit share rises only at $5\times10^{-4}$.
 \emph{The patch has no consistent effect:} B minus A in round-2 pass@1 is
 $+5.3$ at seed~1 and $-7.3$ [$-14.0$, $-0.7$] at seed~2, a sign flip from pools
-that differ by $0$--$3$ examples: trajectory noise.
+differing by $0$--$3$ examples: trajectory noise.
 \emph{Style does not separate imitation from drift:} boxed share falls with the
 pool, which both would produce, and the no-filter and gold arms decline with no verifier at all, so generic SFT damage fits as well.
 
@@ -622,7 +614,10 @@ figure for a measure chosen after the runs that omits seed variance, not a power
 $8$--$10$ of pass@$k$ ($6$ and $5$ in the final round). Because no arm
 improves and the positive gate failed, the null belongs to this recipe, and the
 study cannot say whether self-training in general helps. Every score is graded by the verifier that selects
-the data (re-scoring five runs with $V'$ leaves the decline in place, Section~\ref{sec:setup}), so there is no independent grader.
+the data (re-scoring five runs with $V'$ leaves the decline in place, Section~\ref{sec:setup}). On the final-round generations a
+stricter independent grader (normalised string match of the last \verb|\boxed| against the gold, no \texttt{math-verify};
+\texttt{indep\_grade.py}) gives pass@1 changes of $-3.6$, $-2.2$, $-4.6$ for the three seeds ($-30.0$ for the gold arm) and
+sample-accuracy changes of $-2.5$, $-5.5$, $-5.3$ (same sign and size; intervals exclude zero for seed~3 on pass@1, seeds~2--3 on sample accuracy). Earlier runs are not independently graded.
 
 \emph{Does it learn to write what the verifier accepts?} The data cannot settle
 this. The pre-set pattern requires pass@1 to rise, which never happens
