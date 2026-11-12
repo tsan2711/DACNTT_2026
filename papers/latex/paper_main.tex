@@ -285,9 +285,9 @@ $0.8$ with a cap of $512$ new tokens; the other decoding settings come from the
 checkpoint's generation configuration (top-$p$ $0.8$, top-$k$ $20$, repetition
 penalty $1.1$). Training is LoRA SFT (\texttt{transformers} 5.0.0, \texttt{peft}
 0.19.1, TRL 1.10.0 \texttt{SFTTrainer}; rank $16$, $\alpha=32$, on
-\texttt{q\_proj} and \texttt{v\_proj}, LoRA dropout and weight decay at the
-library defaults; batch size $2$; one epoch; AdamW with linear learning-rate
-decay and no warmup; loss over the whole chat sequence, prompt included; fp16 on
+\texttt{q\_proj} and \texttt{v\_proj}, LoRA dropout, weight decay, gradient
+clipping and trainer seed left at the library defaults; batch size $2$, no accumulation; one epoch; AdamW with linear learning-rate
+decay and no warmup; Python and torch seeds set from the run seed; loss over the whole chat sequence, prompt included; fp16 on
 one Kaggle T4), with a training sequence limit of $512$ tokens that includes the
 prompt. Because this limit equals the generation cap but also holds the prompt,
 any kept solution longer than about $512$ tokens minus the prompt length is cut
