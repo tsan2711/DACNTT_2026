@@ -203,6 +203,7 @@ differences; they do not cancel in ratios or in levels compared across
 partitions. Wrapping the gold in \verb|\boxed{}|, the re-score described
 below, makes $46$ of these $51$ golds parseable, so the two corrections overlap
 and should not be added (\path{experiments/viec3/review_cpu/dot4/unparsed.py}).
+In the final round, which uses $V'$, the $44$ golds that the final-round verifier reports as unparseable when bare (a count measured by a probe, not the $51$ above) are still scored, with their gold wrapped in \verb|\boxed{}| for boxed answers, and move with the rest: pass@1 changes by $-2.3$, $-4.5$, $-2.3$ points at seeds 1--3 on these $44$ problems and by $-5.0$, $-3.1$, $-4.4$ on the other $456$, so these problems do not produce the fall (\path{experiments/viec3/review_cpu/unparse_split.py}; $n=44$, so the estimates are noisy).
 
 \emph{The patch.} For the control we repaired the most \emph{severe} identified
 failure mode with a normalisation pass that rewrites \verb|\dfrac| and
