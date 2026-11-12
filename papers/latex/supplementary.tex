@@ -1205,8 +1205,9 @@ of pass@$k$ and $3.5$--$5.5$ of sample accuracy (Section~\ref{sec:config}).
 Section~\ref{sec:audit} was defined after the runs, covers one defect class
 whose effect is bound to $54$--$62$ problems (only $24$--$28$ of them escapable
 by any answer form), rests on $2$--$12$ training examples per round that could
-teach the avoidance, and its one positive control (a 30\% injected
-\verb|\boxed| bias, one seed, Section~\ref{sec:final} of the main paper) showed
+teach the avoidance, and its two injected-bias runs, neither a valid positive control (a hash-chosen 30\% injected
+\verb|\boxed| bias and a bias on fraction golds, one seed each,
+Section~\ref{sec:final} of the main paper) showed
 no selective avoidance, so we do not know it would detect adaptation.
 \item \emph{Confounded learning-rate grid and one model family.} The higher
 rates also use $k=4$, three rounds and smaller pools, so only comparisons among
@@ -1223,7 +1224,7 @@ step count per round rather than the number of epochs); save token
 counts at generation time and test a larger generation cap during the loop, since
 the untrained model already hits $512$ tokens in $41$--$48\%$ of MATH-500 generations;
 refine the learning-rate grid and replicate Run~C;
-and run a positive control (a verifier biased against a frequent format) to show
+and run a genuine positive control (a verifier biased against a frequent format) to show
 what effect size this design can detect. For the false-reject audit, a
 positive control would inject a defect that rejects a frequent, avoidable
 answer form (for example all \verb|\boxed| answers on a fixed tenth of the

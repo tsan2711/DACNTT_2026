@@ -1,0 +1,119 @@
+[
+{
+"title": "\"Boxed only is flat\" is not supported: its intervals contain the full fall",
+"quote": "On boxed answers alone rt is ﬂat (changes",
+"explanation": "Table 5 gives, for the two 5e-4 runs, an 'all' change of −2.6 [−5.3, 0.3] / −2.6 [−5.2, 0.1] and a 'boxed only' change of +0.7 [−2.9, 4.3] / +0.4 [−2.8, 3.4]. Both boxed-only intervals contain −2.6, so the data cannot distinguish 'boxed-only rt is flat and the fall is pure format share' from 'boxed-only rt fell as much as the total'. The point estimates also show that r_t(all) = r_t(boxed) x (boxed share among V'-accepted) is an arithmetic identity (e.g. 20.0% x 0.91 = 18.2 and 20.7% x 0.76 = 15.7), so the 'match' with the 91->76 and 93->78 shares is guaranteed by construction and is not evidence about mechanism. The prose treats a non-significant point estimate near zero as 'flat' while elsewhere (Sec. 3.4) insisting that null results be read through interval width. The conclusion that the fall 'matches' boxed share is an attribution by decomposition with no uncertainty on the share term.",
+"comment_type": "logical",
+"confidence": "high",
+"source_section": "5.3 A Proposed Audit for GVT with a Biased Verifier",
+"related_sections": ["Table 5", "3.4 Models, Data, Training, Metrics", "Abstract"]
+},
+{
+"title": "Train-on-gold rise in r_t is mostly NOT a boxed-share effect, contradicting the stated explanation",
+"quote": "gives rt rises of 2.1–3.3 points as its outputs become more boxed, so",
+"explanation": "Using Table 5, the implied boxed share among V'-accepted is 18.2/20.0 = 0.91 -> 21.5/22.8 = 0.943 for Gold seed 1 and 18.0/19.4 = 0.928 -> 20.2/21.1 = 0.957 for seed 2. The share-driven part of the rise is about 0.20 x 0.033 = +0.7 and +0.6 points, while the boxed-only part is 0.943 x 2.8 = +2.6 and 0.957 x 1.7 = +1.6. So roughly 75-80% of the rise comes from r_t among boxed answers itself (+2.8 and +1.7), not from more answers being boxed. The prose conclusion 'rt moves with format for reasons unrelated to the verifier' is therefore only weakly supported; what moves is the fraction of correct boxed answers that sit on defect-affected problems (problem-mix composition), a third confound that the paper never names. This also undercuts the earlier reading that boxed-only r_t is the clean quantity (it drifts by +1.7 to +2.8 with no verifier in the loop, the same size as the self-training 'all' falls of −1.5 to −2.6 but of opposite sign), so the boxed-only 'flat' range of −0.4 to +0.7 is within the no-verifier noise.",
+"comment_type": "technical",
+"confidence": "high",
+"source_section": "5.3 A Proposed Audit for GVT with a Biased Verifier",
+"related_sections": ["Table 5"]
+},
+{
+"title": "'Adaptation would also produce' the boxed-share fall conflicts with the paper's own dose and control evidence",
+"quote": "to the defect would also produce.",
+"explanation": "The paper argues the r_t fall is explained by a falling boxed share and that adaptation would also produce this. But the defect fires on only 54-62 of 500 problems, and the pool holds 3-5 (5e-4) examples per round that avoid it. A 15-point fall in boxed share among correct answers over all problems (91->76) cannot plausibly be produced by adaptation driven by 3-5 training examples on about 11% of problems. The paper's own Sec. 4.6 hash control shows the boxed share falls 4.9 and 3.1 points on affected and unaffected problems alike with no learnable bias, and Sec. 4.4 says 'boxed share falls with the pool', i.e. general format drift (plus truncated training targets that lose their final answer, Sec. 3.4). So the more parsimonious reading is format drift unrelated to the verifier, and 'adaptation would also produce' is left as a logically possible but, by the paper's own dose argument, implausible alternative; the paper states both without reconciling them. Also at 10^-5, where the paper says outputs changed little (Sec. 4.2/4.3), Table 5 implies the boxed share still fell about 92% -> 86% (18.3/19.9 vs 16.8/19.5), which is not explained anywhere.",
+"comment_type": "logical",
+"confidence": "medium",
+"source_section": "5.3 A Proposed Audit for GVT with a Biased Verifier",
+"related_sections": ["4.4 Higher Learning Rates", "4.6 Final round", "3.4 Models, Data, Training, Metrics"]
+},
+{
+"title": "\"Pressure to adapt is therefore weak\" is asserted from a count, and sits uneasily with the paper's own caveats",
+"quote": "pressure to adapt is therefore weak.",
+"explanation": "The inference is: only 2-12 pool examples per round come from affected problems and avoid the defect, hence weak pressure. (1) No dose-response is tested; the only varied-dose evidence (the \\frac injected control, 263 vs 298 kept, i.e. 35 examples removed) is at a different learning rate and recipe and reports no count of avoidance examples. (2) The next sentences say the audit 'had little power to see any' adaptation and that without a control that shows an effect one cannot tell whether the audit would detect it; 'weak pressure' (a property of SFT) and 'weak audit' (a property of the measurement) are not separable with these data, yet the paper presents the former as a conclusion. (3) Rejection-sampling SFT is a positive-only policy-gradient step on a binary reward: on affected problems V removes almost all boxed correct samples (87-98%), so only unboxed completions survive as positives, which is exactly the selection pressure toward unboxing that RLVR has. (4) Check (iii) says the same defect changes about a fifth to a quarter of the pool (440->542), a large 'dose' by the paper's own standard, while the 2-12 count is a small one; the two counts measure different things (examples removed vs examples that teach avoidance) and the text does not say which governs pressure.",
+"comment_type": "logical",
+"confidence": "medium",
+"source_section": "5.3 A Proposed Audit for GVT with a Biased Verifier",
+"related_sections": ["3.2 Verifier bias", "4.6 Final round"]
+},
+{
+"title": "RLVR contrast \"a direct pressure that SFT lacks\" is overclaimed and untested",
+"quote": "A false reject gives zero reward there, a direct pressure",
+"explanation": "In the paper's loop a false reject also gives the sample 'zero reward': it is excluded from the SFT pool, while an accepted sibling on the same problem is included. Filtered SFT (STaR/ReST-EM/RFT, cited in Sec. 2) is the standard on-policy, positive-only policy-gradient approximation, so the selection pressure is of the same kind as in RLVR but with fewer updates (fresh adapter each round, one epoch). The difference is of degree, not of kind, and the paper provides no measurement of either side (it says it has not run the audit on RLVR checkpoints). The sentence also reads as a mechanistic explanation for the null that the data do not provide, and conflicts with the paper's own admission that the audit cannot tell whether SFT adapts.",
+"comment_type": "logical",
+"confidence": "medium",
+"source_section": "5.3 A Proposed Audit for GVT with a Biased Verifier",
+"related_sections": ["2 Related Work"]
+},
+{
+"title": "Injected-bias runs are labelled positive controls, but one cannot be and neither matches the audited conditions",
+"quote": "As positive controls for the audit we reran the loop once each",
+"explanation": "The hash-chosen 30% control is, by the paper's own statement, one that 'could not elicit selective avoidance' because a hash is not learnable from the problem; its expected outcome is null, so it is a negative control, and its null says nothing about audit sensitivity. The \\frac control is a valid candidate positive control, but (a) it is run once, at seed 1, at 1e-4 with the corrected final-round recipe (k=2, two rounds), whereas the audit numbers come from 5e-4 and 1e-5 runs under the original recipe with the gold-storage defect, so it does not calibrate the audited measurement; (b) no count of examples in the pool that could teach avoidance is reported for it, although check (iii) and the Table 5 'Pool' column say this is the quantity that must be reported before a control is run; (c) no r_t or equivalent is reported, and the model also lost 7.0 pass@1 points, so training was damaging in that run. The Limitations section then counts these as 'two positive controls with no effect', which overstates what they are. The inference 'without a control that shows an effect we cannot tell whether the audit would detect adaptation' is correct, but it means these runs add essentially no information on sensitivity.",
+"comment_type": "logical",
+"confidence": "medium",
+"source_section": "4.6 Final round (Injected bias) / 5.3",
+"related_sections": ["6 Limitations", "Abstract"]
+},
+{
+"title": "r_t is defined over a denominator that includes outcomes the audit cannot affect, and V' is not guaranteed to dominate V",
+"quote": "known defect class of the training veriﬁer V .",
+"explanation": "V' differs from V only on boxed predictions (it wraps the gold in \\boxed{} when the prediction contains one). Hence every unboxed V'-accepted answer contributes zero to the numerator and 1 to the denominator, and r_t is by construction a product of a format share and a within-boxed rate. The paper says so, but then still proposes r_t(all) as check (i) and states that it is 'not a clean signal on its own', so the proposed audit's headline quantity is one the authors have shown to be confounded; the conditioned versions are only given post hoc and not as the definition. Further, r_t counts only 'accepted by V' but rejected by V'; cases where V accepts and V' rejects (possible when the wrapped gold changes parsing for a boxed prediction) are ignored, so 1 - r_t is not the fraction of V'-accepted answers that V also accepts unless V <= V' is verified; the paper does not state or test it. Finally the 'affected, parseable' subset is defined as problems 'where the defect ever fires and V can parse the gold', i.e. selected on the run's own outputs across all rounds; that is post-treatment selection, gives run-specific problem sets (24-28), and starts at 92-95% so near a ceiling, where changes can only be small and negative, and wide intervals (10-26 points) result.",
+"comment_type": "technical",
+"confidence": "medium",
+"source_section": "5.3 A Proposed Audit for GVT with a Biased Verifier",
+"related_sections": ["3.2 Verifier bias", "Table 5"]
+},
+{
+"title": "Reading three same-sign falls as a pattern ignores non-independence and the opposite-sign controls",
+"quote": "We make no multiplicity correction, so we rest conclusions on patterns across",
+"explanation": "The audit conclusion rests on r_t falling in three runs (−2.6, −2.6, −1.5), each with an interval that contains zero or touches it (the 'all' intervals [−5.3, 0.3], [−5.2, 0.1], [−2.9, 0.0]); the paper calls this 'reaching or just touching zero' and the Abstract/Contributions report the fall of 1.5-2.6 as a result. The three runs are not independent replicates: all are generated on the same 500 problems, so the same 54-62 defect problems drive each r_t; two share a learning rate and recipe; and the third is a different regime (1e-5, k=8, five rounds). The pattern is also not uniform across the five runs in Table 5: the two Gold runs move +3.3 and +2.1, and the boxed-only and affected-parseable rows have mixed signs. With problem-level bootstrap intervals that all include zero, a 3-of-3 sign pattern can arise from shared problem composition. The paper explicitly applies this 'pattern' standard instead of a correction only in the audit and in the patch comparisons, while demanding strict interval standards for the main claims (Sec. 3.4), a mismatch of the self-consistency kind.",
+"comment_type": "logical",
+"confidence": "medium",
+"source_section": "3.4 Uncertainty / 5.3",
+"related_sections": ["Abstract", "1 Introduction (Contributions)", "Table 5"]
+},
+{
+"title": "The audit is listed as a contribution while being declared non-novel and uninformative",
+"quote": "– A post hoc per-round false-reject audit of one veriﬁer defect, carried over",
+"explanation": "Related work states 'Our per-round false-reject measurement (Section 5.3) is not new: it is the per-step tracking of Egashira et al. and TinyV', and Sec. 5.3 and the Conclusion say the result is uninformative about adaptation and that it needs a positive control the authors do not have. A contribution bullet whose content is (a) a method taken from prior work, (b) applied post hoc to one defect of the authors' own pipeline, and (c) shown to be uninformative leaves the contribution reduced to a measured storage defect and a cautionary note. Egashira et al. report that a policy first unlearns the behaviour that triggers format false negatives; the present data show a fall in r_t of that kind but interpret it as non-informative, without explaining why the analogous RLVR evidence was informative and this is not (the explanation would be the dose and boxed-share arguments, which are weaker than they look, see other comments). The title 'Mathematics or the Verifier?' and the Abstract's framing of a dichotomy are also at odds with the paper's own statements that the verifier branch 'cannot be settled' and the mathematics branch is a null for the recipe only (positive gate fails), so neither horn is answered.",
+"comment_type": "logical",
+"confidence": "medium",
+"source_section": "1 Introduction (Contributions)",
+"related_sections": ["2 Related Work", "5.1 Answer to the Research Question", "7 Conclusion"]
+},
+{
+"title": "Proposed items (iii) and (iv) are post hoc lessons, not audit checks, and (iv)'s notion of dose is underspecified",
+"quote": "(iv) Match training dose across designs. Our pooled design trained on about",
+"explanation": "Section 5.3 is titled 'A Proposed Audit for GVT with a Biased Verifier' but only (i) is an audit of verifier bias (and is shown uninformative); (ii) is a descriptive decomposition whose own text says the balance 'diﬀers by partition' (12-30% at seed 1, 52-72% at seed 2) and so is not a stable check; (iii) and (iv) are generic experimental-design reminders (count what a control changes; equalise training dose) learned from this paper's confounds, with no test that following them would have resolved anything. Calling them an audit protocol overstates; the paper does say 'not as tested methods', but the Conclusion then asserts what the audit 'must be conditioned on', which is likewise untested. On (iv): 'dose' is operationalised as examples per round (3,962 vs 872, ratio 4.54, checked), but update size depends on optimizer steps x learning rate. The paper states that Run A at 5e-4 uses about 195 steps per adapter; Design P at the default 1e-5 with about 3,962/2 = 1,981 steps gives roughly 0.020 in steps x LR against 195 x 5e-4 = 0.098 for the isolated run, so a dose-matched comparison on the paper's own grid might already exist and the isolated high-LR runs do decline (Sec. 4.4). This sits against the claim in 5.1 that the collapse 'does not reproduce under isolation'. Pooling adds a second dimension (two datasets in one adapter). Without a definition of dose, (iv) cannot be applied.",
+"comment_type": "logical",
+"confidence": "medium",
+"source_section": "5.3 A Proposed Audit for GVT with a Biased Verifier",
+"related_sections": ["5.1 Answer to the Research Question", "4.1 Design P", "4.4 Higher Learning Rates", "3.4"]
+},
+{
+"title": "Pool-count definition differs between the Table 5 caption, the prose and the Limitations",
+"quote": "only 2–12 examples per round from these problems that do so.",
+"explanation": "The prose says the pool holds examples that write the answers unboxed; the Table 5 caption defines Pool as 'examples per round from aﬀected problems that V accepts (and so avoid the defect)'; the Limitations call them 'training examples per round that could teach avoidance'. These are not the same set: V accepts a boxed answer on an affected problem in the 2-13% of cases where the defect does not reject (87-98% rejection where V parses the gold), so the V-accepted set includes boxed answers and is not 'unboxed'. It is also unclear whether the 3-5, 2-3 and 9-12 values are min-max over rounds or over subsets, and merging them into '2-12' mixes the 5e-4 and 1e-5 regimes. The 9-12 run (1e-5) has the largest pool but a 'weak' r_t movement (−0.2, [−4.9, 4.6]), while 5e-4 has 3-5; no run isolates a dose effect, so the range is not an informative summary. Since this count is the sole basis for 'weak pressure', its definition matters.",
+"comment_type": "technical",
+"confidence": "low",
+"source_section": "5.3 / Table 5",
+"related_sections": ["6 Limitations", "7 Conclusion"]
+},
+{
+"title": "Section 5.2 'defensible statement' about the controls partly contradicts the dose caveats",
+"quote": "The defensible statement is narrow: removing a rare format defect, or the",
+"explanation": "Immediately before this sentence the paper says the data 'neither support nor rule out' the shrinking-pool explanation, that the patch tests a rare bias (0-4 examples; (iii) says this alone shows the control 'could not detect an eﬀect'), and that the no-filter control declines 'with more dose'. The narrow statement that removing the defect or the filter 'made no consistent diﬀerence at this resolution' is then presented as defensible although for the patch the resolution is, by the paper's own account, nil, and the no-filter comparison is dose-confounded. A statement about 'no difference' should be limited to 'we could not test'. Similarly, 5.1 describes the pooled decline as not reproducing under isolation while 4.4 reports that at 5e-4 every isolated run declines with sample-accuracy intervals excluding zero in all four A/B runs; the claim needs 'at the matched dose and rate' to be accurate.",
+"comment_type": "logical",
+"confidence": "low",
+"source_section": "5.2 Interpretation",
+"related_sections": ["5.1 Answer to the Research Question", "4.3", "4.4", "5.3 (iii)"]
+},
+{
+"title": "Small numeric slippage between prose and Table 5, and shares quoted without a table",
+"quote": "On the 24–28 aﬀected problems where some form could, rt moves by −5.5,",
+"explanation": "Recomputing from the displayed Table 5 values: 87.2 − 92.8 = −5.6 (text/table −5.5), 92.0 − 92.3 = −0.3 (−0.2), 20.2 − 18.0 = +2.2 (+2.1), 94.7 − 95.5 = −0.8 (−0.7). These are most likely unrounded differences, but the table gives no note on this, and the prose range '2.1-3.3' therefore does not equal the difference of printed columns. Other checks pass: −2.6, −2.6, −1.5; +0.7, +0.4, −0.4; the 54-62 minus 29-34 gives 20-33 parseable problems, consistent with 24-28 only if the pairings differ by run; 3,962/872 = 4.5; 542 − 440 = 102 = +23%. The boxed shares '91->76% and 93->78%' are not given in any table and can only be checked indirectly (they reproduce r_t(all)/r_t(boxed) to within 0.1-0.3 points). The 24-28 and 54-62 ranges are not tabulated per run, so the reader cannot confirm that the per-run subsets in Table 5 match them.",
+"comment_type": "technical",
+"confidence": "low",
+"source_section": "5.3 / Table 5",
+"related_sections": ["3.2 Verifier bias"]
+}
+]

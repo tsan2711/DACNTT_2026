@@ -1,0 +1,178 @@
+[
+ {
+  "title": "Post hoc 'detectable effect' conflicts with the CI-based reading and with the 2.2-point bound; one-sided rule vs two-sided formula",
+  "quote": "detected with 80% power at the 5% level only if it exceeded about 2.8 h/1.96:",
+  "explanation": "The constant is right for a two-sided 5% test at 80% power: (1.96+0.84)*SE with SE=h/1.96. I checked it against Table 2: h of about 6.7 for pass@1 gives about 9.6, and h of about 4.2 in Section 4.6 gives about 6. Three things remain. (a) The paper's pre-set reading rule is one-sided (it fires only when pass@1 rises), and the claim under test is 'no gain'. A one-sided test would use 1.645+0.84, which is about 1.27h, or about 8.5 points rather than 10. So the headline 'about 10 points' is not tied to the paper's own decision rule. (b) After the data are in, a CI already says which gains are excluded. Every Delta-pass@1 interval in Table 2 has an upper limit of at most +8.0 (and the Gold/C rows are wider for other reasons). Reporting 'gains below about 10 points could have been missed' uses a pre-data power concept that is more pessimistic than the paper's own intervals, and it mixes two logics. Sections 3.4/5.1 then add a third figure, 'about 2.2 points' of sample accuracy, defined as the largest upper limit among observed intervals. That is a CI-exclusion statement, so it is the same kind of statement as (b), and it sits next to a 3.5-5.5 'detectable' figure for the same measure with no explanation of why one is a bound and the other is not. A reader cannot tell which number states what the experiment rules out. (c) The 150-problem exam (a 30% holdout of 500) is given no power rationale. It was fixed before any power computation, and the final round shows that 500 problems halve the detectable effect. The 'null' for Runs A-C is therefore weak by construction, and the abstract's 'about 10 points' headline should be stated as a consequence of that design choice.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "3.4 Models, Data, Training, Metrics (Detectable effects)",
+  "related_sections": [
+   "Abstract",
+   "5.1 Answer to the Research Question",
+   "7 Conclusion"
+  ]
+ },
+ {
+  "title": "Headline power uses single-draw pass@1 although a lower-variance estimator of the same quantity is available",
+  "quote": "is the correctness of the ﬁrst of the k samples (one draw per problem, so it",
+  "explanation": "pass@1 is defined from only the first of k=8 (or 4, or 2) samples, so each exam problem contributes one Bernoulli draw even though 3-7 further samples per problem were generated. The paper admits that sample accuracy 'estimates the same quantity from all k samples with less variance'. Its own numbers show the cost: detectable pass@1 is about 10 points and sample accuracy is 3.5-5.5, so about 2x worse precision from discarding data. The abstract and Introduction nevertheless lead with pass@1 as the measure 'fixed in advance', and present '10 points' as how insensitive the design is. That figure is mostly an artefact of the estimator. For the same estimand the design is roughly twice as sensitive, and the paper then declines to treat the sample-accuracy figure as a power statement because the measure was chosen after the runs. The result is that the pre-set measure is the noisy one and the sensitive measure is demoted as post hoc, so neither gives a clean statement. A related point: pass@k is the raw 'at least one of k samples' indicator, and k differs across runs (8, 4, 2), so 'pass@k flat' in the pre-set rule is not a common quantity across the learning-rate arms. The first sample is also treated as exchangeable; the paper does not say how it was indexed (batch position, seed), so a position effect cannot be excluded.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "3.4 Models, Data, Training, Metrics",
+  "related_sections": [
+   "Abstract",
+   "1 Introduction",
+   "5.1 Answer to the Research Question"
+  ]
+ },
+ {
+  "title": "No multiplicity correction and runs treated as independent evidence although they share exam partitions and round-0 draws",
+  "quote": "We make no multiplicity correction, so we rest conclusions on patterns across",
+  "explanation": "The paper replaces correction with 'patterns across runs and seeds', but the runs are not independent. A seed fixes the exam partition, the selection set and training randomness at once, and runs at the same seed share the partition. Table 1 shows identical round-0 numbers (33.3 pass@1, 33.7 sample accuracy at seed 1 for every learning rate), so the 1e-4, 2e-4 and 5e-4 rows at a seed share one round-0 draw and one exam. Run A and B at the same seed are, in the authors' own words, 'closer to two replicates than four'. The effective number of independent confirmations behind statements such as 'at 5x10^-4 every run declines' or 'the decline may grow with the rate' is therefore about two to three partitions, not 7-12 runs. Over the roughly 60 intervals in Table 2 (4 metrics x 15 rows), some 'excludes zero' results are expected by chance, and the paper selects a few of them for narrative (e.g. B at seed 0 at 1e-5, A/B at 5e-4). The uncorrected intervals favour the claimed declines more than they favour the 'no gain' null. In the other direction, that no gain interval excludes zero among about 30 pass@1/pass@k intervals is the expected outcome under a true null, which is not strong support for 'no gain' either. A family-wise or at least a pooled-by-partition analysis (a mixed model with exam partition and seed as random effects) would be the consistent standard for a paper that says it needs to be rigorous about uncontrolled variance.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "3.4 Models, Data, Training, Metrics (Uncertainty)",
+  "related_sections": [
+   "3.3 Two Experimental Designs",
+   "4.4 Higher Learning Rates",
+   "6 Limitations"
+  ]
+ },
+ {
+  "title": "The replicate pair used to show that intervals are too narrow is not identified, and seed variance is confounded with exam partition",
+  "quote": "conﬁguration replicate pair we have ends 3.2 points of sample accuracy apart.",
+  "explanation": "This sentence is the paper's only direct evidence of how much the bootstrap intervals understate uncertainty, and it carries the argument that the detectable effects 'are lower bounds, probably larger'. But the pair is not identified. Section 3.3 says a seed sets the exam partition, the selection set and the training randomness at once, and that repeating Run A at a second seed 'draws a different 150-problem exam set'. If the pair is A at seed 0 versus A at seed 1, the 3.2-point difference in levels is mostly exam-set difficulty (round-0 sample accuracies of 28.5-33.7 across partitions in Table 1 show how large that is). It is not training-seed variance. The paired quantity that matters is the change from round 0, and for A that is -2.4 vs -1.5, a difference of 0.9. If it is A versus B at the same seed, it is not a same-configuration pair. Either way a single pair gives no variance estimate (one difference, zero degrees of freedom for a standard deviation), and the sign flip of B-A (+5.3 to -7.3) comes from different partitions as well. Because the seed bundles three sources, the paper cannot say how much of the spread is training noise, and the quantitative claim 'probably larger' has no stated basis. Training-seed variance with a fixed partition (several adapters on the same data and exam) was not run, even though the paper cites Xu et al. [16] for exactly this failure.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "3.4 Models, Data, Training, Metrics (Uncertainty)",
+  "related_sections": [
+   "3.3 Two Experimental Designs",
+   "4.4 Higher Learning Rates",
+   "2 Related Work"
+  ]
+ },
+ {
+  "title": "r_t takes V' acceptance as ground truth but V' is unvalidated and only 'repairs' boxed predictions",
+  "quote": "the saved generations with a veriﬁer V ′ that wraps the gold in \\boxed{} when",
+  "explanation": "The central quantity r_t (and the 'about one in six' in the abstract) is the share of V'-accepted generations that V rejects, so it reads as a false-reject rate of V only if V' accepts are truly correct. The probe of Section 3.2 audited V on other models' solutions and, as the paper itself says, inspected only rejections. No false-positive check of V' on the 1.5B model's generations is reported. The wrapped gold is compared by math-verify's symbolic equivalence inside \\boxed{}, which can accept a wrong answer, e.g. a differently scoped expression, a set versus an element, or an equality form. Such acceptances would be counted as 'false rejects' by V. Second, V' is a repair only 'when the prediction contains' \\boxed{}. For unboxed predictions V' equals V, so a correct unboxed answer rejected for the same bare-gold reason is rejected by both and leaves both numerator and denominator of r_t. The denominator therefore changes with the boxed share, which is what the discussion later observes (boxed share among correct answers 91 to 76%), and this makes r_t a moving mixture of two verifiers rather than a clean defect rate. The paper notes part of this in Section 5.3, but the 15.5-18.3% figure is used as the defect's size in the abstract, in Section 3.2, in the dose argument (440 to 542) and in the 0.73-0.85 ratio, without a measured V' error rate.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "3.2 The Verifier and Its Directional Bias",
+  "related_sections": [
+   "Abstract",
+   "5.3 A Proposed Audit for GVT with a Biased Verifier"
+  ]
+ },
+ {
+  "title": "Independent false-negative probe (7.8%, upper limit 13.8%) does not reconcile with the 15.5-18.3% rejection used as the defect size",
+  "quote": "malised comparison) the false-negative rate is 7.8% (10 of 128; Wilson interval",
+  "explanation": "I recomputed the interval: 10/128 = 7.8%, and the Wilson 95% interval is about [4.3, 13.8], matching the text. That upper limit lies below the 15.5-18.3% reported in the next paragraphs for the share of V'-accepted generations rejected by V. The probe measures all rejection causes (the 10 false negatives include the defect plus any extraction failures), so its rate should be at least the defect's rate if both populations were alike. The paper explains neither the factor of about 2 nor why the probe should be representative. Plausible reasons are that Qwen2.5-7B-Instruct solves a different, easier, set of problems than the 1.5B model, that the defect is problem-bound (54-62 of 500 problems), or that V' also accepts some wrong answers. Each of these would mean the 7.8% cannot be carried to the loop's own generations, so the probe does not validate the number the paper headlines. Further weaknesses in the probe: the reference is a 'scripted normalised comparison' that is itself unvalidated, so errors correlated with the verifier (same normalisation tricks) would hide false negatives or create false ones; only 200 problems and one solution each are used; the '0% on GSM8K' figure has no n or interval (with n of about 100-200 an upper limit of 2-3% would still apply); and 'probably largely the gold-storage defect' is a guess from 'most are compound answers', not a test.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "3.2 The Verifier and Its Directional Bias",
+  "related_sections": [
+   "Abstract",
+   "6 Limitations"
+  ]
+ },
+ {
+  "title": "'Bound to the problem' rests on a set of problems defined by the defect firing, so rejection rates of 94-98% are inflated",
+  "quote": "problem, not to the answer: on the 54–62 problems where it ever ﬁres, it rejects",
+  "explanation": "The 'affected' set is defined ex post as problems where V' accepted and V rejected at least once. Conditioning on at least one rejection guarantees every included problem has a rejection and removes any problem where the defect is present but the sampled correct answers happened to pass (or were all unboxed). Problems with one or two correct samples, a typical case here with k=4 and pass rates of 30-45%, are then rejected 100% by construction. The 94-98% figure, and the inference 'bound to the problem, not to the answer', are partly an artefact of this selection. The same set also feeds Table 5's 'affected, parseable' rows (87-98% rejection) and the argument that 'no answer form escapes it'. A fair estimate needs the affected set defined from the gold side (golds without delimiter whose parse in V fails under a boxed prediction) independent of the generations, or at least held-out generations. Note also that 29-34 of the 54-62 have gold V cannot parse at all, so for more than half the set the 100% rejection is by definition, and only the remaining 24-28 problems speak to whether the answer form matters. The 'in every round' wording also hides that these problems contribute 2-12 pool examples.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "3.2 The Verifier and Its Directional Bias",
+  "related_sections": [
+   "5.3 A Proposed Audit for GVT with a Biased Verifier",
+   "Table 5"
+  ]
+ },
+ {
+  "title": "Denominators of the defect statistics are not aligned (pool 440→542 vs r_t over all 500 problems; 'a fifth to a quarter')",
+  "quote": "a quarter (440 →542, +23%), against 0–4 examples for the \\dfrac patch, and",
+  "explanation": "The arithmetic 542/440 = 1.232 is right. But the paper presents it beside 'rejects 15.5–18.3% of the generations V′ accepts'. In the same run the share of V'-accepted pool examples that V rejects is (542-440)/542 = 18.8%, outside the stated 15.5-18.3% range and above the Table 5 value of 18.3% for seed 1. The two numbers cover different sets: the pool counts accepted solutions of the 350 selection problems of one seed (k=4 gives 1,400 generations), r_t counts all 500 problems (2,000 generations). The text never says which set each number is computed on, or which seed 440/542 refers to (Table 3 has 440 for seed 1 and 424 for seed 2; no 542-equivalent is given for seed 2). The phrase 'by about a fifth to a quarter' is also ambiguous between 18.8% of the V' pool and 23% of the V pool. The range 15.5-18.3% mixes round 0 and last-round values across runs, while the gold arm (18.0-21.5%) lies outside it. The dose argument in Section 5.3(iii) ('about a fifth to a quarter of the pool') depends on these figures. It is a small inconsistency in size, but it is a place where a careful reader could take away a different number than the data support.",
+  "comment_type": "technical",
+  "confidence": "low",
+  "source_section": "3.2 The Verifier and Its Directional Bias",
+  "related_sections": [
+   "Table 3",
+   "Table 5",
+   "5.3 A Proposed Audit for GVT with a Biased Verifier"
+  ]
+ },
+ {
+  "title": "About 10% of golds are unscorable and the cancellation assumption is left unchecked although V' makes the check possible",
+  "quote": "500 stored MATH-500 golds (10.2%); these problems always count as unsolved,",
+  "explanation": "51/500 = 10.2% is correct. Together with the 54-62 problems where the defect rejects 94-98% of correct answers (29-34 of which overlap with the unparseable golds), roughly 15% of MATH-500 problems are effectively unscorable under V, and about 11-18 of the 150 exam problems per partition. Three consequences are not followed through. (1) The effective exam size is about 130 problems, so the intervals and the 10-point detectable effect are computed on a denominator that includes problems that cannot change. (2) The unparseable and defect-affected problems are not random: they are the ones whose answers are fractions, expressions or sets. The training pool therefore can contain only simple-answer problems (integers, plain decimals), so the loop trains on a biased stratum while the exam score has a ceiling. This is a form of the 'directional bias' the paper studies, but it is treated only as an offset. (3) The paper says the offset cancels in within-run differences 'only if those problems would not otherwise change, which we did not check'. That check is cheap here: V' already exists and was used to re-score five runs. Reporting Delta-pass@1 and Delta-pass@k under V' (or excluding the unscorable set) would show whether the null on the pre-set measures survives. Instead only sample accuracy is re-scored, so the headline null on pass@1/pass@k remains under a verifier the paper itself describes as biased.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "3.2 The Verifier and Its Directional Bias",
+  "related_sections": [
+   "4.2 Design I at 1e-5",
+   "5.1 Answer to the Research Question",
+   "6 Limitations"
+  ]
+ },
+ {
+  "title": "r_t (Table 5) is computed on all 500 problems, mixing problems the adapter was trained on with unseen exam problems",
+  "quote": "set; generation runs on all 500 problems each round, but only the other 350 can",
+  "explanation": "I checked the partition for leakage into the exam: the 150 exam problems are excluded from the pool, so the accuracy tables (computed on the exam only) are not contaminated by training on exam problems. That part is sound. The audit is not so protected. Table 5 is 'all 500 problems', that is, 350 selection problems plus 150 exam problems, and the round-t adapter was trained on solutions the loop accepted for the 350 selection problems at round t-1. A fall in r_t on those 350 problems can arise from memorising the specific accepted (V-passing, i.e. defect-avoiding) solutions it was trained on. The question the audit asks is whether the model generalises 'avoid the defect' to problems it has not been trained on. The two cannot be separated without reporting r_t on the exam set and the selection set separately. This weakens the adaptation reading in either direction (a fall may be memorisation; a flat r_t on unseen problems may hide it), and the 'affected problems' count of 54-62 and 24-28 combines both sets. The related fact that a seed also sets the partition means different seeds audit different mixes of seen and unseen problems. Splitting by exam/selection costs nothing since the saved generations exist.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "3.3 Two Experimental Designs",
+  "related_sections": [
+   "5.3 A Proposed Audit for GVT with a Biased Verifier",
+   "Table 5"
+  ]
+ },
+ {
+  "title": "The 512-token budget makes the exam partly a termination test, and training truncation teaches unfinished answers",
+  "quote": "prompt length is cut in training and loses its ﬁnal answer and end-of-sequence",
+  "explanation": "Three recipe choices combine here. First, evaluation uses T=0.8 with a 512-token cap and the checkpoint's repetition penalty of 1.1 (which penalises repeating digits and LaTeX tokens). The paper's own Table 1 shows that 43% of round-0 generations hit the cap, so the measured 'mathematics' is bounded by whether the model finishes within 512 tokens. Round-0 pass@1 is about 33% on the 150-problem exam but 49.2% in Section 4.6 with a 1,024 cap on 500 problems; the partition spread seen in Table 1 (28.5-33.7 sample accuracy) cannot account for 16 points, so the cap and decoding appear to cost much of the base model's ability. Second, because the training limit equals the generation cap and includes the prompt, 24-26% of the kept pool is cut in training and loses its final answer and end-of-sequence token, so the loop trains on a quarter of examples that are unfinished by construction, together with a loss over the prompt. Third, the paper's Section 4.5 says retraining without truncated examples 'leaves the deficit in place', so truncation is not the sole cause. But the practical result is that Runs A-C and the 1e-5 to 5e-4 arms test a recipe the authors later describe as having 'suspected causes' of non-improvement. The abstract and title ('Mathematics or the Verifier?', 'No Detectable Gain from Verifier-Filtered Self-Training of a 1.5B Model') generalise beyond that. The scope is stated honestly in places, but the earlier arms are 'defective by design' as tests of self-training, and only the 500-problem final round (k=2, two rounds, one LR) uses the corrected recipe.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "3.4 Models, Data, Training, Metrics",
+  "related_sections": [
+   "4.5 Anatomy of the Decline",
+   "4.6 A Final Round with a Corrected Recipe",
+   "Abstract"
+  ]
+ },
+ {
+  "title": "Training procedure underspecified: effective batch size, pool composition and per-problem handling of samples, seeds, precision",
+  "quote": "weight decay at the library defaults; batch size 2; one epoch; AdamW with linear",
+  "explanation": "The method is described as reproducible but several parameters that determine the dose and its meaning are missing or left to defaults. (a) 'Batch size 2' is not identified as per-device, with or without gradient accumulation, or as effective; the step counts (195 for 392/386 examples, 436 for 872) fit effective batch 2 with no accumulation, which I checked: 392/2 = 196 and 386/2 = 193, so the paper's 'about 195' is consistent. With effective batch 2, learning rates up to 5e-4, no warmup, fp16 on a T4 and no mention of gradient clipping or loss scaling, the 5e-4 declines (and the train-on-gold collapse) could come from optimisation instability rather than from what the data teaches, and the grid over learning rate cannot be separated from step noise. (b) LoRA dropout and weight decay are 'at the library defaults' without values, for three libraries whose defaults changed across versions (transformers 5.0.0, TRL 1.10.0). (c) How accepted samples are handled per problem is not stated: whether the up-to-k correct samples of one problem are all kept, deduplicated or capped. The 872 examples from 350 problems (k=8) suggest several near-identical solutions of easy problems per problem, so the pool is weighted toward easy problems, which shapes what 'filtering' does. (d) Which random seeds control generation, partition and training are not separated, and round-0 samples appear to be reused across learning rates (identical round-0 values in Table 1). (e) The pooled design's LR, round count and 0.5B settings are left to a supplement. These choices are central to claims about dose and about the 'no-filter' and 'gold' controls.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "3.4 Models, Data, Training, Metrics",
+  "related_sections": [
+   "4.4 Higher Learning Rates",
+   "Table 3"
+  ]
+ },
+ {
+  "title": "'4.5x dose' compares a two-dataset pooled pool (3,962) with a single-dataset isolated pool (872), so it is not a like-for-like dose",
+  "quote": "about 4.5× as many examples per round as the isolated MATH-500 run (3,962",
+  "explanation": "The arithmetic is right (3,962/872 = 4.54). But the two pools differ in more than dose. The pooled design trains one adapter on both datasets with all 1,000 problems eligible, while the isolated MATH-500 run uses MATH only and only 350 selection problems. The 872 is also at k=8 on MATH-500, where the 1.5B accuracy is about a third, whereas the pooled pool includes GSM8K, with a much higher acceptance rate. Using the paper's own statement that Run C took about twice Run A's optimizer steps, the isolated MATH and GSM8K pools together would be roughly 2.6k examples, and scaled to 500 problems each about 3.7k, almost the pooled 3,962. So most of the 4.5x is the structural consequence of pooling two datasets (and of not holding out 150 problems), not a free 'dose' knob that the isolated design failed to match. This matters because the paper repeatedly says the collapse 'cannot be attributed to pooling' on the grounds of dose (Sections 4.1, 5.1, 5.3(iv)). Pooling and dose are inseparable in this contrast, and the statement that a dose-matched isolated run would test pooling needs a clearer account of what matched dose means (per adapter, per problem, or per dataset).",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "4.1 Design P: An Apparent Collapse",
+  "related_sections": [
+   "5.1 Answer to the Research Question",
+   "5.3 A Proposed Audit for GVT with a Biased Verifier"
+  ]
+ },
+ {
+  "title": "No training-pipeline sanity check or frozen/zero-effect control, despite citing it as the standard",
+  "quote": "to the base model and trained on the kept solutions for one epoch. Round 0 is",
+  "explanation": "Related Work presents Xu et al. [16] as the closest study, auditing self-improvement 'against a frozen control' and naming training-seed variance and a fixed token cap as failures that 'each invert a finding when uncontrolled'. The present design does not apply that standard to itself. There is no control that trains an adapter on a random or unfiltered subset at matched dose and step count (the no-filter control triples the steps), no adapter trained at zero or negligible effective learning rate to calibrate resampling noise, and a replicate pair that is not clearly a replicate (see the replicate-pair finding). The only positive control, training on reference solutions, drops pass@1 from 49.2 to 17.0 and from 49.2 to 20.6 at a rate five times smaller, with 300 examples and about 150 steps. A drop of that size from a few hundred gold solutions, at two learning rates, is at least as consistent with a defect in the training or formatting pipeline (EOS handling, chat template, truncation at 1,024, fp16 on a T4) as with 'the reference style', which the paper says it 'did not isolate'. Without a sanity check that the pipeline can fit a trivially learnable target without degrading generation, the conclusion that the 'null concerns this recipe' is weaker than the abstract suggests, since the recipe may not be a faithful implementation of self-training.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "3.1 The GVT Loop",
+  "related_sections": [
+   "2 Related Work",
+   "4.6 A Final Round with a Corrected Recipe",
+   "6 Limitations"
+  ]
+ }
+]

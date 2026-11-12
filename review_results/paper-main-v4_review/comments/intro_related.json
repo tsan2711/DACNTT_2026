@@ -1,0 +1,149 @@
+[
+ {
+  "title": "Headline research question is not answered by the evidence, and the title/abstract framing outruns what the study can say",
+  "quote": "We ask: after several GVT rounds, is the model better at mathematics, or",
+  "explanation": "The paper poses a two-branch question (better at mathematics vs. only learned what the verifier accepts). Sections 4-7 concede that neither branch can be answered: the first is a null for one recipe whose positive gate fails (training on reference solutions drops pass@1 by 32 points), and the second is 'untested' because the pre-set rule cannot fire when accuracy does not rise and the audit has no positive control. The title ('No Detectable Gain from Verifier-Filtered Self-Training of a 1.5B Model') and the opening sentences of the abstract and introduction nevertheless frame this as a study of self-training in general and of the verifier-vs-mathematics question. The question also presupposes a rising score to interpret, and the paper never observes one; what it observes is a decline. The honest qualifiers are present, but they are buried behind a title and framing that a reader would take as a statement about verifier-filtered self-training, when a failed positive control means the experiments cannot distinguish 'self-training does not help' from 'this training pipeline cannot improve this model at all'. The authors deserve credit for the candour; the issue is the mismatch between headline and warranted scope.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Introduction",
+  "related_sections": [
+   "Abstract",
+   "Results (4.6)",
+   "Discussion (5.1)",
+   "Limitations"
+  ]
+ },
+ {
+  "title": "The verifier 'bias' studied is largely a defect of the authors' own pipeline, yet is presented as a property of rule-based verifiers",
+  "quote": "it rejects some correct answers written in forms it does not parse (Section 3.2).",
+  "explanation": "The Introduction motivates the study by saying the rule-based verifier rejects correct answers. Section 3.2 shows the dominant rejection (15.5-18.3% of V'-accepted generations, and the unparseable-gold 10.2% of MATH-500 problems) comes from the pipeline storing gold answers without a delimiter, so that math-verify's LaTeX extraction is not applied; eight of ten false negatives in the format probe pass when only the boxed answer is verified. Wrapping the gold in $...$ or \\boxed{} is the documented way to call math-verify, so this is an integration bug, not an intrinsic bias of rule-based verifiers. Only the \\dfrac/\\tfrac rejection is a genuine parser limitation, and the paper itself shows it touches 0-4 training examples. Consequently the narrative linking the study to TinyV, Egashira et al. and 'the verifier accepts what it accepts' overstates the relevance: most 'verifier bias' measured is harness error that a standard call would remove, and the paper's central audit (r_t) is about that bug. The related-work comparisons (e.g., recall of 0.95 for math-verify in [6], 86% average) suggest the properly configured verifier is considerably better than the one used here.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "Introduction",
+  "related_sections": [
+   "Setup (3.2)",
+   "Related Work",
+   "Discussion (5.3)",
+   "Limitations"
+  ]
+ },
+ {
+  "title": "The audit measures false rejects, which by the paper's own account cannot create pressure to adapt in SFT, so it does not address the stated question",
+  "quote": "used form of the loop, oﬄine rejection-sampling SFT, where a false reject only",
+  "explanation": "The introduction itself says that in offline SFT 'a false reject only removes a training example', and Section 5.3 concludes 'Under SFT the pressure to adapt is therefore weak' (2-12 relevant training examples per round). Yet the research question is whether the model learns to write what the verifier accepts, and the audit is built on false-reject rates only. In rejection-sampling SFT, learning verifier-specific behaviour would show up chiefly through false accepts (wrong or unfaithful reasoning that ends in an accepted string), which the paper explicitly does not measure ('gives no false-positive rate'). Related Work also reports that Egashira et al. find systematic false negatives behave like random noise, which predicts no adaptation signal for a problem-bound defect like the one studied; the paper does not connect this prediction to its audit. The audit was therefore ill-matched to the question by construction, and its null/uninformative result says little about the 'second branch' it is supposed to probe. Carrying a per-step false-negative tracker from RLVR (where a false reject is a zero reward) into SFT (where it is a dropped example) changes what the quantity means.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Introduction",
+  "related_sections": [
+   "Related Work",
+   "Setup (3.2)",
+   "Discussion (5.3)"
+  ]
+ },
+ {
+  "title": "The 'cheapest and most widely used form of the loop' is not what was implemented; the null may reflect a defective training recipe",
+  "quote": "This paper studies the question in the cheapest and most widely",
+  "explanation": "The paper claims to study the standard offline rejection-sampling SFT loop (STaR, ReST, ReST-EM, RFT) and that the result concerns 'this recipe'. But Section 3.4 and 4.6 reveal the main-run recipe deviates from those methods in ways that plausibly depress accuracy irrespective of the verifier: loss over the prompt as well as the completion, LoRA on q_proj/v_proj only, a 512-token training limit that cuts the final answer and EOS from 24-26% of kept examples (and 62.4% in no-filter), and fp16 on a T4. The positive gate, training on reference solutions, drops pass@1 by 32 points even with the corrected recipe, which signals the pipeline degrades a strong instruct model on any SFT data. The 'most widely used' characterisation is also unsupported by a citation. Because the one measure of whether the pipeline can help fails, the finding that 'verifier-filtered self-training' yields no gain is not separable from implementation. The authors state a recipe-only reading, which is appropriate, but the Introduction and Contributions still present it as the canonical cheapest GVT loop.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Introduction",
+  "related_sections": [
+   "Setup (3.4)",
+   "Results (4.6)",
+   "Limitations"
+  ]
+ },
+ {
+  "title": "Contribution list credits an audit that the paper elsewhere calls not new and uninformative",
+  "quote": "– A post hoc per-round false-reject audit of one veriﬁer defect, carried over",
+  "explanation": "The Contributions list presents the per-round false-reject audit as the second contribution. The Related Work then states that this measurement 'is not new: it is the per-step tracking of Egashira et al. and TinyV, applied to offline SFT' and that the authors 'do not claim the combination of a measured verifier bias and a patched control as a contribution'. The same bullet concedes the audit 'is uninformative about adaptation', and the injected-bias controls fail to validate it. Section 5.3 then relabels it 'a proposed audit' for future studies 'not as tested methods'. What remains as a contribution is the porting of an existing measurement to SFT, with no positive control and an effect that tracks \\boxed share. The contribution is therefore an untested protocol, and calling it a contribution (and a headline element of the abstract) is stronger than the evidence supports; the contributions list should say so rather than listing it alongside the null result and the decomposition.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Introduction",
+  "related_sections": [
+   "Related Work",
+   "Discussion (5.3)",
+   "Abstract"
+  ]
+ },
+ {
+  "title": "Introduction asserts the pooled decline 'does not reproduce under isolation' although Section 4.1 and 5.1 say the designs cannot be compared",
+  "quote": "the solutions the model does ﬁnish. A sharp decline in a pooled design does not",
+  "explanation": "The sentence continues 'reproduce under isolation (Section 4.1)', and the Conclusion repeats 'The pooled design's decline does not reproduce under isolation.' But Section 4.1 states the pooled design 'cannot be read causally' and that 'No run separates these explanations', and Section 5.1 says 'we cannot say whether pooling, selection-set scoring or dose produced it'. The pooled design differs from the isolated runs in dataset mix, one adapter over both pools, selection==evaluation, ~4.5x more training examples per round (3,962 vs 872), and also uses both model sizes. A non-reproduction across arms that differ in four or more factors is not a replication failure of any one of them. Moreover isolated runs at higher learning rates (5e-4: pass@1 down 4-11 points; Run C at 1e-5: -12.7; train-on-gold: -18 to -21) show substantial declines, so 'does not reproduce' is too absolute. The headline phrasing should be 'is not matched by the dose-lower isolated runs at 1e-5', not a statement of non-reproduction.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Introduction",
+  "related_sections": [
+   "Results (4.1)",
+   "Discussion (5.1)",
+   "Conclusion"
+  ]
+ },
+ {
+  "title": "Abstract and Introduction present the cap-conditional 'finished accuracy' decline as a finding, but the decomposition attributes most of the decline to cap share in some runs",
+  "quote": "ﬁnished-accuracy part and a cap-share part: at the highest rate, ﬁnished",
+  "explanation": "Contribution 3 and the Introduction say that 'what appears, most clearly at the highest rate, is lower accuracy on the solutions the model does finish' and report a 5.5-10.6 point loss in finished accuracy. Section 4.5 reports that the three-part decomposition attributes 52-72% of the decline to cap share at seed 2 (and 12-30% at seed 1), and Table 1 shows the seed-2 5e-4 cap-hit share at 51.2% vs a round-0 level of ~43%. So at seed 2 the decline is mostly 'fewer solutions finish', not 'finished solutions are less accurate'. The matched finished-accuracy measure also conditions on which problems finish after training (post-treatment selection), which the paper admits makes it only descriptive; one of the six runs in the 5.5-10.6 range has an interval reaching +0.1, and the range pools A/B pairs, no-filter arms and different seeds that the paper elsewhere calls near-replicates. Calling this a contribution with a point range and 'cap-hit share rises only at that rate' is therefore stronger than the post hoc, descriptive evidence. Notably the Related Work credits Xu et al. [16] for the finished/terminated separation, so novelty is also limited.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "Introduction",
+  "related_sections": [
+   "Results (4.5)",
+   "Results (4.4)",
+   "Related Work",
+   "Discussion (5.3)"
+  ]
+ },
+ {
+  "title": "Claim that the final-round loop 'falls' in each seed is stated more firmly in the abstract than the intervals support",
+  "quote": "recipe, pass@1 falls 3.2–4.8 points in each of three seeds (mean −4.1).",
+  "explanation": "The abstract reports a pass@1 fall of 3.2-4.8 points in every seed. Table 4 shows that for seed 2 the pass@1 interval is [-6.8, +0.6] (includes zero), and the intervals omit training-seed variance and are based on a single sampled draw per problem at k=2; round-0 pass@1 itself varies 46.8-49.2 across seeds purely from sampling. Section 4.6 more cautiously says the loop 'probably costs a few points' and that 'we did not isolate the cause'. The three-seed t-interval [-6.1, -2.1] rests on n=3 and on seeds that share the same exam problems, and the whole final round is one of the analyses the Introduction lists as post hoc. The paper otherwise argues that the design can detect only ~6 points of pass@1 in this round, so a 4-point effect is below its stated resolution; reporting it as a consistent decline in the abstract is in tension with that. The abstract should carry the qualifier that the effect is below the stated detectable size and that pass@1 intervals include zero in one seed.",
+  "comment_type": "technical",
+  "confidence": "medium",
+  "source_section": "Abstract",
+  "related_sections": [
+   "Results (4.6)",
+   "Setup (3.4)",
+   "Discussion (5.1)"
+  ]
+ },
+ {
+  "title": "Pre-set rule and 'fixed in advance' measures are given weight although virtually every operative choice is post hoc and the rule was unable to fire",
+  "quote": "(Section 4.6) were all added after seeing earlier runs; all are post hoc.",
+  "explanation": "The Introduction invokes four measures 'fixed in advance' and a pre-set reading rule, then lists what was post hoc: the higher learning rates, controls, round count and k at those rates, sample accuracy as the primary measure, termination measures, the re-scoring for the second verifier defect, and the entire final 500-problem round. This leaves almost nothing confirmatory: the null at 1e-5 (which the paper says 'changed the outputs little') is the only pre-set arm, and its pre-set measure pass@1 has the lowest power (about 10 points). The rule was also one-sided, as the authors admit, so it could never have supported the 'verifier-style' branch. Nothing documents that the measures were truly fixed in advance (no preregistration or timestamped plan is cited). Because the pre-set framing is used to lend discipline to the 'no gain' claim, and the remaining analyses were chosen after seeing results, no multiplicity correction is applied across roughly twenty runs, and the headline 'no interval excludes zero' is a count of failed rejections under low power. The paper discloses all this, which is commendable, but the abstract's categorical 'No pass@1 or pass@k gain has a problem-level bootstrap interval excluding zero' sits on a design that was iterated until the end; the claim should be marked as exploratory rather than a test of the pre-set rule.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "Introduction",
+  "related_sections": [
+   "Abstract",
+   "Setup (3.4)",
+   "Discussion (5.1)",
+   "Limitations"
+  ]
+ },
+ {
+  "title": "Related-work comparison between RLVR on base/Math models and SFT on an instruct model is not like-for-like and some characterisations are loose",
+  "quote": "which our SFT loop does not; of Wang et al.’s 37.6 points only 8.6 lie beyond",
+  "explanation": "The Introduction and Related Work use Qwen2.5-Math-1.5B, DeepSeek-R1-Distill-Qwen-1.5B and base-model zero-RL results as the motivating benchmark of 'large gains at this scale', then contrast them with the null from an instruction-tuned Qwen2.5-1.5B (Limitations: 'all instruction-tuned (no base model)'). Those gains are largely available because base/Math models have format and elicitation headroom (the paper itself notes only 8.6 of 37.6 points exceed format correction, and cites Shao et al. that rewards can be spurious and effects vary by model family), whereas an instruct model with a boxed-answer prompt starts near 49% on MATH-500 with little format headroom. The paper therefore sets up an expectation that the study's design cannot test, and the contrast 'which our SFT loop does not' compares RL with SFT, different base checkpoints, and different training algorithms in one step. Similarly, Related Work says Kim et al. [8] show a teacher-conditioned self-distillation shortens responses and cuts accuracy 'as our train-on-gold control does', but train-on-gold here is plain SFT on reference solutions, and Section 4.6 admits the cause is 'attributed to the reference style but not isolated', so the analogy is asserted rather than supported.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "Related Work",
+  "related_sections": [
+   "Introduction",
+   "Limitations",
+   "Results (4.6)"
+  ]
+ },
+ {
+  "title": "'At any learning rate we tried' overstates the coverage of the learning-rate sweep, whose arms change several factors at once",
+  "quote": "– For a 1.5B model, LoRA SFT and one rule-based veriﬁer, no gain is de-",
+  "explanation": "The first contribution says no gain is detectable 'at any learning rate we tried', and the abstract says 'at four learning rates'. But Section 3.4 states 1e-5 was a default 'not tuned', and Section 4.4 says the 1e-4/2e-4/5e-4 runs differ from the 1e-5 runs in k (4 vs 8), rounds (3 vs 5), pool size and even the pass@k metric, so 'only 10^-4 to 5x10^-4 isolates the rate'. The grid is thus coarse (Limitations: 'coarse'), confounded, has 1-3 seeds per rate, and 5e-4 ran with only two seeds; the best-performing rate in the final round was a different, un-swept recipe. Every arm moves in the same direction (declines), including the gate at 2e-5 and 1e-4, suggesting the failure is not specific to rate, which undercuts reading the sweep as coverage of the learning-rate dimension. The claim should be that no gain appeared in the sampled configurations, not that learning rate has been covered.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "Introduction",
+  "related_sections": [
+   "Abstract",
+   "Results (4.4)",
+   "Limitations"
+  ]
+ }
+]

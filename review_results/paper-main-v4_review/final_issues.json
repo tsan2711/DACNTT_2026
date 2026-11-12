@@ -1,0 +1,205 @@
+[
+ {
+  "title": "Title/'negative result' framing outruns a design that cannot answer either branch",
+  "quote": "The design detects only gains of about 10 points of pass@1 (6 in the",
+  "explanation": "The paper's own evidence says the null belongs to a recipe it describes as flawed (loss on the prompt, q/v-only LoRA, 512 cap truncating a quarter of the pool, untuned LR), the gate failed, the design detects only ~10 (6) points of pass@1, and every score is produced by the verifier under study. The title question (mathematics or the verifier?) is therefore answered on neither side, and no matched-dose unfiltered/random baseline or V'-trained run (cheap, since V' exists) manipulates the verifier. The paper is candid about this in places, but title, keywords and the Conclusion's 'no' still read as a finding about verifier-filtered self-training.",
+  "comment_type": "claim_accuracy",
+  "severity": "major"
+ },
+ {
+  "title": "Failed positive gate invalidates the 'corrected recipe' label and the gate as a control",
+  "quote": "The gate shows only that we have no recipe known to raise accuracy;",
+  "explanation": "A 32-point collapse from 300 reference solutions (unchanged at 2e-5) points to a pipeline defect rather than a property of the task, yet the recipe is called 'corrected' in the abstract and §4.6. Seven recipe changes were made at once with no ablation, the $-style attribution is asserted not tested, and a harmful configuration could equally explain the loop's own decline. The gate is therefore not a valid positive control and the −4.1 mean cannot be attributed to self-training or to the verifier.",
+  "comment_type": "methodology",
+  "severity": "major"
+ },
+ {
+  "title": "All scores use the training verifier that the paper shows to be defective",
+  "quote": "through every run before the ﬁnal round, and every headline number is graded",
+  "explanation": "Every headline accuracy is graded by math-verify with a defect rejecting ~1/6 of correct answers and 10.2% unparseable golds; the defect interacts with training-induced format changes (boxed share, $-style), so it does not cancel in within-run differences. The final round normalises gold, so it is not comparable to earlier rounds yet is pooled with them in the abstract/§5.1. A second grader (PRM800K, or V' on the exam) is cheap on saved generations and would allow the stated question to be addressed.",
+  "comment_type": "methodology",
+  "severity": "major"
+ },
+ {
+  "title": "Power analysis: single-draw pass@1 on 150 problems, post hoc bounds that disagree",
+  "quote": "The design detects only gains of about 10 points of pass@1 (6 in the",
+  "explanation": "The pre-set pass@1 uses one of k samples and cannot detect plausible gains; sample accuracy has about half the minimum detectable effect but was chosen post hoc. The 2.8h/1.96 constant is correct for a two-sided test, but the 2.2-point figure ('largest upper limit among observed intervals') and the 3.5–5.5 bound are two non-reconciled quantities and neither includes seed variance, so 'no gain of at least that size' is not what 80% power licenses.",
+  "comment_type": "methodology",
+  "severity": "moderate"
+ },
+ {
+  "title": "Inconsistent standards: multiplicity, pattern-reading and forking paths",
+  "quote": "We read this as a possible small decline, not an established",
+  "explanation": "§3.4 disclaims multiplicity correction and rests conclusions on 'patterns across runs', yet runs share exam partitions and round-0 draws and are not independent. Small declines are read as 'probably costs a few points' (below the stated 6-pt detectable effect) while gains of similar size are dismissed; sample accuracy is negative in 9/9 runs at ≤2e-4 and pass@1 in 12/13 A/B runs, which a pooled analysis would treat as evidence. The same leniency is applied to the r_t pattern (three same-sign falls, all intervals touching zero). Recipe, metric and runs were chosen after seeing MATH-500 results.",
+  "comment_type": "methodology",
+  "severity": "major"
+ },
+ {
+  "title": "Replicate/seed-variance evidence is unidentified and the +5.3/−7.3 'flip' is weak",
+  "quote": "is +5.3 at seed 1 and −7.3 [−14.0, −0.7] at seed 2, a sign ﬂip from pools that",
+  "explanation": "The only evidence that intervals understate uncertainty is one unidentified 'replicate pair' (3.2 pts) and a B−A sign flip in single-draw pass@1 whose resampling SD for a difference is ≈5 points. 'Seed' bundles partition, selection set and training randomness, so training-seed variance is never isolated and same-seed A/B are called 'closer to replicates' without a test.",
+  "comment_type": "methodology",
+  "severity": "moderate"
+ },
+ {
+  "title": "Prose and Table 2 disagree on the seed-1 B−A difference at 1e-5",
+  "quote": "A is −0.7 [−3.3, +2.0] points of pass@1 at seed 0 and +0.0 [−2.7, +2.7] at",
+  "explanation": "Text gives B−A = +0.0 at seed 1, Table 2 implies −0.7 (the note says some values differ by one problem without saying which seed), which also affects the '2.7–4.0' range.",
+  "comment_type": "presentation",
+  "severity": "minor"
+ },
+ {
+  "title": "'Pooled decline does not reproduce under isolation' is contradicted or unsupported",
+  "quote": "A sharp decline in a pooled design does not",
+  "explanation": "§4.1/5.1 say the designs cannot be compared, while the Introduction/Conclusion assert non-reproduction. Run C (GSM8K) falls 12.7 pts with an interval excluding zero, and isolated 5e-4 runs decline. Selection==eval can only inflate accuracy so cannot explain a collapse, and '4.5× dose' (examples) ignores steps×LR; pooling and dose are inseparable.",
+  "comment_type": "claim_accuracy",
+  "severity": "moderate"
+ },
+ {
+  "title": "Rate dependence not shown; the 1e-5 runs are near-null by construction",
+  "quote": "length and cap-hit share, barely change, which is weak evidence that the adapter",
+  "explanation": "Sample-accuracy change is about −2.1 at both 1e-5 and 1e-4 and flat at seed 2, undercutting 'the adapter did little at 1e-5' and 'the decline may grow with rate' (one seed). Main 1e-5 runs use an untuned, near-no-op adapter, so the null there is uninformative about self-training.",
+  "comment_type": "claim_accuracy",
+  "severity": "moderate"
+ },
+ {
+  "title": "'No gain at any learning rate' overstates a non-controlled sweep",
+  "quote": "– For a 1.5B model, LoRA SFT and one rule-based veriﬁer, no gain is de-",
+  "explanation": "The 1e-5 and higher-rate runs differ in k, rounds, pool size and pass@k metric, so only 1e-4→5e-4 isolates rate; the grid is four points.",
+  "comment_type": "claim_accuracy",
+  "severity": "moderate"
+ },
+ {
+  "title": "Cap-share decomposition is unstable and the 'finished accuracy' contribution is overstated",
+  "quote": "attributes 12–30% of the decline to the cap share in the three original seed-1",
+  "explanation": "Shares range −2% to 96% by seed, are conditioned on a post-treatment variable, and a crude Table 1 check gives ~96% (not 52–72%) at seed 2 while matched finished accuracy (−5.5) exceeds the total decline (−4.7). The '5.5–10.6' contribution mixes in the no-filter control (10.6) and a run whose interval includes zero; for A/B alone the range is 5.5–9.1. Token counts behind it were not saved.",
+  "comment_type": "claim_accuracy",
+  "severity": "moderate"
+ },
+ {
+  "title": "Cross-arm comparisons rest on unmatched dose; no-filter comparison is selective",
+  "quote": "it took about twice Run A’s optimizer steps",
+  "explanation": "Run C (~2× steps), no-filter (3–4×) and pooled (4.5×) are used for causal readings. The no-filter vs filtered comparison is summarised by pass@4 alone; pass@1 (+4.0/−4.6) and sample accuracy (+0.1/−5.5) are inconsistent, and at 3.6× steps the seed-1 no-filter decline is no larger, contradicting the paper's dose reasoning. Pool differences are quoted as 0–4, 3–4 and 0–3 in different sections with mixed units (examples vs problems).",
+  "comment_type": "methodology",
+  "severity": "moderate"
+ },
+ {
+  "title": "r_t 'matches boxed share' is an identity, and the train-on-gold rise is not a boxed-share effect",
+  "quote": "On boxed answers alone rt is ﬂat (changes",
+  "explanation": "r_t(all) = r_t(boxed-only) × boxed share holds by construction, so the 'match' is not evidence. Boxed-only intervals contain the whole −2.6 fall (so 'flat' is unsupported); for train-on-gold the share part is ~+0.6–0.7 while the boxed-only part (+2.6, +1.6) is ~75–80% of the rise, i.e., boxed-only r_t drifts with no verifier. The claim that adaptation 'would also produce' a 15-point global boxed fall conflicts with only 3–12 avoidance examples and with the hash control, where boxing falls on affected and unaffected problems alike. The available no-filter arm is a missing negative control.",
+  "comment_type": "technical",
+  "severity": "major"
+ },
+ {
+  "title": "'Pressure to adapt is weak' and the RLVR contrast are asserted, not tested",
+  "quote": "pressure to adapt is therefore weak.",
+  "explanation": "The inference comes from a count of pool examples with no dose–response, and conflicts with 'little power to see any'. Rejection-sampling SFT is a positive-only policy-gradient step, so 'a direct pressure SFT lacks' is untested; the 440→542 dose (a fifth to a quarter) is not reconciled with 2–12 avoidance examples.",
+  "comment_type": "claim_accuracy",
+  "severity": "moderate"
+ },
+ {
+  "title": "Injected-bias controls: not positive controls, unclear denominators, wrong-direction results",
+  "quote": "As positive controls for the audit we reran the loop once each",
+  "explanation": "The hash control cannot elicit selective avoidance by construction; the \\frac control is a single run at the final recipe, reports no r_t and no avoidance-example count. '70 of 500' is an exam-set count while selection uses a 300-problem pool, so '263 vs 298' cannot be reconstructed. The visible-rule arm moves +2.8 vs −3.7/−2.7/−5.5 in unbiased seeds (the wrong direction for avoidance) and pass@1 falls 7.0 with an interval excluding zero, yet the text concludes 'neither control shows an effect'.",
+  "comment_type": "methodology",
+  "severity": "major"
+ },
+ {
+  "title": "r_t definition and defect statistics: unvalidated V', conflated denominators, ex post subsets",
+  "quote": "known defect class of the training veriﬁer V .",
+  "explanation": "r_t treats V' acceptance as ground truth (no false-positive check), includes outcomes the audit cannot affect in the denominator, and 'affected, parseable' is selected on the run's own outputs near a 92–95% ceiling ('bound to the problem' is circular). The independent 7.8% probe (upper 13.8%) does not reconcile with 15.5–18.3% 'one in six'; 542/440 implies 18.8%; the abstract says 'correct solutions' while r_t is over V'-accepted. The framing that the defect is 'verifier bias' is largely the authors' own storage bug, not intrinsic to rule-based verifiers.",
+  "comment_type": "technical",
+  "severity": "moderate"
+ },
+ {
+  "title": "Audit contribution is internally inconsistent: listed, non-novel and uninformative",
+  "quote": "– A post hoc per-round false-reject audit of one veriﬁer defect, carried over",
+  "explanation": "The contributions list credits an audit that Related Work calls 'not new' (Egashira, TinyV) and the abstract calls uninformative, while §5.3 concludes the pressure to adapt is weak. Items (iii)/(iv) are post hoc lessons, not audit checks, and 'dose' is counted in examples rather than steps×LR.",
+  "comment_type": "claim_accuracy",
+  "severity": "moderate"
+ },
+ {
+  "title": "Unscorable golds, mixed populations in Table 5, and numeric slippage",
+  "quote": "500 stored MATH-500 golds (10.2%); these problems always count as unsolved,",
+  "explanation": "10.2% of golds are unscorable and 'we did not check' cancellation although V' makes it cheap; Table 5 mixes trained-on selection problems with unseen exam problems; pool-count definitions differ across caption, prose and Limitations; recomputed Table 5 differences (−5.6, −0.3, +2.2, −0.8) differ slightly from printed ones, and the 91→76%/93→78% shares appear in no table.",
+  "comment_type": "presentation",
+  "severity": "minor"
+ },
+ {
+  "title": "Token budget and decoding make the exam partly a termination test",
+  "quote": "prompt length is cut in training and loses its ﬁnal answer and end-of-sequence",
+  "explanation": "512-token cap with 43% cap-hit at round 0, 24–26% of the pool truncated in training (answer and EOS lost) and repetition penalty 1.1 at T=0.8 likely depress the baseline and teach unfinished answers, so declines may reflect recipe artefacts rather than self-training.",
+  "comment_type": "methodology",
+  "severity": "moderate"
+ },
+ {
+  "title": "Underspecified training and no pipeline sanity check; reproducibility gaps",
+  "quote": "weight decay at the library defaults; batch size 2; one epoch; AdamW with linear",
+  "explanation": "Effective batch 2 with no clipping/warmup at LR up to 5e-4, library-default dropout/decay, seed handling and per-problem sample handling are unspecified. There is no frozen/zero-effect control despite citing Xu et al. as the standard; the gold collapse at two LRs is consistent with a pipeline defect. Design P logs, token counts and the 1,536-token re-scoring were not saved, yet claims rely on them; the AI disclosure does not say which scripts were independently verified.",
+  "comment_type": "missing_information",
+  "severity": "moderate"
+ },
+ {
+  "title": "Contamination of Qwen2.5 on MATH/GSM8K dismissed in three words",
+  "quote": "and possible test-set contamination",
+  "explanation": "Known contamination affects headroom for self-training, the meaning of small declines, and the MATH-train pool used in the final round.",
+  "comment_type": "missing_information",
+  "severity": "moderate"
+ },
+ {
+  "title": "'Drift' vs 'imitation' is never operationalised",
+  "quote": "drift: boxed share falls with the pool, which both would produce.",
+  "explanation": "The no-filter and gold arms decline without any verifier, so generic SFT damage explains the declines equally well; the paper concedes style does not separate the two.",
+  "comment_type": "methodology",
+  "severity": "moderate"
+ },
+ {
+  "title": "Final-round statistics: baseline ambiguity, t-interval, 'all three seeds'",
+  "quote": "Change from\neach run’s own untrained round 0 to round 1 in points (round-0 pass@1 is 49.2, 46.8,\n48.2 at seeds 1–3, from sampling)",
+  "explanation": "Table 4's 'Untrained 49.2' is seed 1's draw while seeds 2–3 start at 46.8/48.2; the n=3 t-interval omits shared problem-sampling error; '≈6' is a single-run, seed-variance-free figure; 'two rounds' is stated but only round 0→1 is reported; 'falls in each seed' mixes significant (two of three) and non-significant intervals. I recomputed mean −4.07, [−6.08,−2.06] and [−8.05,−1.02]: they match.",
+  "comment_type": "technical",
+  "severity": "moderate"
+ },
+ {
+  "title": "Cleanliness of the 300-problem MATH-train pool is undocumented",
+  "quote": "a pool of 300 problems from the MATH training split, so that the exam is all 500\nMATH-500 problems.",
+  "explanation": "No dedup/overlap check against MATH-500 and no selection procedure; the base model is likely exposed to MATH-train.",
+  "comment_type": "missing_information",
+  "severity": "minor"
+ },
+ {
+  "title": "Final-round loop lacks a no-filter or equal-dose control",
+  "quote": "The loop does not help and probably costs a few points;\nwe did not isolate the cause.",
+  "explanation": "Without it the decline cannot be tied to the verifier rather than SFT on self-generated data.",
+  "comment_type": "methodology",
+  "severity": "moderate"
+ },
+ {
+  "title": "'Cheapest, most widely used' loop and RLVR comparison are not like-for-like",
+  "quote": "This paper studies the question in the cheapest and most widely",
+  "explanation": "The implemented loop (loss on prompt, q/v-only LoRA, truncated examples, instruct model) differs from standard RFT/ReST, and the RLVR comparisons use base/Math models; the Kim et al. analogy is asserted.",
+  "comment_type": "claim_accuracy",
+  "severity": "minor"
+ },
+ {
+  "title": "Pre-set reading rule has no operational thresholds and little weight",
+  "quote": "requires pass@1 to rise, pass@k to stay ﬂat and style to converge",
+  "explanation": "'Fixed in advance' measures and the rule carry little weight since nearly every operative choice is post hoc, and §5.1 applies it with a post hoc 'detectably'.",
+  "comment_type": "claim_accuracy",
+  "severity": "minor"
+ },
+ {
+  "title": "Corrected-recipe test is one adapter at one rate, not multi-round GVT",
+  "quote": "It is 10−4 with k = 2 and two rounds; the loop has three",
+  "explanation": "Round 0 plus one adapter at 1e-4 does not test several GVT rounds, yet 'any learning rate' blends this with the earlier faulty recipe.",
+  "comment_type": "claim_accuracy",
+  "severity": "moderate"
+ },
+ {
+  "title": "§5.2 'defensible statement' partly contradicts its own dose caveats",
+  "quote": "The defensible statement is narrow: removing a rare format defect, or the",
+  "explanation": "The data 'neither support nor rule out' the shrinking-pool account, yet a statement about no consistent difference is offered as defensible.",
+  "comment_type": "claim_accuracy",
+  "severity": "minor"
+ }
+]
