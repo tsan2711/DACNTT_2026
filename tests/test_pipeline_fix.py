@@ -104,3 +104,10 @@ def test_injected_boxed_bias_is_selective_and_deterministic():
     # deterministic, and only boxed answers are affected
     assert rej == [g for g in golds if not biased.verify(g, f"so \\boxed{{{g}}}").accepted]
     assert all(biased.verify(g, f"the answer is {g}").accepted == clean.verify(g, f"the answer is {g}").accepted for g in rej[:20])
+
+
+def test_content_bias_rejects_boxed_fraction_golds_only():
+    biased = MathVerifyAdapter("reward", inject_bias_content=True)
+    assert not biased.verify("\\frac{1}{2}", "so \\boxed{\\frac{1}{2}}").accepted
+    assert biased.verify("\\frac{1}{2}", "the answer is 1/2").accepted
+    assert biased.verify("7", "so \\boxed{7}").accepted

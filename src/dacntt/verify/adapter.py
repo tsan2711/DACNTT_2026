@@ -64,6 +64,7 @@ class MathVerifyAdapter:
         normalize_frac_commands: bool = False,
         normalize_gold_boxed: bool = False,
         inject_boxed_bias: float = 0.0,
+        inject_bias_content: bool = False,
     ) -> None:
         if preset not in PRESETS:
             raise ValueError(f"unknown preset {preset!r}; expected one of {PRESETS}")
@@ -77,11 +78,17 @@ class MathVerifyAdapter:
         # \boxed{} answer, so a model that learns the verifier should stop
         # boxing on exactly those problems. Use on the *select* adapter only.
         self.inject_boxed_bias = inject_boxed_bias
+        # Content-learnable variant: instead of a hash, reject \boxed answers
+        # whenever the gold answer is a fraction (contains \frac/\dfrac). The
+        # model can see this in the problem, so avoidance is learnable.
+        self.inject_bias_content = inject_bias_content
         self._parse = parse_fn
         self._verify = verify_fn
         self._pred_config = None if parse_fn is not None else extraction_config(preset)
 
     def _bias_rejects(self, gold: str, prediction: str) -> bool:
+        if self.inject_bias_content:
+            return bool(_HAS_BOXED.search(prediction)) and bool(re.search(r"\\[dt]?frac", gold))
         if self.inject_boxed_bias <= 0 or not _HAS_BOXED.search(prediction):
             return False
         return zlib.crc32(gold.strip().encode()) % 1000 < self.inject_boxed_bias * 1000

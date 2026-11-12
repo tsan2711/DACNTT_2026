@@ -138,6 +138,7 @@ def main(argv: list[str] | None = None) -> int:
         normalize_frac_commands=args.patch_verifier,
         normalize_gold_boxed=args.patch_verifier_boxed,
         inject_boxed_bias=args.inject_boxed_bias,
+        inject_bias_content=args.inject_bias_content,
     )
     exam_adapters = {
         name: MathVerifyAdapter(
@@ -628,6 +629,7 @@ def _manifest(
         "train_pool_n": args.train_pool_n,
         "max_train_examples": args.max_train_examples,
         "inject_boxed_bias": args.inject_boxed_bias,
+        "inject_bias_content": args.inject_bias_content,
         "max_seq_length": args.max_seq_length,
         "max_tokens": args.max_tokens,
         "no_filter": args.no_filter,
@@ -785,6 +787,13 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         help="positive control for the r_t audit: the select verifier rejects "
         "every \\boxed answer on this fraction of problems (hash of gold). "
         "Exam verifiers stay clean.",
+    )
+    parser.add_argument(
+        "--inject-bias-content",
+        action="store_true",
+        help="content-learnable variant of --inject-boxed-bias: the select "
+        "verifier rejects every \\boxed answer whose gold is a fraction "
+        "(\\frac/\\dfrac), a rule visible from the problem",
     )
     parser.add_argument(
         "--max-train-examples",
