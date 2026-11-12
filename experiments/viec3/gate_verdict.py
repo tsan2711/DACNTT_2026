@@ -20,7 +20,10 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+from dacntt.gold.extract import normalise_math_gold  # noqa: E402
 from dacntt.verify.adapter import MathVerifyAdapter  # noqa: E402
+
+FIX_GOLD = False  # set by --fix-gold: apply the final round's gold normalisation
 
 
 def load_flags(path: Path, patch: bool) -> dict[int, dict[str, list[bool]]]:
@@ -33,16 +36,17 @@ def load_flags(path: Path, patch: bool) -> dict[int, dict[str, list[bool]]]:
         if rec["dataset"] == "mathtrain":  # selection pool, not the exam
             continue
         out.setdefault(rec["round"], {})[rec["item_id"]] = [
-            ad.verify(rec["gold"], t).accepted for t in rec["texts"]
+            ad.verify(normalise_math_gold(rec["gold"]) if FIX_GOLD else rec["gold"], t).accepted for t in rec["texts"]
         ]
     return out
 
 
 def stat(rows: list[list[bool]]) -> tuple[float, float, float]:
     n = len(rows)
-    p1 = sum(sum(r) / len(r) for r in rows) / n
+    p1 = sum(r[0] for r in rows) / n  # pass@1 = first sample, as in table.md
     pk = sum(any(r) for r in rows) / n
-    return p1, pk, p1
+    sa = sum(sum(r) / len(r) for r in rows) / n  # sample accuracy
+    return p1, pk, sa
 
 
 def main() -> None:
@@ -50,7 +54,10 @@ def main() -> None:
     ap.add_argument("run_dir", type=Path)
     ap.add_argument("--B", type=int, default=10000)
     ap.add_argument("--no-patch", action="store_true")
+    ap.add_argument("--fix-gold", action="store_true", help="normalise gold as run.py --fix-gold does")
     a = ap.parse_args()
+    global FIX_GOLD
+    FIX_GOLD = a.fix_gold
     flags = load_flags(a.run_dir / "generations.jsonl", not a.no_patch)
     rounds = sorted(flags)
     ids = sorted(set.intersection(*(set(flags[r]) for r in rounds)))
@@ -66,20 +73,22 @@ def main() -> None:
         if r == rounds[0]:
             print(f"{r:5d} | {100*p1:6.1f} | {100*pk:6.1f} | (baseline)")
             continue
-        d1, dk = [], []
+        d1, dk, ds = [], [], []
         for d in draws:
             c = [cur[j] for j in d]
             b = [base[j] for j in d]
             d1.append(stat(c)[0] - stat(b)[0])
             dk.append(stat(c)[1] - stat(b)[1])
-        d1.sort(), dk.sort()
+            ds.append(stat(c)[2] - stat(b)[2])
+        d1.sort(), dk.sort(), ds.sort()
         lo, hi = int(0.025 * a.B), int(0.975 * a.B)
         b1, bk = stat(base)[0], stat(base)[1]
         last = (p1 - b1, d1[lo], d1[hi])
         print(
             f"{r:5d} | {100*p1:6.1f} | {100*pk:6.1f} | {100*(p1-b1):+.1f} "
             f"[{100*d1[lo]:+.1f}, {100*d1[hi]:+.1f}] | {100*(pk-bk):+.1f} "
-            f"[{100*dk[lo]:+.1f}, {100*dk[hi]:+.1f}]"
+            f"[{100*dk[lo]:+.1f}, {100*dk[hi]:+.1f}] | sample acc {100*(stat(cur)[2]-stat(base)[2]):+.1f} "
+            f"[{100*ds[lo]:+.1f}, {100*ds[hi]:+.1f}]"
         )
     if last:
         delta, lo_, hi_ = last
