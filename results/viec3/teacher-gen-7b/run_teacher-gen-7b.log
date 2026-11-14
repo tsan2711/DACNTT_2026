@@ -1,0 +1,58 @@
+pool 300, already done 0, to do 300
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+loading Qwen/Qwen2.5-7B-Instruct on 2 GPU(s), max_memory={0: '11GiB', 1: '13GiB'}
+Skipping import of cpp extensions due to incompatible torch version. Please upgrade to torch >= 2.11.0 (found 2.10.0+cu128).
+loaded
+  8/300 problems
+  16/300 problems
+  24/300 problems
+  32/300 problems
+  40/300 problems
+  48/300 problems
+  56/300 problems
+  64/300 problems
+  72/300 problems
+  80/300 problems
+  88/300 problems
+  96/300 problems
+  104/300 problems
+  112/300 problems
+  120/300 problems
+  128/300 problems
+  136/300 problems
+  144/300 problems
+  152/300 problems
+  160/300 problems
+  168/300 problems
+  176/300 problems
+  184/300 problems
+  192/300 problems
+  200/300 problems
+  208/300 problems
+  216/300 problems
+  224/300 problems
+  232/300 problems
+  240/300 problems
+  248/300 problems
+  256/300 problems
+  264/300 problems
+  272/300 problems
+  280/300 problems
+  288/300 problems
+  296/300 problems
+  300/300 problems
+{
+ "model": "Qwen/Qwen2.5-7B-Instruct",
+ "k": 4,
+ "max_tokens": 1024,
+ "temp": 0.8,
+ "problems": 300,
+ "samples": 1200,
+ "sample_acc_v": 0.7366666666666667,
+ "sample_acc_string": 0.705,
+ "sample_acc_both": 0.705,
+ "problems_with_a_kept_solution": 237,
+ "kept_for_training": 237,
+ "median_chars_all": 1270.0,
+ "median_chars_kept": 1104
+}

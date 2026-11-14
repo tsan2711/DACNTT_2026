@@ -20,7 +20,7 @@ from pptx.enum.text import PP_ALIGN, MSO_ANCHOR  # noqa: E402
 from pptx.enum.shapes import MSO_CONNECTOR, MSO_SHAPE  # noqa: E402
 
 REPO = "/Users/tsangcuteso1/Documents/GitHub/DACNTT_2026"
-OUT = f"{REPO}/25-10-2026/BaoCaoNhanh_25-10_52300057_52300006.pptx"
+OUT = f"{REPO}/_archive/nhap/25-10-2026/BaoCaoNhanh_25-10_52300057_52300006.pptx"
 FIG = f"{REPO}/papers/figures"
 CPU = f"{REPO}/experiments/viec3/review_cpu"
 
@@ -543,7 +543,7 @@ for i, slide in enumerate(prs.slides, 1):
            color=DARKMUTED if i in DARK_SLIDES else MUTED)
     notes(slide, "NÓI: " + say + (f"\n\nNẾU BỊ HỎI: {extra}" if extra else ""))
 
-MD = f"{REPO}/25-10-2026/KICH-BAN-THUYET-TRINH.md"
+MD = f"{REPO}/_archive/nhap/25-10-2026/KICH-BAN-THUYET-TRINH.md"
 BEGIN, END = "<!-- SLIDES:BEGIN -->", "<!-- SLIDES:END -->"
 titles = {1: "Bìa", 2: "01 · Câu hỏi", 3: "02 · Cách làm", 4: "03 · Kết quả 1", 5: "04 · Kết quả 2",
           6: "05 · Phát hiện", 7: "Demo", 8: "06 · Kết luận", 9: "07 · So sánh",

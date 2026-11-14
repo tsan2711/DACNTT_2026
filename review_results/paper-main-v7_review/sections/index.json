@@ -1,0 +1,42 @@
+[
+ {
+  "file": "00_chunk.md",
+  "heading": "Chunk 1",
+  "chars": 5677
+ },
+ {
+  "file": "01_chunk.md",
+  "heading": "Chunk 2",
+  "chars": 5830
+ },
+ {
+  "file": "02_chunk.md",
+  "heading": "Chunk 3",
+  "chars": 5994
+ },
+ {
+  "file": "03_chunk.md",
+  "heading": "Chunk 4",
+  "chars": 5533
+ },
+ {
+  "file": "04_chunk.md",
+  "heading": "Chunk 5",
+  "chars": 5694
+ },
+ {
+  "file": "05_chunk.md",
+  "heading": "Chunk 6",
+  "chars": 5451
+ },
+ {
+  "file": "06_chunk.md",
+  "heading": "Chunk 7",
+  "chars": 4631
+ },
+ {
+  "file": "07_chunk.md",
+  "heading": "Chunk 8",
+  "chars": 5362
+ }
+]

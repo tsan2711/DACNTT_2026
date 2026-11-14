@@ -132,6 +132,31 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
 
+    if args.teacher_solutions:
+        # Positive gate with a stronger teacher: replace the dataset reference
+        # solution by a verified full teacher solution (one per problem); problems
+        # with no teacher solution contribute no training example.
+        import dataclasses
+
+        if not args.train_on_gold:
+            raise SystemExit("--teacher-solutions needs --train-on-gold (it replaces item.solution)")
+        teacher = {}
+        for line in Path(args.teacher_solutions).read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                rec = json.loads(line)
+                teacher[f"{rec['dataset']}:{rec['item_id']}"] = rec["solution"]
+        items = [
+            dataclasses.replace(it, solution=teacher.get(f"{it.dataset}:{it.item_id}", ""))
+            if f"{it.dataset}:{it.item_id}" in (train_ids or frozenset())
+            else it
+            for it in items
+        ]
+        print(
+            f"teacher solutions: {sum(1 for it in items if it.solution and f'{it.dataset}:{it.item_id}' in (train_ids or ()))} "
+            f"of {len(train_ids or ())} pool problems have one (from {args.teacher_solutions})",
+            file=sys.stderr,
+        )
+
     select_adapter = MathVerifyAdapter(
         args.select_preset,
         timeout_seconds=args.verify_timeout,
@@ -634,6 +659,7 @@ def _manifest(
         "max_tokens": args.max_tokens,
         "no_filter": args.no_filter,
         "train_on_gold": args.train_on_gold,
+        "teacher_solutions": str(args.teacher_solutions) if args.teacher_solutions else None,
         "model": args.model if mode in ("mlx", "hf") else "scripted-from-gold",
         "train": {"mlx": "mlx-lora-sft", "hf": "hf-lora-sft"}.get(mode, "noop"),
         "lora_iters": args.lora_iters if mode == "mlx" else 0,
@@ -842,6 +868,13 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         "problem, same every round). Separates 'self-training degrades the "
         "model' from 'any short SFT pass degrades an instruction-tuned model'. "
         "Generation and scoring are unchanged, so pass@* stays comparable.",
+    )
+    parser.add_argument(
+        "--teacher-solutions",
+        type=Path,
+        default=None,
+        help="JSONL {dataset,item_id,solution}: with --train-on-gold, train on these verified "
+        "teacher solutions (plan B2, positive gate) instead of the dataset reference solutions.",
     )
     return parser.parse_args(argv)
 

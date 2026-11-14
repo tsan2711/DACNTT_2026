@@ -15,17 +15,17 @@ Ràng buộc cứng:
 
 ## Nhánh A — CPU (làm ngay)
 
-- [ ] **A1. Chấm lại mọi run cũ từ generation đã lưu, một bộ số duy nhất** (phản biện M3, B2.1, B1.2)
+- [x] **A1 (bài chính; phụ lục còn lại sau). Chấm lại mọi run cũ từ generation đã lưu, một bộ số duy nhất** (phản biện M3, B2.1, B1.2)
   - Verifier V′ (gold bọc `\boxed{}`) + grader khớp chuỗi (`indep_grade.py`); cố định timeout `math-verify`.
   - Đầu ra: một CSV tổng; cập nhật Bảng 1–3 và Mục 4.3 (bỏ cột "run-log"), đồng bộ phụ lục.
   - Rủi ro: số đổi nhẹ → kiểm lại mọi câu trích số trong bài.
-- [ ] **A2. Phân tích `gate_anatomy.py` cho run cũ** (boxed, accuracy theo boxed, độ dài) — nếu A1 xong thì làm luôn; ghi một dòng vào bài.
-- [ ] **A3. So với Xu et al. [15] cụ thể** (Phantom Gains, arXiv:2608.20290): đọc bài thật, thay câu "We differ in scale and in the verifier" bằng 2–3 điểm khác biệt đã kiểm chứng.
-- [ ] **A4. Trích PRM800K / Lightman et al. 2023 (2305.20050)**: xác nhận tiêu đề + ID + ngày; thêm `\bibitem`; dùng làm grader thứ hai nếu chạy được trên CPU.
+- [-] **A2 (bỏ: bài đã kín 15 trang; summary.csv có boxed/acc|boxed). Phân tích `gate_anatomy.py` cho run cũ** (boxed, accuracy theo boxed, độ dài) — nếu A1 xong thì làm luôn; ghi một dòng vào bài.
+- [x] **A3. So với Xu et al. [15] cụ thể** (Phantom Gains, arXiv:2608.20290): đọc bài thật, thay câu "We differ in scale and in the verifier" bằng 2–3 điểm khác biệt đã kiểm chứng.
+- [x] **A4. Trích PRM800K / Lightman et al. 2023 (2305.20050)**: xác nhận tiêu đề + ID + ngày; thêm `\bibitem`; dùng làm grader thứ hai nếu chạy được trên CPU.
 - [ ] **A5. Tiêu đề: GIỮ NGUYÊN.** (đã chốt, không làm gì)
-- [ ] **A6. Trình bày**: abstract ~269 → ~200 từ; tách đoạn dài ở Mục 3.4; sửa chỗ ngắt trang trong danh sách Contributions. Giữ 15 trang (trang 15 hiện đầy tới 659 pt, chừa dư địa bằng cách cắt chữ, không bằng chữ nhỏ).
-- [ ] **A7. Supplementary**: nộp như file thứ hai (đã có `baocao-phu-luc.pdf` trong zip). Trong bài ghi rõ "Supplementary (file riêng)" ở lần nhắc đầu tiên + đường dẫn repo.
-- [ ] **A8. Repo gọn**: README ngắn "file nào sinh bảng nào"; tách thư mục nháp (`25-10-2026/`, `paper_long_25p.tex`) khỏi bản phát hành. Làm cuối, sau khi đóng băng nội dung.
+- [x] **A6 (abstract ~190 từ, bài 15 trang, 0 overfull; chưa tách đoạn 3.4). Trình bày**: abstract ~269 → ~200 từ; tách đoạn dài ở Mục 3.4; sửa chỗ ngắt trang trong danh sách Contributions. Giữ 15 trang (trang 15 hiện đầy tới 659 pt, chừa dư địa bằng cách cắt chữ, không bằng chữ nhỏ).
+- [x] **A7. Supplementary**: nộp như file thứ hai (đã có `baocao-phu-luc.pdf` trong zip). Trong bài ghi rõ "Supplementary (file riêng)" ở lần nhắc đầu tiên + đường dẫn repo.
+- [x] **A8 (bản nháp/zip cũ chuyển vào `_archive/`, README xong). Repo gọn**: README ngắn "file nào sinh bảng nào"; tách thư mục nháp (`25-10-2026/`, `paper_long_25p.tex`) khỏi bản phát hành. Làm cuối, sau khi đóng băng nội dung.
 
 ## Nhánh B — GPU Kaggle (30 giờ, chỉ dùng cho gate)
 
@@ -33,12 +33,12 @@ Mục tiêu duy nhất: **một positive gate hợp lệ** (huấn luyện trên
 
 Thiết lập giữ nguyên recipe vòng cuối (completion-only, all-linear LoRA, cap 1024, lr 1e-4, 1 vòng, exam 500 câu MATH-500) để so được với gate cũ (49,2 → 17,0).
 
-- [ ] **B0. Chuẩn bị (CPU, ~1 giờ)**: viết/kiểm notebook theo `experiments/viec3/KAGGLE.md`; thêm chế độ "train-on-teacher" (dữ liệu SFT = lời giải teacher đã kiểm đúng, cắt về **298 mẫu** để cùng dose với loop); kiểm tra bằng 1 mẫu cục bộ nếu được.
-- [ ] **B1. Sinh lời giải teacher** (Kaggle session 1, ≤ ~3 giờ GPU): Qwen2.5-7B-Instruct chia 2×T4 (`device_map=auto`; **chỉ dùng cho bước sinh này**, vì driver gate ép 1 GPU). Dự phòng: Qwen2.5-3B-Instruct 1 GPU. 300 câu pool (MATH train), k = 4, cap 1024. Lọc đúng bằng grader sạch (V′ **và** khớp chuỗi, hai grader cùng đúng). Lưu mọi generation + điểm từng mẫu.
-- [ ] **B2. Gate G2 (teacher)** seed 1 (session 2, ~2–3 giờ): SFT trên lời giải teacher đã lọc → đo exam 500 câu: pass@1, sample accuracy, tỷ lệ `\boxed`, accuracy theo `\boxed`, độ dài trung vị (`gate_anatomy.py`).
-- [ ] **B3. G2 seed 2** (session 3) — nếu B2 cho tín hiệu rõ (tăng hoặc ≥ ngang round 0); nếu B2 vẫn sụp, **dừng**, ghi nhận "ngay cả teacher cũng không qua gate" và chuyển B5.
+- [x] **B0. Chuẩn bị (CPU, ~1 giờ)**: viết/kiểm notebook theo `experiments/viec3/KAGGLE.md`; thêm chế độ "train-on-teacher" (dữ liệu SFT = lời giải teacher đã kiểm đúng, cắt về **298 mẫu** để cùng dose với loop); kiểm tra bằng 1 mẫu cục bộ nếu được.
+- [x] **B1 (237/300 bài có lời giải đúng; teacher 73,7% V′, 70,5% chuỗi). Sinh lời giải teacher** (Kaggle session 1, ≤ ~3 giờ GPU): Qwen2.5-7B-Instruct chia 2×T4 (`device_map=auto`; **chỉ dùng cho bước sinh này**, vì driver gate ép 1 GPU). Dự phòng: Qwen2.5-3B-Instruct 1 GPU. 300 câu pool (MATH train), k = 4, cap 1024. Lọc đúng bằng grader sạch (V′ **và** khớp chuỗi, hai grader cùng đúng). Lưu mọi generation + điểm từng mẫu.
+- [x] **B2 (QUA GATE: pass@1 49,2->49,4, Δ+0,2 [-4,0;+4,6]; boxed 90,9->94,3; acc|boxed 48,5->47,1; liều 237). Gate G2 (teacher)** seed 1 (session 2, ~2–3 giờ): SFT trên lời giải teacher đã lọc → đo exam 500 câu: pass@1, sample accuracy, tỷ lệ `\boxed`, accuracy theo `\boxed`, độ dài trung vị (`gate_anatomy.py`).
+- [x] **B3 (seed 2 xong: pass@1 46,8->50,0, +3,2 [-0,8;+7,0]; teacher-loop +6,4 [+2,2;+10,6]). G2 seed 2** (session 3) — nếu B2 cho tín hiệu rõ (tăng hoặc ≥ ngang round 0); nếu B2 vẫn sụp, **dừng**, ghi nhận "ngay cả teacher cũng không qua gate" và chuyển B5.
 - [ ] **B4. (Chỉ nếu G2 qua gate) Gate lời giải của chính model** (session 4): SFT trên lời giải đúng của chính Qwen2.5-1.5B (đã có sẵn ở round 0, chọn bằng grader độc lập) — chính là vòng loop nhưng có grader sạch. Hai lần chạy cho so sánh dose-matched.
-- [ ] **B5. Cập nhật Mục 4.6 + abstract + Limitations + Conclusion** theo kết quả (qua hay không qua gate). Không đổi tiêu đề. Nếu G2 qua gate: viết "loop giảm trong khi gate-teacher không giảm → null có thông tin hơn cho recipe"; nếu không qua: nêu là ngay cả lời giải đầy đủ cũng không cứu được recipe.
+- [x] **B5 (đã cập nhật cả seed 2; bản 1 xong theo seed 1: abstract, Bảng 5, Mục 4.6, 5.1, Limitations, Conclusion, Xu iii; còn cập nhật nếu B3 seed 2 xong). Cập nhật Mục 4.6 + abstract + Limitations + Conclusion** theo kết quả (qua hay không qua gate). Không đổi tiêu đề. Nếu G2 qua gate: viết "loop giảm trong khi gate-teacher không giảm → null có thông tin hơn cho recipe"; nếu không qua: nêu là ngay cả lời giải đầy đủ cũng không cứu được recipe.
 
 Ngân sách GPU dự kiến: B1 ~3h, B2 ~3h, B3 ~3h, B4 ~6h → ≤ 15 giờ trong 30 giờ. Còn dư 15 giờ cho phiên bị treo (từng có 5 phiên × 12h treo; nếu 1 phiên treo > 2 giờ không tiến triển → kill, chạy lại theo heartbeat).
 
@@ -46,9 +46,9 @@ Ngân sách GPU dự kiến: B1 ~3h, B2 ~3h, B3 ~3h, B4 ~6h → ≤ 15 giờ tro
 
 ## Kết hợp openaireview
 
-- [ ] **R7** — cuối nhánh A (chiều 14/11): chạy review trên PDF mới. Tránh script ghi đè workspace (từng lấy nhầm bài arXiv): dùng `full_text.md` đã trích + venv python trong scratchpad; lưu kết quả `review_results/paper-main-v7_review/`. Sửa mọi major + moderate còn lại.
-- [ ] **R8** — sau B5 (sáng 15/11): review lần cuối. Chỉ sửa lỗi, không mở rộng.
-- [ ] **Chốt (≤ 18:00 15/11)**: build 2 lần → kiểm ≤ 15 trang / undefined / overfull; đóng zip `52300057_NguyenTanSang_52300006_TranDuyAnh.zip`; **giải nén thử và compile lại**; bỏ `kehoach.pdf` (scan chữ ký GVHD) và `baocao - turnitin.pdf` vào cùng cấp `baocao.pdf`; hỏi Bi trước khi commit / push / dời tag `paper-2026-11b` (nhớ cập nhật mục "Code availability" cho khớp commit cuối).
+- [x] **R7** — cuối nhánh A (chiều 14/11): chạy review trên PDF mới. Tránh script ghi đè workspace (từng lấy nhầm bài arXiv): dùng `full_text.md` đã trích + venv python trong scratchpad; lưu kết quả `review_results/paper-main-v7_review/`. Sửa mọi major + moderate còn lại.
+- [x] **R8 (2 reviewer: số liệu + overclaim; đã sửa)** — sau B5 (sáng 15/11): review lần cuối. Chỉ sửa lỗi, không mở rộng.
+- [-] **Chốt (zip đã đóng + giải nén thử OK; còn: Bi bỏ kehoach.pdf, baocao - turnitin.pdf; hỏi push/tag) (≤ 18:00 15/11)**: build 2 lần → kiểm ≤ 15 trang / undefined / overfull; đóng zip `52300057_NguyenTanSang_52300006_TranDuyAnh.zip`; **giải nén thử và compile lại**; bỏ `kehoach.pdf` (scan chữ ký GVHD) và `baocao - turnitin.pdf` vào cùng cấp `baocao.pdf`; hỏi Bi trước khi commit / push / dời tag `paper-2026-11b` (nhớ cập nhật mục "Code availability" cho khớp commit cuối).
 
 ## Lịch
 

@@ -1,37 +1,252 @@
 [
   {
-    "file": "00_chunk.md",
-    "heading": "Chunk 1: Mathematics or the Veri\ufb01er? No Detectable",
-    "chars": 7411
+    "file": "00_reinforcement_learning_with_verifiable_yet_noisy_r.md",
+    "heading": "Reinforcement Learning with Verifiable yet Noisy Rewards under Imperfect Verifiers",
+    "chars": 1339
   },
   {
-    "file": "01_chunk.md",
-    "heading": "Chunk 2: RL with veri\ufb01able rewards at small scale. RLVR with GRPO rep",
-    "chars": 7938
+    "file": "01_1_introduction.md",
+    "heading": "1 Introduction",
+    "chars": 4627
   },
   {
-    "file": "02_chunk.md",
-    "heading": "Chunk 3: 3.4   Models, Data, Training, Metrics",
-    "chars": 7936
+    "file": "02_2_related_works.md",
+    "heading": "2 Related Works",
+    "chars": 3565
   },
   {
-    "file": "03_chunk.md",
-    "heading": "Chunk 4: Two controls at 5 \u00d7 10\u22124 . The no-\ufb01lter run trains on all k ",
-    "chars": 6393
+    "file": "03_3_problem_setup_and_algorithms.md",
+    "heading": "3 Problem Setup and Algorithms",
+    "chars": 118
   },
   {
-    "file": "04_chunk.md",
-    "heading": "Chunk 5: 4.5   Anatomy of the Decline",
-    "chars": 7935
+    "file": "04_3_1_problem_setup.md",
+    "heading": "3.1 Problem Setup",
+    "chars": 4683
   },
   {
-    "file": "05_chunk.md",
-    "heading": "Chunk 6: Table 4. The false-reject audit for the gold-storage defect ",
-    "chars": 7894
+    "file": "05_3_2_noisy_policy_gradient_with_backward_correction.md",
+    "heading": "3.2 Noisy Policy Gradient with Backward Correction (PGBC)",
+    "chars": 2715
   },
   {
-    "file": "06_chunk.md",
-    "heading": "Chunk 7: References",
-    "chars": 3788
+    "file": "06_3_3_noisy_policy_gradient_with_forward_correction.md",
+    "heading": "3.3 Noisy Policy Gradient with Forward Correction (PGFC)",
+    "chars": 7292
+  },
+  {
+    "file": "07_4_experiments.md",
+    "heading": "4 Experiments",
+    "chars": 403
+  },
+  {
+    "file": "08_4_1_experimental_setup.md",
+    "heading": "4.1 Experimental Setup",
+    "chars": 1300
+  },
+  {
+    "file": "09_4_2_synthetic_noise.md",
+    "heading": "4.2 Synthetic Noise",
+    "chars": 1615
+  },
+  {
+    "file": "10_4_3_real_world_noise.md",
+    "heading": "4.3 Real-World Noise",
+    "chars": 4173
+  },
+  {
+    "file": "11_4_4_robustness_to_noise_mis_specification.md",
+    "heading": "4.4 Robustness to Noise Mis-Specification",
+    "chars": 3691
+  },
+  {
+    "file": "12_5_conclusion.md",
+    "heading": "5 Conclusion",
+    "chars": 1797
+  },
+  {
+    "file": "13_appendix_a_from_reinforce_style_corrections_to_grp.md",
+    "heading": "Appendix A From REINFORCE-Style Corrections to GRPO Updates",
+    "chars": 4724
+  },
+  {
+    "file": "14_appendix_b_implementation_details.md",
+    "heading": "Appendix B Implementation Details",
+    "chars": 677
+  },
+  {
+    "file": "15_b_1_notation_and_grpo_surrogate.md",
+    "heading": "B.1 Notation and GRPO Surrogate",
+    "chars": 1834
+  },
+  {
+    "file": "16_b_2_pgbc_corrected_utility_grpo.md",
+    "heading": "B.2 PGBC: Corrected-Utility GRPO",
+    "chars": 1914
+  },
+  {
+    "file": "17_b_3_pgfc_score_corrected_grpo.md",
+    "heading": "B.3 PGFC: Score-Corrected GRPO",
+    "chars": 2635
+  },
+  {
+    "file": "18_b_4_why_we_do_not_use_direct_group_zz_scoring_for.md",
+    "heading": "B.4 Why We Do Not Use Direct-Group zz-Scoring for Binary Channel Corrections",
+    "chars": 1638
+  },
+  {
+    "file": "19_b_5_process_supervised_extension.md",
+    "heading": "B.5 Process-Supervised Extension",
+    "chars": 1308
+  },
+  {
+    "file": "20_b_6_when_conditional_independence_is_violated_bias.md",
+    "heading": "B.6 When Conditional Independence Is Violated (Bias Decomposition).",
+    "chars": 1020
+  },
+  {
+    "file": "21_b_7_online_fn_rate_estimation_via_appeals.md",
+    "heading": "B.7 Online FN-Rate Estimation via Appeals",
+    "chars": 1796
+  },
+  {
+    "file": "22_appendix_c_additional_experimental_results.md",
+    "heading": "Appendix C Additional Experimental Results",
+    "chars": 45
+  },
+  {
+    "file": "23_c_1_performance_under_pass_8_metric.md",
+    "heading": "C.1 Performance under Pass@8 Metric",
+    "chars": 236
+  },
+  {
+    "file": "24_c_2_complementarity_with_stronger_verifiers.md",
+    "heading": "C.2 Complementarity with Stronger Verifiers",
+    "chars": 1647
+  },
+  {
+    "file": "25_c_3_training_dynamics_under_synthetic_noise.md",
+    "heading": "C.3 Training Dynamics under Synthetic Noise",
+    "chars": 3523
+  },
+  {
+    "file": "26_c_4_appeals_statistics_and_computational_overhead.md",
+    "heading": "C.4 Appeals Statistics and Computational Overhead",
+    "chars": 1842
+  },
+  {
+    "file": "27_c_5_general_capability_retention.md",
+    "heading": "C.5 General Capability Retention",
+    "chars": 605
+  },
+  {
+    "file": "28_appendix_d_proofs_and_derivations.md",
+    "heading": "Appendix D Proofs and Derivations",
+    "chars": 36
+  },
+  {
+    "file": "29_d_1_proof_of_proposition_3_2.md",
+    "heading": "D.1 Proof of Proposition\u00a03.2",
+    "chars": 1308
+  },
+  {
+    "file": "30_d_2_proof_of_theorem_3_3.md",
+    "heading": "D.2 Proof of Theorem\u00a03.3",
+    "chars": 2247
+  },
+  {
+    "file": "31_d_3_proof_of_proposition_3_4.md",
+    "heading": "D.3 Proof of Proposition\u00a03.4",
+    "chars": 2188
+  },
+  {
+    "file": "32_d_4_proof_of_theorem_3_5.md",
+    "heading": "D.4 Proof of Theorem\u00a03.5",
+    "chars": 3360
+  },
+  {
+    "file": "33_appendix_e_prompt_templates_and_training_evaluatio.md",
+    "heading": "Appendix E Prompt Templates and Training/Evaluation Details",
+    "chars": 185
+  },
+  {
+    "file": "34_e_1_prompt_templates.md",
+    "heading": "E.1 Prompt Templates",
+    "chars": 1349
+  },
+  {
+    "file": "35_e_2_data_preprocessing.md",
+    "heading": "E.2 Data Preprocessing",
+    "chars": 207
+  },
+  {
+    "file": "36_e_3_training_configuration.md",
+    "heading": "E.3 Training Configuration",
+    "chars": 674
+  },
+  {
+    "file": "37_e_4_online_fn_rate_estimation_hyperparameters_and.md",
+    "heading": "E.4 Online FN-Rate Estimation Hyperparameters and Ablations",
+    "chars": 1879
+  },
+  {
+    "file": "38_e_5_datasets.md",
+    "heading": "E.5 Datasets",
+    "chars": 1420
+  },
+  {
+    "file": "39_appendix_f_false_positive_fp_and_false_negative_fn.md",
+    "heading": "Appendix F False Positive (FP) and False Negative (FN) Examples",
+    "chars": 4723
+  },
+  {
+    "file": "40_appendix_g_additional_evaluations_and_analysis.md",
+    "heading": "Appendix G Additional Evaluations and Analysis",
+    "chars": 49
+  },
+  {
+    "file": "41_g_1_estimated_rate_corrections_with_compassverifie.md",
+    "heading": "G.1 Estimated-Rate Corrections with CompassVerifier",
+    "chars": 1534
+  },
+  {
+    "file": "42_g_2_varying_the_true_noise_channel.md",
+    "heading": "G.2 Varying the True Noise Channel",
+    "chars": 1008
+  },
+  {
+    "file": "43_g_3_auxiliary_verifier_calibration_and_estimation.md",
+    "heading": "G.3 Auxiliary-Verifier Calibration and Estimation Error",
+    "chars": 2358
+  },
+  {
+    "file": "44_g_4_conditional_advantage_and_gradient_variance.md",
+    "heading": "G.4 Conditional Advantage and Gradient Variance",
+    "chars": 1322
+  },
+  {
+    "file": "45_g_5_direct_coefficient_reinforce.md",
+    "heading": "G.5 Direct-Coefficient REINFORCE",
+    "chars": 1557
+  },
+  {
+    "file": "46_g_6_increasing_the_rollout_count.md",
+    "heading": "G.6 Increasing the Rollout Count",
+    "chars": 667
+  },
+  {
+    "file": "47_appendix_h_additional_scope_clarifications.md",
+    "heading": "Appendix H Additional Scope Clarifications",
+    "chars": 45
+  },
+  {
+    "file": "48_h_1_informative_uninformative_and_reversed_channel.md",
+    "heading": "H.1 Informative, Uninformative, and Reversed Channels",
+    "chars": 1548
+  },
+  {
+    "file": "49_h_2_single_reward_functions_and_nonlinear_group_ob.md",
+    "heading": "H.2 Single-Reward Functions and Nonlinear Group Objectives",
+    "chars": 2885
   }
 ]

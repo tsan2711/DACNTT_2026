@@ -32,15 +32,22 @@ OVERLAY = [
     "src/dacntt/gold/load.py",
     "src/dacntt/gold/sources.py",
     "src/dacntt/verify/adapter.py",
+    "experiments/viec3/teacher_gen.py",
+    "experiments/viec3/regrade_all.py",
+    "experiments/viec3/review_cpu/gate_anatomy.py",
+    "experiments/viec3/review_cpu/indep_grade.py",
 ]
 MODEL = "Qwen/Qwen2.5-1.5B-Instruct"
 
 
-def overlay_blob() -> str:
+def overlay_blob(extra: dict[str, Path] | None = None) -> str:
+    """extra: {arcname: local file} added on top of OVERLAY (e.g. teacher_solutions.jsonl)."""
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w:gz") as tar:
         for rel in OVERLAY:
             tar.add(REPO / rel, arcname=rel)
+        for arc, path in (extra or {}).items():
+            tar.add(path, arcname=arc)
     return base64.b64encode(buf.getvalue()).decode()
 
 

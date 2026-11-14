@@ -1,0 +1,110 @@
+[
+  {
+    "title": "A failed positive gate makes the null uninformative, not 'scoped to this recipe'",
+    "quote": "Because no arm improves and the positive",
+    "explanation": "The paper infers that because no arm improves and the gate failed, 'the null belongs to this recipe'. That inference runs the wrong way. A positive control that fails shows the pipeline (LoRA SFT, 512-token cap, fresh adapter per round, this exam) could not be shown to produce a gain even when given a supervision source that is supposed to help. That makes the null uninformative about whether the recipe works. It does not confine the null to the recipe. A failed control is also not evidence about the recipe itself. The gate is run only under the revised recipe and the 500-problem exam, while the four-learning-rate null comes from earlier runs under a different recipe and 150 problems. The paper's own conclusion calls it an 'inconclusive null', which fits the logic better than the abstract and contributions do. Credit is due for stating that the gate is a weak control. The scoping claim still outruns what the gate supports.",
+    "comment_type": "logical",
+    "confidence": "high",
+    "source_section": "5.1 Answer to the Research Question",
+    "related_sections": ["Abstract", "1 Introduction (Contributions)", "7 Conclusion"]
+  },
+  {
+    "title": "Abstract and title frame a recipe-level null; conclusion calls it inconclusive and the data show a decline",
+    "quote": "The null therefore concerns this recipe only.",
+    "explanation": "The abstract and title present a 'null result' that 'concerns this recipe'. The conclusion says that, because the gate failed, 'this is an inconclusive null for the recipe and says little about self-training'. The abstract also reports that the final-round loop lowers pass@1 in all three seeds (mean -4.1, t interval [-6.1, -2.1] excluding zero). A decline whose interval excludes zero is not a null. The text sits between 'null for the recipe' (abstract, contributions), 'inconclusive' (conclusion) and a measured negative effect (Section 4.6). A reader cannot tell which claim the paper stands behind. The framing should be reconciled. Either call it an inconclusive/negative result, or state what the gate failure does and does not license.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "Abstract",
+    "related_sections": ["7 Conclusion", "4.6 Final round and gate"]
+  },
+  {
+    "title": "Standard applied asymmetrically: 'no gain' is a finding but 'consistent decline' is not claimed",
+    "quote": "we do not claim that it costs accuracy or isolate the cause.",
+    "explanation": "Three seeds all decline in pass@1 and in sample accuracy. The three sample-accuracy intervals all exclude zero, and the mean pass@1 t interval [-6.1, -2.1] excludes zero. The second grader reproduces the sign and size. Yet the paper declines to say the loop costs accuracy, while the abstract states the 'no gain' null from intervals that include zero. The caveats given are legitimate: three seeds, one exam draw, one rate, and no seed variance in the intervals. The same caveats apply to the null side, whose power is also computed without seed variance. The abstract therefore leaves the impression of a flat null and plays down the only statistically supported effect in the paper, which is negative. The paper should state the same evidentiary standard for both directions.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "4.6 Final round and gate",
+    "related_sections": ["Abstract", "5.1 Answer to the Research Question"]
+  },
+  {
+    "title": "'Not a format defect' contradicts the later concession that a format artefact is not ruled out",
+    "quote": "It is not a format defect: on the 500 exam problems",
+    "explanation": "The gate failure is declared 'not a format defect' because the share of generations with a \\boxed answer is unchanged. Section 5.1 then concedes that the string-match grader 'does not rule out a format artefact in the gate'. The model also adopts the reference style almost completely ($-delimited spans in 1,577 of 1,600 generations), and there are many ways a boxed answer can still be graded wrong. These include a different answer form inside \\boxed (units, \\text{}, $ signs, \\dfrac, ordering), and failure of both math-verify and string match on the new form. An unchanged boxed share excludes only one format failure (missing \\boxed). The 32-point collapse, at a low learning rate such as 2e-5 and with a 1.5B instruct model, also looks large enough to leave a training-pipeline problem possible. The categorical statement in 4.6 and the abstract should be weakened to match the concession.",
+    "comment_type": "logical",
+    "confidence": "high",
+    "source_section": "4.6 Final round and gate",
+    "related_sections": ["Abstract", "5.1 Answer to the Research Question"]
+  },
+  {
+    "title": "Causal explanation of the gate failure ('loses reasoning steps') is asserted, not tested",
+    "quote": "model imitates terse reference solutions and loses reasoning steps; the three",
+    "explanation": "The evidence is a drop in median character length (3.2x) and in accuracy among boxed answers. The abstract states the mechanism as fact: 'the model imitates terse references and loses reasoning'. No analysis ties the accuracy loss to lost reasoning steps. For example, there is no control on solution length, no per-problem comparison of reasoning content, and no check of whether the shorter outputs are wrong because of omitted steps or because of answer-form mismatch. The paper uses the claimed mechanism to separate the gate's decline from the loop's decline ('so their decline is not this effect'), but that separation rests on the same unconfirmed reading. A correlation of shorter output and lower accuracy is compatible with the format explanation the paper says it excludes.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "4.6 Final round and gate",
+    "related_sections": ["Abstract"]
+  },
+  {
+    "title": "Boxed-share changes quoted for the 'unbiased seeds' do not match the values reported for the same loop seeds",
+    "quote": "against −3.7, −2.7 and −5.5 in the three unbiased seeds; pass@1",
+    "explanation": "The injected-bias comparison gives -3.7, -2.7 and -5.5 as the figures in the three unbiased seeds. The gate paragraph reports boxed-share changes of -0.6, -0.6 and -5.1 for the three loop seeds on the 500 exam problems. These are the same unbiased runs (or the same design), so the two sets of numbers cannot both describe the same measure. The quantity being contrasted with the +2.8 difference is not defined: it may be a different subset of problems or a different grader. The reader cannot tell whether the bias controls were compared with the correct baseline. The comparison is the paper's only support for 'no selective avoidance', so the ambiguity matters.",
+    "comment_type": "technical",
+    "confidence": "medium",
+    "source_section": "4.6 Injected bias",
+    "related_sections": ["4.6 Final round and gate"]
+  },
+  {
+    "title": "Larger decline in the biased-verifier run is set aside as uninterpretable while smaller declines are interpreted",
+    "quote": "falls 7.0 points ([−11.2, −3.0]), more than in the unbiased seeds, which we do not",
+    "explanation": "In the visible-rule bias run, pass@1 falls by 7.0 points with an interval excluding zero. This is larger than in each unbiased seed (3.2-4.8). It is the one result that bears directly on the paper's question of whether a biased selection verifier hurts. The paper declines to interpret it because it is one run. The unbiased decline is built on three seeds with an interval that excludes zero and is also discussed in the abstract. Both are single-exam, single-rate results with no seed variance in the intervals. The paper does not apply the same standard to both. At minimum, the statement that the data 'neither support nor rule out' the shrinking-pool explanation (Section 5.2) should mention this run as weak but supporting evidence for harm from a biased filter.",
+    "comment_type": "logical",
+    "confidence": "low",
+    "source_section": "4.6 Injected bias",
+    "related_sections": ["5.2 Interpretation"]
+  },
+  {
+    "title": "Train-on-gold r_t 'drift' is not distinguishable from zero and comes from collapsed models",
+    "quote": "2.1–3.3 points (Table 5), so rt drifts as much as the falls we observe, unrelated",
+    "explanation": "The text says the gold arms show r_t rises of 2.1-3.3 points, so r_t 'drifts as much as the falls we observe, unrelated to the verifier', which is used to discount the loop's r_t fall. In Table 5 every gold interval for 'all' includes zero ([-1.2, 8.1] and [-2.2, 6.7]), exactly as the loop falls (which 'reach or just touch zero') do. A drift of unknown sign is therefore compatible with no drift. The gold runs are also models whose accuracy has collapsed by about 30 points and whose style has changed. The denominator #{accepted by V'} changes sharply, so r_t movement there is not a clean baseline for the loop. The statement overreaches. The weaker honest reading is that the audit's r_t is too noisy to separate either direction.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "5.3 A Proposed Audit",
+    "related_sections": ["Table 5"]
+  },
+  {
+    "title": "'Largest pass@1 change' of -1.3 is inconsistent with other reported changes",
+    "quote": "Undecided: the pre-set pattern requires pass@1 to rise, which never happens detectably (largest pass@1",
+    "explanation": "The sentence cites 'largest pass@1 change -1.3 [-8.7, +6.0]' as evidence that no pass@1 rise occurs. The final-round pass@1 changes (-4.8, -3.2, -4.2, and -7.0 in the bias run) are larger in magnitude, and the observed changes in earlier runs are not given here. 'Largest' is therefore ambiguous (largest increase? largest among the pre-final runs?). The quantity that matters for the reading rule, the largest observed increase and its interval, is not clearly reported. The interval half-width of about 7 also shows that rises of up to about +6 are compatible with this run, which is the paper's detectability point, but the sentence reads as if it supported an absence of rise.",
+    "comment_type": "technical",
+    "confidence": "low",
+    "source_section": "5.1 Answer to the Research Question",
+    "related_sections": ["1 Introduction"]
+  },
+  {
+    "title": "Post hoc 1.7-point sample-accuracy upper limit sits beside much larger stated detectable effects",
+    "quote": "of about 1.7 points is the largest upper limit among observed intervals, a",
+    "explanation": "Section 5.1 reports that about 1.7 points is the largest upper limit among observed sample-accuracy intervals. The Introduction says gains of up to 4-6.5 sample-accuracy points 'could have been missed', and the design 'could detect only about 10 points of pass@1'. The paper flags that the 1.7 figure is post hoc and omits seed variance, but placing it next to the Answer to the Research Question invites a reader to take it as an upper bound on possible gains. Two incompatible detectability figures (1.7 vs 4-6.5) for the same measure are presented without a clear statement of which one a reader should use. If the intervals already exclude gains above 1.7 points on that measure, the 4-6.5 figure is overly pessimistic, and if not, the 1.7 figure is misleading.",
+    "comment_type": "technical",
+    "confidence": "low",
+    "source_section": "5.1 Answer to the Research Question",
+    "related_sections": ["1 Introduction", "Abstract"]
+  },
+  {
+    "title": "Abstract says the mathematics question is unanswered, but Section 5.1 answers it ('Not detectably') and declines are measured by two graders",
+    "quote": "string-match check, so neither the mathematics",
+    "explanation": "The abstract and conclusion state that 'neither branch of the question is answered' because of grader dependence. Section 5.1 headlines the mathematics branch with 'Does the model get better at mathematics? Not detectably.' The second grader reproduces the sign and magnitude of the final-round declines. Only the verifier-adaptation branch is clearly unanswered (the audit is uninformative and no run varies the defect). The mathematics branch has an answer: no detectable improvement, and in the final round a decline under both graders. The summary statements overgeneralise. They should say that the mathematics branch is answered only for improvement and only under \\boxed-dependent grading.",
+    "comment_type": "logical",
+    "confidence": "low",
+    "source_section": "Abstract",
+    "related_sections": ["5.1 Answer to the Research Question", "7 Conclusion"]
+  },
+  {
+    "title": "'About one in six' defect rate does not match Table 5",
+    "quote": "defect (about one in six correct solutions rejected)",
+    "explanation": "Table 5 reports r_t for the gold-storage defect of 18.0-18.3% over all predictions at round 0, and about 19-20% among boxed predictions. That is closer to one in five than one in six (16.7%). The ratio r_t is also defined over answers accepted by V', not over 'correct solutions' in general, and it falls to 15.5-16.8% in the last round of the loop runs. The abstract figure is not tied to a specific row. The denominator and round behind 'one in six' are unclear, and the number may be a rounded form of different quantities. The effect on conclusions is small, but the headline figure should match the table.",
+    "comment_type": "technical",
+    "confidence": "low",
+    "source_section": "Abstract",
+    "related_sections": ["5.3 A Proposed Audit", "Table 5"]
+  }
+]

@@ -1,761 +1,1945 @@
-    Mathematics or the Veriﬁer? No Detectable
-    Gain from Veriﬁer-Filtered Self-Training of a
-                   1.5B Model
+# Reinforcement Learning with Verifiable yet Noisy Rewards under Imperfect Verifiers
 
-                       Tan Sang Nguyen1 and Duy Anh Tran1
+Abstract
+    
 
-               Ton Duc Thang University, Ho Chi Minh City, Vietnam
-          52300057@student.tdtu.edu.vn, 52300006@student.tdtu.edu.vn
+Reinforcement Learning with Verifiable Rewards (RLVR) replaces costly human labeling with automated verifiers. To reduce verifier hacking, many RLVR systems binarize rewards to {0,1}\{0,1\}, but imperfect verifiers inevitably introduce false negatives (FN, rejecting correct answers) and false positives (FP, accepting incorrect ones). We formalize verifier unreliability as a stochastic reward channel with asymmetric noise rates ρ0\rho_{0} and ρ1\rho_{1}—the FP rate and the FN rate, respectively. From this abstraction we derive two lightweight corrections: (i) a backward correction that yields an unbiased surrogate reward and thus an unbiased policy-gradient estimator in expectation, and (ii) a forward correction that reweights score-function terms so the expected update aligns with the clean gradient direction and requires only the FN rate. We implement both as lightweight hooks in a group relative policy optimization pipeline, both corrections improve RLVR reasoning under synthetic and real verifier noise, with the forward variant being more stable under heavier noise. We further use a lightweight appeals mechanism to estimate FN rates online and show that the correction can complement stronger verifier-side baselines.
 
+  
 
+## 1 Introduction
 
-        Abstract. Self-training and reinforcement learning with veriﬁable re-
-        wards report large gains for small language models, but a rising score
-        does not show that a model learned mathematics rather than what its
-        veriﬁer accepts. We study the cheapest form of the loop, generate–verify–
-        select–train with oﬄine LoRA SFT, on Qwen2.5-1.5B-Instruct with the
-        rule-based veriﬁer math-verify, on a held-out exam of [N] problems at
-        [K] learning rates on MATH-500 and GSM8K. No pass@1 or pass@k gain
-        has a problem-level bootstrap interval excluding zero [UPDATE after
-        new round]. The design detects only gains of about [MDE] points of
-        pass@1 (80% power), and no arm, including training on reference solu-
-        tions, improves on the untrained model, so this null concerns the recipe,
-        not self-training in general. At the highest rate accuracy falls in every
-        run. As a post hoc audit we track the share of the loop’s own correct
-        solutions that a storage defect in our pipeline rejects (about one in six).
-        It falls by [X] points, which a falling \boxed share accounts for, so we
-        ﬁnd no adaptation to the defect but cannot exclude it. Two controls,
-        patching a rarer defect and removing the ﬁlter, [RESULT].
+Reinforcement Learning with Verifiable Rewards (RLVR) offers a scalable paradigm for improving the reasoning abilities of Large Language Models (LLMs) by replacing expensive human annotation with automated feedback (Wen et al., 2025). In this problem, a policy is trained using rewards from a verifier that automatically checks the correctness of a model’s output (Shao et al., 2024). The efficacy of this approach, however, heavily depends on the verifier’s reliability. Emerging evidence reveals that verifiers are systematically fallible in two critical ways: they can accept incorrect solutions (false positives; FPs) or reject correct ones (false negatives; FNs) (Xu et al., 2025; Zhao et al., 2025).
 
-        Keywords: self-training · self-improvement · veriﬁer bias · mathe-
-        matical reasoning · small language models · veriﬁable rewards · neg-
-        ative result.
+FPs have been widely documented as a vulnerability of LLM-based verifiers. Recent studies showed that LLM judges can be swayed by superficial cues—e.g., popular specialized verifiers, such as GPT-4o, give 35 % – 66.8% FP rate when the answer starts with Let’s solve this problem step by step (Zhao et al., 2025; Shi et al., 2025; Shi et al., 2024; Chen et al., 2024). Conversely, FNs are common with rule-based verifiers. These checkers, while highly precise, are often brittle; they may reject valid solutions that are formatted differently, expressed in an algebraically equivalent form, or embedded in explanatory text (Hugging Face, 2025). A recent analysis of a math-RL dataset found that over 38% of responses flagged as incorrect by a rule-based system were in fact correct, a gap that a lightweight LLM verifier could partially close (Xu et al., 2025). Both FPs and FNs materially degrade RLVR training: FNs deprive the agent of informative gradients and slow convergence, while FPs reward hackable patterns and inflate returns during policy optimization (Xu et al., 2025; Huang et al., 2025).
 
+Figure 1: Verifier-noise flow in RLVR. An AI agent produces candidate solutions that are scored by automated verifiers. While verifiers would yield false negatives (1236\frac{12}{36} vs. 13\frac{1}{3}, reaching 38%38\% rates (Xu et al., 2025)) and false positives (mislead by “Let’s solve it step by step…”, reaching 35%−66.8%35\%-66.8\% rates (Zhao et al., 2025)), confusing the agent; applying our backward/forward corrections restores correct signals.
 
-1     Introduction
-A common recipe for improving the mathematical reasoning of a small lan-
-guage model (SLM) without human annotation is to let the model generate its
-own solutions, keep those an automated veriﬁer judges correct, and ﬁne-tune on
-them, for several rounds. We call this the Generate–Verify–Train (GVT) loop;
-it underlies STaR [19], ReST [12], ReST-EM [11] and rejection-sampling ﬁne-
-tuning [17]. But the veriﬁer never reads the reasoning: a rule-based veriﬁer such
-as math-verify1 only extracts a ﬁnal answer and compares it with the gold, and
-it rejects some correct answers written in forms it does not parse (Section 3.2).
-The training signal is “was the ﬁnal string accepted”, not “were the steps right”.
+Motivated by these failures, we address these challenges by explicitly treating verifier errors as noise in the reward signal. We model the verifier as a stochastic reward channel that corrupts the true, latent reward with verifier-conditional probabilities—the FP rate and the FN rate. Building on this formulation, we derive two estimators to counteract this noise. Our first method, noisy Policy Gradient with Backward Correction (PGBC), inverts the noise process to compute an unbiased estimator of the true reward, which can be used as a drop-in replacement in any advantage-estimation in RL. Our second method, noisy Policy Gradient with Forward Correction (PGFC), directly reweights the terms of the policy gradient to ensure its expected direction aligns with the clean gradient. This approach requires only an estimate of the FN rate to achieve directional correctness, making it suitable for the often harder-to-estimate FP rate (Xu et al., 2025). The pipeline is illustrated in Figure 1.
+
+We integrate these corrections into a group relative policy optimization (GRPO) (Shao et al., 2024)-based RLVR pipeline and demonstrate their effectiveness on competitive math reasoning benchmarks (Shao et al., 2024). Both methods consistently outperform uncorrected training and achieve performance nearly equivalent to that of noise-free scenarios, with the forward correction offering the fastest and most stable convergence. We also propose a practical online estimation scheme for the FN rate: a querying mechanism where a low-cost LLM verifier like TinyV (Xu et al., 2025) re-evaluates outputs rejected by a primary rule-based checker. This hybrid approach provides a reliable estimate of the FN rate with minimal computational overhead, recovering near-oracle performance. Furthermore, we stress-test our approach under complex, non-i.i.d. noise distributions that violate our FP and FN modeling, but both PGBC and PGFC corrections remain robust and effective even in these more challenging conditions. Our contributions are: (i) a formal verifier-channel model for RLVR that captures the prevalent FP and FN errors; (ii) backward and forward corrections derived from RL principles to calibrate policy learning; and (iii) a practical implementation for online noise estimation that makes these corrections viable in real-world systems.
+
+## 2 Related Works
+
+#### Reasoning with LLMs.
+
+A large body of work improves LLM reasoning through prompting and search at inference time. Chain-of-Thought (CoT) prompting elicits step-by-step rationales and boosts arithmetic and commonsense reasoning (Wei et al., 2022), while self-consistency aggregates diverse reasoning paths to further improve robustness (Wang et al., 2023). Decomposition-based prompting, such as Least-to-Most, solves complex problems via ordered sub-problems (Zhou et al., 2023); search-based schemes like Tree-of-Thoughts explicitly explore and evaluate alternative reasoning branches (Yao et al., 2023). Orthogonally, training-time verifier signals can be used to re-rank candidate solutions, as in Cobbe et al. (2021). Our work is complementary: rather than proposing a new inference-time strategy or re-ranking scheme, we address how to perform policy optimization when the reward itself—supplied by a verifier—is noisy.
+
+#### RLVR and verifier reliability.
+
+Recent math-RL pipelines combine on-policy RL (e.g., GRPO) with programmatic or LLM-based verifiers to yield verifiable rewards (Mroueh, 2025). However, LLM-as-a-judge is prone to systematic biases, including position bias and prompt-based attacks, producing FPs (accepting incorrect solutions) (Gu et al., 2024; Thakur et al., 2024; Shi et al., 2025; Zhao et al., 2025; Shi et al., 2024). Conversely, exact-match or brittle parsers in rule-based checkers can miss algebraic equivalences and text-formatted answers, leading to widespread FNs (Li et al., 2025; Huang et al., 2025). A recent study showed that over 38% of model responses labeled incorrect by a rule-based pipeline were in fact correct, and introduced a lightweight verifier (TinyV) that recovers many such cases with minimal overhead (Xu et al., 2025). Prior efforts therefore improved the verifier (e.g., better judges or appeals) or evaluation suites; in contrast, we treat verifier errors as verifier-conditional noise and directly correct the policy gradient so that learning remains aligned with the clean objective even when the verifier is imperfect.
+
+#### Learning with noisy labels.
+
+While our method is derived from RL, it shares intuition with the literature on learning with label noise. Wang et al. (2020) modeled reward corruption via a class-conditional confusion matrix and derived an unbiased surrogate reward for Q-learning algorithms to solve control tasks. In supervised learning, a central thread is to make empirical-risk minimization robust either by correcting the loss given a noise-transition model or by avoiding or down-weighting suspected noisy examples (Song et al., 2022; Li et al., 2021). The former includes the unbiased-risk estimators of Natarajan et al. (2013) and the now-standard loss corrections of Patrini et al. (2017). A second family avoids the noise explicitly by relying on the “small-loss first” memorization dynamics of deep nets: mentor methods (MentorNet) learn a weighting network that feeds cleaner samples to the student, and Co-teaching (Han et al., 2018) trains two peers that exchange their selected small-loss examples; semi-supervised hybrids such as DivideMix (Li et al., 2020) split data into clean/noisy partitions via mixture modeling and co-train with consistency regularization (Jiang et al., 2018). Unlike them, we target the policy gradient estimator in RLVR: we instantiate both backward and forward corrections inside the policy gradient estimator to stabilize and align RL under verifier noise, instead of a direct supervised-loss substitution.
+
+## 3 Problem Setup and Algorithms
+
+In this section, we introduce the problem formulations and our proposed algorithms.
+
+### 3.1 Problem Setup
+
+We consider the standard RLVR setting where a stochastic policy πθ​(y|x)\pi_{\theta}(y|x) generates a response yy for a given prompt xx, where θ\theta denotes learnable parameters. The goal is to maximize an objective based on the true, or clean, reward R∗​(x,y)∈{0,1}R^{*}(x,y)\in\{0,1\}, which indicates whether the response yy is genuinely correct. This objective is typically regularized by a KL-divergence term to a reference policy πref\pi_{\mathrm{ref}} to maintain stability:
+
+maxθJβ(θ)=𝔼x𝔼y∼πθ(⋅∣x)[R∗(x,y)−βKL(πθ(⋅∣x)∥πref(⋅∣x))],\max_{\theta}\;J_{\beta}(\theta)\;=\;\mathbb{E}_{x}\,\mathbb{E}_{y\sim\pi_{\theta}(\cdot\mid x)}\!\Big[\,R^{*}(x,y)-\beta\,\mathrm{KL}(\pi_{\theta}(\cdot\mid x)\,\|\,\pi_{\mathrm{ref}}(\cdot\mid x))\,\Big],
+
+(1)
+
+in which KL\mathrm{KL} denotes the Kullback-Leibler (KL)-divergence. The policy gradient with respect to the unregularized reward is given by the REINFORCE estimator (Sutton et al., 1999), ∇θJ​(θ)=𝔼⁡[R∗​(x,y)​∑tGt]\nabla_{\theta}J(\theta)=\mathbb{E}[R^{*}(x,y)\,\sum_{t}G_{t}], where Gt=∇θ​log​πθ​(yt∣x,y<t)G_{t}=\nabla_{\!\theta}\log\pi_{\theta}(y_{t}\mid x,y_{<t}) is the score function for the token at step tt, and y<ty_{<t} denotes the sequence of tokens generated prior to step
+tt. In the following, we will denote R⁡(x,y)R(x,y) with RR for brevity. In practice, the clean reward R∗R^{*} is unavailable. Instead, the agent receives a noisy reward R~​(x,y)∈{0,1}\tilde{R}(x,y)\in\{0,1\} from an automated verifier. We model this verifier as a stochastic reward channel that flips the latent clean reward to an observed noisy one. This channel is characterized by asymmetric, verifier-conditional noise rates.
+
+Definition 3.1 (Verifier Reward Channel).
+
+The observed verifier reward R~\tilde{R} is generated from the latent clean reward R∗R^{*} according to the following conditional probabilities:
+
+ℙ⁡(R~=1∣R∗=0)=ρ0,ℙ⁡(R~=0∣R∗=1)=ρ1,\mathbb{P}\bigl(\tilde{R}=1\mid R^{*}=0\bigr)=\rho_{0},\mathbb{P}\bigl(\tilde{R}=0\mid R^{*}=1\bigr)=\rho_{1},
+
+(2)
+
+where ρ0,ρ1∈[0,1)\rho_{0},\rho_{1}\in[0,1) and ρ0+ρ1<1\rho_{0}+\rho_{1}<1.
+
+The condition ρ0+ρ1<1\rho_{0}+\rho_{1}<1 implies that the verifier channel is informative and invertible. Equivalently, the 2×22\times 2 binary transition matrix has determinant 1−ρ0−ρ1>01-\rho_{0}-\rho_{1}>0.
+
+#### Assumptions and scope of the verifier channel.
+
+Definition 3.1 is a deliberately lightweight abstraction of verifier unreliability.
+It assumes (i) instance-independent class-conditional noise rates (ρ0,ρ1)(\rho_{0},\rho_{1}) that do not vary with (x,y)(x,y), and (ii) conditional independence: given the latent correctness R∗​(x,y)R^{*}(x,y), the verifier’s stochastic flip R~\tilde{R} is independent of the policy’s sampling randomness (hence independent of the score-function terms used by policy gradients).
+These assumptions are standard in class-conditional noise models and allow closed-form reward/gradient corrections.
+In real RLVR deployments, verifier errors can be content-dependent (e.g., spurious phrases can increase FPs), which violates (i) and can partially violate (ii).
+We therefore view (ρ0,ρ1)(\rho_{0},\rho_{1}) as effective noise rates, and empirically test robustness to mis-specification in Section 4.4;
+we further estimate ρ1\rho_{1} online via a low-cost appeals mechanism in Section 4.3.
+When rates are instance-dependent, the same formulas are treated as correcting an effective marginal channel rather than eliminating all bias; Appendix B gives the resulting covariance residual.
+
+Based on this noise model, we establish a linear relationship between the expected noisy reward and the clean reward, which is presented in Proposition 3.2.
+
+Proposition 3.2 (Connection between Corrupted Rewards and True Rewards).
+
+Under the Verifier Reward Channel model, the expectation of the noisy reward R~\tilde{R} conditioned on the clean reward R∗R^{*} is an affine transformation of R∗R^{*}:
+
+𝔼⁡[R~∣R∗]=(1−ρ0−ρ1)​R∗+ρ0.\mathbb{E}[\tilde{R}\mid R^{*}]\;=\;(1-\rho_{0}-\rho_{1})\,R^{*}+\rho_{0}.
+
+The proof is provided in Appendix D.1. The central challenge of RLVR is that naively optimizing with the noisy reward R~\tilde{R} leads to a biased policy gradient, causing the policy to learn from mistakes of the verifier. Our goal is to develop policy gradient estimators that use only the observable noisy reward R~\tilde{R} but the expectation is either identical or parallel to the true policy gradient ∇θJ​(θ)\nabla_{\theta}J(\theta). We integrate these estimators within REINFORCE-style policy gradient algorithms widely used for reasoning tasks that compute normalized advantages over a group of sampled trajectories (Shao et al., 2024).
+
+### 3.2 Noisy Policy Gradient with Backward Correction (PGBC)
+
+Our first proposed approach aims to construct an unbiased estimator of the true reward R∗R^{*} by “inverting” the noise process. Since the expected noisy reward 𝔼⁡[R~∣R∗]\mathbb{E}[\tilde{R}\mid R^{*}] is an affine transformation of the clean reward R∗R^{*} in Proposition 3.2, we can solve for R∗R^{*} to derive a corrected reward estimator, R^\widehat{R}, that is unbiased in expectation.
+
+Theorem 3.3 (Oracle-Rate Unbiased Reward Estimator for the Binary Verifier Channel).
+
+Given the verifier channel with known noise rates ρ0\rho_{0} and ρ1\rho_{1} with ρ0+ρ1<1\rho_{0}+\rho_{1}<1, the estimator
+
+R^=R~−ρ0 1−ρ0−ρ1\widehat{R}=\frac{\tilde{R}-\rho_{0}}{\,1-\rho_{0}-\rho_{1}\,}
+
+(3)
+
+is an unbiased estimator of the true reward R∗​(x,y)R^{*}(x,y), i.e., 𝔼⁡[R^]=R∗\mathbb{E}[\widehat{R}]=R^{*}.
+
+The proof is provided in Appendix D.2. The theorem is an oracle-rate population statement: unbiasedness holds when the channel rates used in the correction equal the true effective rates and before finite-sample GRPO normalization, clipping, or KL terms are applied. Theorem 3.3 shows that, by replacing the noisy reward R~\tilde{R} with R^\widehat{R} in any standard policy gradient formulation, we obtain an unbiased estimate of the true policy gradient. This allows R^\widehat{R} to serve as a drop-in replacement for the reward signal in complex RL algorithms, seamlessly integrating with advantage estimation and other machinery.
+The details of the algorithm are summarized in Algorithm 1. After rolling out a set of trajectories and obtaining their rewards, we use the corrected rewards to compute the policy gradients for model update.
+
+Algorithm 1  Noisy Policy Gradient with Backward Correction (PGBC)
+
+              
+              
+             Input: Initial policy θ0\theta_{0}; learning rate η\eta; batch size MM; estimates of noise rates, (ρ^0,ρ^1)(\hat{\rho}_{0},\hat{\rho}_{1}).
+
+              
+              
+             loop
+
+              
+              
+              Roll out MM trajectories {(xi,yi)}i=1M\{(x_{i},y_{i})\}_{i=1}^{M}, obtaining observed rewards {R~i}i=1M\{\tilde{R}_{i}\}_{i=1}^{M}.
+
+              
+              
+              For each trajectory ii, compute the unbiased reward estimate:
+
+R^i←R~i−ρ^01−ρ^0−ρ^1.\widehat{R}_{i}\leftarrow\frac{\tilde{R}_{i}-\hat{\rho}_{0}}{1-\hat{\rho}_{0}-\hat{\rho}_{1}}.
+
+              
+              
+              Compute the policy gradient using the corrected rewards {R^i}i=1M\{\widehat{R}_{i}\}_{i=1}^{M}.
+
+              
+              
+              Update parameters: θ←θ+η​Δ​θ\theta\leftarrow\theta+\eta\,\Delta\theta.
+
+              
+              
+             end loop
+
+### 3.3 Noisy Policy Gradient with Forward Correction (PGFC)
+
+While PGBC provides an elegant unbiased estimator, it faces two practical challenges. First, the denominator (1−ρ0−ρ1)(1-\rho_{0}-\rho_{1}) can be small if the total noise rate is high, leading to high variance in the reward estimate R^\widehat{R} and potentially unstable training. Second, it requires accurate estimation of both the false positive rate ρ0\rho_{0} and the false negative rate ρ1\rho_{1}, which are usually difficult to obtain in practice. The PGFC approach is introduced to mitigate these issues.
+
+Instead of correcting the reward itself, this method directly modifies the policy gradient estimator to ensure its expectation is correctly aligned. The core idea is to reweight the score function GtG_{t} under the tt-th token based on the observed noisy reward R~\tilde{R}. We define an update term ht=wR~​Gth_{t}=w_{\tilde{R}}G_{t} and choose the forward weights w0w_{0} (for R~=0\tilde{R}=0) and w1w_{1} (for R~=1\tilde{R}=1) such that the expected update 𝔼⁡[ht]\mathbb{E}[h_{t}] is parallel to the clean gradient ∇θJ​(θ)\nabla_{\theta}J(\theta). The key insight is to choose the forward weights so that the conditional expectations given the true reward R∗R^{*} have a specific structure.
+
+Proposition 3.4 (Conditional Expectation of Forward Weights).
+
+Let the forward weights be defined as w0=ρ1−1w_{0}=\rho_{1}-1 and w1=ρ1w_{1}=\rho_{1}. Under the Verifier Reward Channel model, the conditional expectations of the corresponding weight wR~w_{\tilde{R}} given the true reward R∗R^{*} are:
+
+• 1. 
+
+𝔼⁡[wR~∣R∗=1]= 0\mathbb{E}[w_{\tilde{R}}\mid R^{*}=1]\;=\;0.
+
+• 2. 
+
+𝔼⁡[wR~∣R∗=0]=−(1−ρ0−ρ1)\mathbb{E}[w_{\tilde{R}}\mid R^{*}=0]\;=\;-(1-\rho_{0}-\rho_{1}).
+
+The proof can be found in Appendix D.3. Proposition 3.4 reveals that, in expectation, the forward weights are chosen so that their conditional expectation vanishes when R∗=1R^{*}=1, i.e., truly positive cases do not require correction. Consequently, the explicit contribution to the correction term arises from samples with R∗=0R^{*}=0. This structure allows us to recover the correct gradient direction, as shown in the following theorem.
+
+Theorem 3.5 (REINFORCE-Style Directional Alignment of the Forward Correction).
+
+Let the gradient-update term be Δ​θ=1M​∑wR~​Gt\Delta\theta=\frac{1}{M}\sum w_{\tilde{R}}\,G_{t}, where w0=ρ1−1w_{0}=\rho_{1}-1 and w1=ρ1w_{1}=\rho_{1} with MM trajectories. Under the Verifier Reward Channel model, the expected update is parallel to the clean policy gradient:
+
+𝔼⁡[Δ​θ]=c​∇θJ​(θ),\mathbb{E}[\Delta\theta]\;=\;c\,\nabla_{\theta}J(\theta),
+
+(4)
+
+in which c=(1−ρ0−ρ1)c=(1-\rho_{0}-\rho_{1}).
+
+The proof is given in Appendix D.4. Since 1−ρ0−ρ1>01-\rho_{0}-\rho_{1}>0, Theorem 3.5 guarantees that the expected update of the policy is in the same direction as the true gradient; meanwhile, the positive scaling factor (1−ρ0−ρ1)(1-\rho_{0}-\rho_{1}) can be absorbed into the learning rate. By avoiding the inverse operation of PGBC, PGFC circumvents the variance-inflation problem.
+
+Algorithm 2  Noisy Policy Gradient with Forward Correction (PGFC)
+
+              
+              
+             Input: Initial policy θ0\theta_{0}; learning rate η\eta; batch size MM; an estimate of the false negative rate, ρ^1\hat{\rho}_{1}.
+
+              
+              
+             loop
+
+              
+              
+              Roll out MM trajectories and observe rewards {R~i}i=1M\{\tilde{R}_{i}\}_{i=1}^{M}.
+
+              
+              
+              For each trajectory ii, define the weight based on the observed reward R~i\tilde{R}_{i}:
+
+wR~i←{ρ^1−1,if ​R~i=0,ρ^1,if ​R~i=1.w_{\tilde{R}_{i}}\;\leftarrow\;\begin{cases}\hat{\rho}_{1}-1,&\text{if }\tilde{R}_{i}=0,\\
+\hat{\rho}_{1},&\text{if }\tilde{R}_{i}=1.\end{cases}
+
+              
+              
+              For each trajectory ii, compute the score-function term GiG_{i} and the weighted term hi←wR~i​Gih_{i}\leftarrow w_{\tilde{R}_{i}}\,G_{i}.
+
+              
+              
+              Form the policy gradient estimate: g^←1M​∑i=1Mhi\hat{g}\leftarrow\frac{1}{M}\sum_{i=1}^{M}h_{i}.
+
+              
+              
+              Update parameters: θ←θ+η​g^\theta\leftarrow\theta+\eta\,\hat{g}.
+
+              
+              
+             end loop
+
+(a) Qwen2.5-Math-1.5B
+
+(b) DeepSeek-R1-Distill-Qwen-1.5B
+
+(c) Llama-3.2-3B-Instruct
+
+(d) Qwen2.5-Math-7B
+
+Figure 2: Synthetic-Noise Results (pass@1) with 16 samples and 5 random seeds. Base: baseline without RL; Oracle: Training with clean rewards; Noise: Training with noisy verifier rewards; Noise_BC: Training with noise under backward correction; Noise_FC: Training with noise under forward correction.
+
+In practice, we estimate ρ^1\hat{\rho}_{1} during training by appealing a small, uniformly random subset of rule-based negatives to a lightweight LLM verifier (e.g., TinyV (Xu et al., 2025)) and then smoothing the empirical flip rate. Concretely, at step tt, let 𝒩R(t)\mathcal{N}_{\mathrm{R}}^{(t)} be items labeled negative by the rule-based verifier, 𝒫R(t)\mathcal{P}_{\mathrm{R}}^{(t)} the rule-based positives, and sample a fraction q∈(0,1]q\in(0,1] of 𝒩R(t)\mathcal{N}_{\mathrm{R}}^{(t)} for appeal; denote by 𝒫L(t)\mathcal{P}_{\mathrm{L}}^{(t)} those appealed items that the LLM flips to positive. Using a Horvitz–Thompson correction (Karwa and Airoldi, 2023), we estimate the number of FNs as |𝒫L(t)|/q|\mathcal{P}_{\mathrm{L}}^{(t)}|/q, treat |𝒫R(t)||\mathcal{P}_{\mathrm{R}}^{(t)}| as true positives in the rule-checker regime, and set ρ^1(t)=|𝒫L(t)|/q+α|𝒫L(t)|/q+|𝒫R(t)|+α+β\hat{\rho}_{1}^{(t)}=\frac{|\mathcal{P}_{\mathrm{L}}^{(t)}|/q+\alpha}{|\mathcal{P}_{\mathrm{L}}^{(t)}|/q+|\mathcal{P}_{\mathrm{R}}^{(t)}|+\alpha+\beta} with small Beta-prior pseudocounts α,β=10−5\alpha,\beta=10^{-5}. We then apply exponential moving average (EMA) smoothing over a sliding window. If both ρ^0\hat{\rho}_{0} and ρ^1\hat{\rho}_{1} are available, one can use PGBC; if only ρ^1\hat{\rho}_{1} is available, PGFC is the default. We released our code in  https://github.com/caixq1996/noisy-RLVR. More details of appealing mechanism can be found in Appendix E.4.
+
+#### Bridging REINFORCE-Style Corrections to GRPO Updates
+
+Our analysis is stated for the reward-gradient component of a score-function estimator, while GRPO implements this component through scalar trajectory coefficients broadcast as token-level advantages inside a clipped surrogate. We therefore insert each correction at the coefficient level that best matches its estimator: PGBC is implemented as a corrected-utility coefficient based on r^i=(r~i−ρ^0)/(1−ρ^0−ρ^1)\widehat{r}_{i}=(\tilde{r}_{i}-\hat{\rho}_{0})/(1-\hat{\rho}_{0}-\hat{\rho}_{1}), whereas PGFC is implemented as a score-level coefficient wr~i∈{ρ^1−1,ρ^1}w_{\tilde{r}_{i}}\in\{\hat{\rho}_{1}-1,\hat{\rho}_{1}\}, not as a reward proxy. In both cases, the corrected coefficient is passed directly to the GRPO surrogate, with the KL term unchanged. This implementation avoids a subtle binary-reward degeneracy: any pre-normalization proxy affine in r~i\tilde{r}_{i} can be removed by group centering and standardization, making the corrected update identical to uncorrected noisy-reward GRPO. Appendix A states the centered-update guarantee and Appendix B gives the implementation recipe.
+
+## 4 Experiments
+
+We evaluate our approach under both synthetic and real-world verifier noise. We first spell out the experimental protocol, and then present main and ablation results. Additional experimental results, including training dynamics, pass@8 performance under real-world noise, appeals statistics, complementarity with stronger verifiers, and non-math evaluations are provided in Appendix C.
+
+### 4.1 Experimental Setup
+
+We train on three small backbones, Qwen2.5-Math-1.5B, DeepSeek-R1-Distill-Qwen-1.5B, and Llama-3.2-3B-Instruct, and probe scale with Qwen2.5-Math-7B. Rewards come from either (i) a rule-based checker that extracts the final \boxed{\cdot} answer and tests numeric/rational equivalence or (ii) a lightweight LLM verifier (TinyV 1.5B) used for appeals/estimation; prior work motivates explicit noise modeling due to systematic FP/FN behavior in these verifiers. Unless stated otherwise, we follow the DeepScaleR corpus and a GRPO-style on-policy recipe with BoN sampling, implementing our backward and forward corrections as drop-in hooks at the advantage-construction stage within VERL. Evaluation uses six verifiable math suites—AIME-2024, AIME-2025, AMC-2023, MATH500, Minerva MATH, and OlympiadBench—reporting Pass@1 and Pass@8 with 16 samples and 5 random seeds in average. Compute is 8×\timesA100 (40GB) GPUs servers; unless noted, KL schedules, sampling temperatures, and other rollout settings are kept identical across compared conditions.
+We estimate pass@kk as 1−(n−cokk)/(nk)1-\binom{n-c_{\rm ok}}{k}/\binom{n}{k}, where n=16n=16, cokc_{\rm ok} is the number of correct samples, and k∈{1,8}k\in\{1,8\} (Chen et al., 2021). More details can be found in Appendix E.
+
+### 4.2 Synthetic Noise
+
+To disentangle optimization effects from verifier unreliability, we inject verifier-conditional noise into the binary reward stream during training. Concretely, when the latent clean reward is R∗∈{0,1}R^{*}\!\in\{0,1\}, the observed reward R~\tilde{R} is drawn from a reward channel with Pr⁡(R~=∣R∗=0)=ρ0\Pr(\tilde{R}{=}1\!\mid\!R^{*}{=}0)=\rho_{0} and Pr⁡(R~=∣R∗=1)=ρ1\Pr(\tilde{R}{=}0\!\mid\!R^{*}{=}1)=\rho_{1}; unless stated otherwise we use ρ0=0.1\rho_{0}{=}0.1 and ρ1=0.2\rho_{1}{=}0.2. We train GRPO on DeepScaleR with identical sampling and KL settings across conditions, and evaluate Pass@1 (16 samples) and Pass@8 on AIME-2024/2025, AMC-2023, MATH500, Minerva MATH, and OlympiadBench. We compare five variants: Base (no RL), Oracle (clean rewards), Noise (uncorrected), and our two corrections—PGBC (backward correction using R^=R~−ρ01−ρ0−ρ1\widehat{R}=\frac{\tilde{R}-\rho_{0}}{1-\rho_{0}-\rho_{1}}) and PGFC (forward correction that rescales the gradient using ρ1\rho_{1} only).
+Figure 3 complements the pass@1 results with synthetic-noise pass@8: on the Qwen and Llama backbones, PGBC and PGFC improve over Noise and remain close to Oracle in the six-benchmark average.
+
+(a) Qwen2.5-Math-1.5B
+
+(b) DeepSeek-R1-Distill-Qwen-1.5B
+
+(c) Llama-3.2-3B-Instruct
+
+(d) Qwen2.5-Math-7B
+
+Figure 3: Synthetic-Noise Results (pass@8) with 16 samples and 5 random seeds. Base: baseline without RL; Oracle: Training with clean rewards; Noise: Training with noisy verifier rewards; Noise_BC: Training with noise under backward correction; Noise_FC: Training with noise under forward correction.
+
+### 4.3 Real-World Noise
+
+As discussed above, automated verifiers exhibit both false positives (LLM judges over-crediting incorrect solutions) and false negatives (rule-based checkers rejecting correct ones) (Gu et al., 2024; Xu et al., 2025; Huang et al., 2025; Li et al., 2025). In math RL pipelines, the latter is particularly prevalent: brittle exact-match or limited equivalence rules lead to many valid answers being scored as incorrect, depriving the agent of learning signal. Motivated by this, in this subsection we specifically investigate whether denoising false negatives, i.e., estimating ρ^1\hat{\rho}_{1} as in Section 3.3, can measurably improve policy optimization. Concretely, we keep a fast rule-based checker as the primary reward source with a lightweight LLM verifier (TinyV) (Xu et al., 2025). From disagreements on negatives we maintain an online estimate ρ^1\hat{\rho}_{1} (EMA over a sliding window to track policy drift).
+
+Results in Table 1 show a consistent pattern across backbones and benchmarks. Direct LLM-judge rewards underperform Rule on the six-benchmark average for each backbone, although individual task outcomes vary. Employing appeals to recheck rule-based negatives (Appeals) recovers some FNs, but its downstream benefit varies across models and benchmarks. In contrast, Appeals+PGFC uses the same appeals stream to estimate ρ^1\hat{\rho}_{1} and directly applies the FN correction to the policy gradient via weights wR~∈{ρ^1−1,ρ^1}w_{\tilde{R}}\!\in\!\{\hat{\rho}_{1}-1,\hat{\rho}_{1}\}, improving over Appeals in 22 of 24 cells.
+
+Table 1: Real-world pass@1. Rule: uncorrected rule-based rewards; LLM-as-Judge: direct LLM-judge rewards; Appeals: rule-based reward plus LLM appeals on negative samples without gradient correction; Appeals+PGFC: appeals-based FN-rate estimation plus forward correction.
+
+Dataset
+AIME2024
+AIME2025
+AMC2023
+MATH500
+Minerva MATH
+Olympiad Bench
+Average
+
+Qwen2.5-Math-1.5B
+
+Base
+6.0 ±\pm 1.9
+4.0 ±\pm 0.6
+34.2 ±\pm 0.2
+47.5 ±\pm 0.3
+5.1 ±\pm 0.4
+25.1 ±\pm 0.4
+20.3 ±\pm 0.6
+
+Rule
+15.0 ±\pm 0.4
+5.6 ±\pm 0.6
+50.3 ±\pm 0.6
+69.4 ±\pm 0.4
+17.8 ±\pm 0.6
+31.6 ±\pm 0.0
+31.6 ±\pm 0.4
+
+LLM-as-Judge
+10.9 ±\pm 1.3
+4.7 ±\pm 1.0
+42.1 ±\pm 1.8
+63.0 ±\pm 0.7
+15.9 ±\pm 0.7
+25.3 ±\pm 0.5
+27.0 ±\pm 1.0
+
+Appeals
+11.9 ±\pm 0.6
+5.8 ±\pm 1.2
+47.8 ±\pm 1.2
+68.3 ±\pm 0.1
+16.7 ±\pm 0.6
+29.8 ±\pm 0.1
+30.1 ±\pm 0.6
+
+Appeals+PGFC (Ours)
+20.3 ±\pm 0.0
+10.7 ±\pm 1.7
+53.3 ±\pm 1.4
+68.6 ±\pm 0.8
+16.5 ±\pm 0.4
+32.9 ±\pm 0.2
+33.7 ±\pm 0.8
+
+DeepSeek-R1-Distill-Qwen-1.5B
+
+Base
+29.5 ±\pm 0.4
+20.6 ±\pm 0.9
+69.3 ±\pm 0.6
+83.1 ±\pm 0.3
+24.9 ±\pm 0.6
+43.6 ±\pm 0.5
+45.2 ±\pm 0.6
+
+Rule
+31.0 ±\pm 0.7
+26.3 ±\pm 0.5
+79.1 ±\pm 0.9
+88.7 ±\pm 0.4
+29.5 ±\pm 0.1
+50.1 ±\pm 0.2
+50.8 ±\pm 0.5
+
+LLM-as-Judge
+30.2 ±\pm 1.0
+27.0 ±\pm 0.8
+79.5 ±\pm 0.9
+85.8 ±\pm 0.7
+27.7 ±\pm 0.9
+47.2 ±\pm 1.0
+49.6 ±\pm 0.9
+
+Appeals
+34.0 ±\pm 1.2
+27.8 ±\pm 0.9
+78.7 ±\pm 1.1
+88.0 ±\pm 0.8
+29.0 ±\pm 1.0
+49.6 ±\pm 1.1
+51.2 ±\pm 1.0
+
+Appeals+PGFC (Ours)
+35.8 ±\pm 0.7
+29.1 ±\pm 0.8
+81.7 ±\pm 0.6
+88.8 ±\pm 0.5
+31.1 ±\pm 0.7
+52.4 ±\pm 0.6
+53.2 ±\pm 0.7
+
+Llama-3.2-3B-Instruct
+
+Base
+5.7 ±\pm 1.2
+0.6 ±\pm 0.4
+17.2 ±\pm 1.5
+34.8 ±\pm 0.7
+4.8 ±\pm 0.3
+12.7 ±\pm 0.2
+12.6 ±\pm 0.2
+
+Rule
+6.0 ±\pm 1.0
+1.0 ±\pm 0.4
+24.3 ±\pm 1.7
+40.4 ±\pm 0.5
+8.9 ±\pm 0.7
+15.0 ±\pm 0.5
+15.9 ±\pm 0.8
+
+LLM-as-Judge
+1.4 ±\pm 1.1
+0.1 ±\pm 0.3
+12.7 ±\pm 2.1
+26.4 ±\pm 0.2
+4.1 ±\pm 0.2
+7.7 ±\pm 0.4
+8.7 ±\pm 0.6
+
+Appeals
+3.8 ±\pm 1.4
+0.6 ±\pm 0.7
+16.9 ±\pm 1.8
+40.8 ±\pm 0.3
+9.0 ±\pm 0.4
+13.7 ±\pm 0.3
+14.1 ±\pm 0.4
+
+Appeals+PGFC (Ours)
+9.4 ±\pm 1.9
+0.4 ±\pm 0.6
+21.2 ±\pm 1.3
+46.4 ±\pm 0.3
+9.9 ±\pm 0.8
+16.3 ±\pm 0.3
+17.3 ±\pm 0.9
+
+Qwen2.5-Math-7B
+
+Base
+12.7 ±\pm 0.9
+5.8 ±\pm 0.7
+44.4 ±\pm 2.2
+52.0 ±\pm 0.4
+9.8 ±\pm 0.7
+26.4 ±\pm 0.4
+25.2 ±\pm 0.9
+
+Rule
+29.2 ±\pm 2.5
+13.5 ±\pm 1.2
+62.8 ±\pm 1.9
+78.9 ±\pm 0.5
+24.2 ±\pm 0.7
+37.8 ±\pm 0.5
+41.1 ±\pm 1.2
+
+LLM-as-Judge
+16.8 ±\pm 2.1
+6.8 ±\pm 1.4
+50.2 ±\pm 1.8
+62.5 ±\pm 1.0
+10.1 ±\pm 0.4
+31.0 ±\pm 0.9
+29.6 ±\pm 1.3
+
+Appeals
+27.4 ±\pm 1.9
+11.8 ±\pm 1.9
+63.7 ±\pm 1.6
+74.9 ±\pm 0.7
+20.6 ±\pm 0.8
+37.6 ±\pm 0.3
+39.3 ±\pm 1.2
+
+Appeals+PGFC (Ours)
+31.0 ±\pm 1.5
+14.6 ±\pm 1.2
+65.7 ±\pm 1.4
+81.6 ±\pm 0.4
+26.2 ±\pm 0.5
+39.3 ±\pm 0.5
+43.1 ±\pm 0.9
+
+### 4.4 Robustness to Noise Mis-Specification
+
+There now exist practical procedures to estimate verifier FP/FN rates via rule-based equivalence checkers (e.g., Math-Verify), lightweight appeals/judges such as TinyV, and meta-evaluation suites that quantify verifier reliability (Hugging Face, 2025; Xu et al., 2025; Li et al., 2025). In real deployments, however, these estimates can be imperfect. We therefore test how backward and forward corrections behave under mis-specified noise rates. We follow the synthetic-noise setting from Section 4.2 with Qwen2.5-math-1.5B: rewards are corrupted at data-time with ρ0=0.1,ρ1=0.2\rho_{0}{=}0.1,\ \rho_{1}{=}0.2. During training, we intentionally feed each algorithm mis-specified rates from a grid ρ^0∈[0.0,0.2]\hat{\rho}_{0}\in[0.0,0.2], ρ^1∈[0.1,0.3]\hat{\rho}_{1}\in[0.1,0.3], and report the Average Pass@1 (16 samples) across our six math benchmarks. Because the forward method only requires the false negative rate, we vary ρ^1\hat{\rho}_{1} for forward correction while keeping ρ^0\hat{\rho}_{0} unused, as shown in Fig. 4.
+
+(a) BC: ρ^0=0.1\hat{\rho}_{0}{=}0.1, ρ^1∈[0.1,0.3]\hat{\rho}_{1}\!\in\![0.1,0.3]
+
+(b) BC: ρ^1=0.2\hat{\rho}_{1}{=}0.2, ρ^0∈[0.0,0.2]\hat{\rho}_{0}\!\in\![0.0,0.2]
+
+(c) FC: ρ^0=0.1\hat{\rho}_{0}{=}0.1, ρ^1∈[0.1,0.3]\hat{\rho}_{1}\!\in\![0.1,0.3]
+
+Figure 4: Robustness results. (a) Backward correction (BC) with ρ^0\hat{\rho}_{0} fixed and sweeping ρ^1\hat{\rho}_{1}; (b) Backward correction (BC) with ρ^1\hat{\rho}_{1} fixed and sweeping ρ^0\hat{\rho}_{0}; (c) Forward correction (FC) with ρ^0\hat{\rho}_{0} fixed and sweeping ρ^1\hat{\rho}_{1}.
+
+Backward correction remains strong when the total noise is underestimated, but performance degrades as we overestimate the rates (i.e., as 1−ρ^0−ρ^11-\hat{\rho}_{0}-\hat{\rho}_{1} shrinks). Intuitively, the unbiased de-biasing,
+R^=R~−ρ^01−ρ^0−ρ^1\widehat{R}=\frac{\tilde{R}-\hat{\rho}_{0}}{1-\hat{\rho}_{0}-\hat{\rho}_{1}},
+involves an inverse factor that amplifies reward variance and accentuates estimation error when the effective denominator becomes small. In contrast, forward correction exhibits a notably flat response curve around the true ρ1\rho_{1}; perturbing ρ^1\hat{\rho}_{1} changes only the per-sample weights and avoids any inverse operation, yielding lower-variance policy gradient estimates.
+
+We also stress-test the constant-channel assumption using format-dependent, non-iid verifier noise with the same Qwen2.5-Math-1.5B / DeepScaleR setup. Both the FN and FP rates depend on a prompt-level tag and a response-level format tag (e.g., decimal or missing boxed answer vs. canonical format). Specifically, we use a shared FP rate of ρ0=0.2\rho_{0}=0.2 but a format-dependent FN rate: ρ1=0.05\rho_{1}=0.05 for low-risk formats and ρ1=0.45\rho_{1}=0.45 for high-risk formats, with the actual flip decision made by hashing (data_source, ground_truth, solution_str). This explicitly violates the instance-independent channel model. Table 2 shows that both corrections still improve over uncorrected training and base model under this non-iid noise setting, with PGFC again strongest performance in most cases.
+
+Table 2: Format-dependent non-iid verifier-noise setting on Qwen2.5-Math-1.5B. Each cell reports pass@1 / pass@8.
+
+Method
+MATH500
+AIME2024
+AIME2025
+AMC2023
+Minerva Math
+OlympiadBench
+Average
+
+Base
+47.5 / 62.8
+6.0 / 32.4
+4.0 / 16.7
+34.2 / 79.3
+5.1 / 15.5
+25.1 / 31.3
+20.3 / 39.7
+
+Noise
+40.7 / 60.5
+7.5 / 26.5
+2.2 / 15.8
+30.0 / 72.4
+3.8 / 11.6
+21.5 / 25.8
+17.6 / 35.4
+
+PGBC
+67.7 / 67.9
+11.5 / 33.0
+7.4 / 22.4
+49.1 / 81.8
+20.7 / 21.1
+30.5 / 31.7
+31.2 / 43.0
+
+PGFC
+68.1 / 69.9
+12.8 / 32.4
+8.0 / 22.6
+49.6 / 79.5
+21.8 / 23.8
+31.1 / 33.6
+31.9 / 43.6
+
+## 5 Conclusion
+
+Reinforcement Learning with Verifiable Rewards (RLVR) has emerged as a practical and popular paradigm for training reasoning-focused large language models (LLMs). Yet binarized rewards inevitably suffer from false positives (FP) and false negatives (FN). Prior efforts largely mitigated these errors from the verifier side—e.g., debiasing LLM judges or strengthening equivalence checking—to reduce the downstream impact on learning (Li et al., 2025; Huang et al., 2025). In contrast, we modeled verifier unreliability as a verifier-conditional noise channel with the FP and FN rates, and introduced two theory-driven corrections that act directly at the policy-learning interface. The backward correction de-biases the observed reward to yield an unbiased gradient estimator; it requires estimates of the FP and FN rates but is agnostic to the choice of policy-optimization algorithm and can thus be used beyond policy gradient methods. The forward correction rescales score-function terms so that the expected update is aligned with the clean gradient; notably, it needs only the FN rate estimate, which is often the dominant source of real-world noise due to rule-based FNs (Huang et al., 2025; Xu et al., 2025).
+
+While we instantiated appeals with a lightweight LLM verifier for efficiency, the same backward/forward correction mechanisms should also gain from stronger verifiers (Xu et al., 2025). Meanwhile, although modeled with the constant noise rates, the proposed methods already show clear advantages, even under a more challenging non-iid verifier noise setting. On the other hand, real-world noise can depend on content, formatting, prompt style, and verifier family, motivating future work on instance-dependent reliability models and adversarially robust verifiers.
+
+## Appendix A From REINFORCE-Style Corrections to GRPO Updates
+
+#### Setup (single prompt and group).
+
+Fix a prompt xx and sample a group of KK i.i.d. responses y1,…,yK∼πθ(⋅∣x)y_{1},\dots,y_{K}\sim\pi_{\theta}(\cdot\mid x).
+Let Gi≜∑t=1|yi|∇θ​log​πθ​(yi,t∣x,yi,<t)G_{i}\triangleq\sum_{t=1}^{|y_{i}|}\nabla_{\theta}\log\pi_{\theta}(y_{i,t}\mid x,y_{i,<t}) denote the trajectory score-function.
+Let uiu_{i} be any scalar proxy reward computed from the trajectory. For PGBC, ui=r^iu_{i}=\widehat{r}_{i}. For the population PGFC theorem, the score-function term is weighted as wr~i​Giw_{\tilde{r}_{i}}G_{i}; the hypothetical pre-centering proxy ui=r~i​wr~iu_{i}=\tilde{r}_{i}w_{\tilde{r}_{i}} is analyzed below only as a degeneracy example, not as our default implementation.
+Define the group mean u¯=1K​∑j=1Kuj\bar{u}=\frac{1}{K}\sum_{j=1}^{K}u_{j}.
+Consider the centered score-function update
+
+Δcenter​(θ)≜1K​∑i=1K(ui−u¯)​Gi.\Delta_{\text{center}}(\theta)\;\triangleq\;\frac{1}{K}\sum_{i=1}^{K}(u_{i}-\bar{u})\,G_{i}.
+
+(5)
+
+Proposition A.1 (Group centering preserves expected direction).
+
+Assume {(ui,Gi)}i=1K\{(u_{i},G_{i})\}_{i=1}^{K} are i.i.d. under πθ(⋅∣x)\pi_{\theta}(\cdot\mid x) and 𝔼⁡[Gi∣x]=0\mathbb{E}[G_{i}\mid x]=0 (the standard score-function identity (Williams, 1992; Sutton et al., 1999)).
+Then the centered update in (5) satisfies
+
+𝔼⁡[Δcenter​(θ)∣x]=(1−1K)​𝔼​[u​G∣x].\mathbb{E}\!\left[\Delta_{\text{center}}(\theta)\mid x\right]\;=\;\Bigl(1-\frac{1}{K}\Bigr)\,\mathbb{E}\!\left[u\,G\mid x\right].
+
+(6)
+
+In particular, if 𝔼⁡[u​G∣x]\mathbb{E}[u\,G\mid x] is parallel to the clean gradient direction for the prompt-conditioned objective, then so is 𝔼​[Δcenter​(θ)∣x]\mathbb{E}[\Delta_{\text{center}}(\theta)\mid x].
+
+Proof.
+
+Expand Δcenter=1K∑iuiGi−u¯⋅1K∑iGi\Delta_{\text{center}}=\frac{1}{K}\sum_{i}u_{i}G_{i}-\bar{u}\cdot\frac{1}{K}\sum_{i}G_{i}.
+Taking expectation conditioned on xx yields
+
+𝔼[u¯⋅1K∑iGi∣x]=1K2∑i,j𝔼[ujGi∣x].\mathbb{E}[\bar{u}\cdot\tfrac{1}{K}\sum_{i}G_{i}\mid x]=\frac{1}{K^{2}}\sum_{i,j}\mathbb{E}[u_{j}G_{i}\mid x].
+
+The i=ji=j terms contribute KK2​𝔼​[u​G∣x]\frac{K}{K^{2}}\mathbb{E}[uG\mid x].
+For i≠ji\neq j, independence gives 𝔼⁡[uj​Gi∣x]=𝔼⁡[u∣x]​𝔼​[G∣x]=0\mathbb{E}[u_{j}G_{i}\mid x]=\mathbb{E}[u\mid x]\mathbb{E}[G\mid x]=0.
+Thus 𝔼[u¯⋅1K∑iGi∣x]=1K𝔼[uG∣x]\mathbb{E}[\bar{u}\cdot\tfrac{1}{K}\sum_{i}G_{i}\mid x]=\frac{1}{K}\mathbb{E}[uG\mid x], implying (6).
+∎
+
+Corollary A.2 (Directional correctness of PGFC under centered GRPO-style updates).
+
+Under the Verifier Reward Channel (Definition 3.1) and the conditional-independence assumption stated above, let u=wR~u=w_{\tilde{R}} with w0=ρ1−1w_{0}=\rho_{1}-1 and w1=ρ1w_{1}=\rho_{1} as in Proposition 3.4.
+Then for each prompt xx,
+
+𝔼⁡[Δcenter​(θ)∣x]=(1−1K)​(1−ρ0−ρ1)​∇θJ​(θ∣x),\mathbb{E}\!\left[\Delta_{\text{center}}(\theta)\mid x\right]\;=\;\Bigl(1-\frac{1}{K}\Bigr)(1-\rho_{0}-\rho_{1})\,\nabla_{\theta}J(\theta\mid x),
+
+so the expected centered update remains aligned with the clean policy-gradient direction.
+
+#### Binary-proxy equivalence caveat.
+
+The corollary explains how centering interacts with a generic proxy whose score-function expectation is aligned with the clean gradient. It does not by itself prove that every PGFC proxy creates a distinct GRPO update. For binary rewards, wr~=r~+ρ1−1w_{\tilde{r}}=\tilde{r}+\rho_{1}-1 differs from r~\tilde{r} by an additive constant, so group centering removes the difference. Likewise, the hypothetical pre-centering proxy u=r~​wr~=ρ1​r~u=\tilde{r}\,w_{\tilde{r}}=\rho_{1}\tilde{r} is a positive rescaling of r~\tilde{r}; if within-group standardization is enabled, this rescaling also cancels.
+
+#### Standardization, clipping, and KL (what is guaranteed, and what is approximate).
+
+GRPO further divides centered proxy rewards by the within-group standard deviation to form normalized advantages, and then applies a PPO-style clipping on token-level ratios and an explicit KL penalty to πref\pi_{\mathrm{ref}} (Shao et al., 2024).
+The exact direction-preservation statement in Proposition A.1 covers the centering step, which is the main nontrivial departure from vanilla REINFORCE.
+Clipping and the KL penalty add further stabilizers: in the small-update regime (encouraged by the KL term and typical learning rates), clipping is rarely active and the update is close to the unclipped score-function form; when clipping activates, it intentionally limits step size and may deviate from the exact REINFORCE direction.
+Importantly, our corrections target the reward-gradient component; the KL gradient is unchanged, so any global scaling factor (e.g., 1−ρ0−ρ11-\rho_{0}-\rho_{1}) can be absorbed into the effective learning rate and/or interpreted as modifying the reward–KL trade-off.
+
+## Appendix B Implementation Details
+
+This appendix describes the implementation of PGBC and PGFC inside a GRPO-style RLVR pipeline.
+The key design choice is to insert each correction at the level of the scalar coefficient multiplying the score-function term.
+PGBC is a corrected-utility method: it replaces the observed verifier reward by an estimate of the clean reward.
+PGFC is a score-corrected method: it replaces the usual reward-derived advantage by a signed channel-calibrated multiplier.
+In both cases, the corrected coefficient is passed directly to the PPO-style GRPO surrogate and is not converted into a binary reward proxy that is subsequently group-standardized.
+
+### B.1 Notation and GRPO Surrogate
+
+For a prompt xx, GRPO samples a group of KK responses
+
+y1,…,yK∼πθold(⋅∣x).y_{1},\ldots,y_{K}\sim\pi_{\theta_{\mathrm{old}}}(\cdot\mid x).
+
+Let r~i∈{0,1}\tilde{r}_{i}\in\{0,1\} be the observed verifier reward for response yiy_{i}.
+For token tt in response ii, define the policy ratio
+
+ri,t​(θ)=πθ​(yi,t∣x,yi,<t)πθold​(yi,t∣x,yi,<t).r_{i,t}(\theta)=\frac{\pi_{\theta}(y_{i,t}\mid x,y_{i,<t})}{\pi_{\theta_{\mathrm{old}}}(y_{i,t}\mid x,y_{i,<t})}.
+
+Given a scalar trajectory coefficient aia_{i}, we broadcast it to all response tokens:
+
+Ai,t≡ai,t=1,…,|yi|.A_{i,t}\equiv a_{i},\qquad t=1,\ldots,|y_{i}|.
+
+The clipped GRPO reward surrogate is then
+
+ℒGRPOrew​(θ)=1K​∑i=1K1|yi|​∑t=1|yi|min⁡(ri,t​(θ)​Ai,t,clip⁡(ri,t​(θ),1−ε,1+ε)​Ai,t).\mathcal{L}_{\mathrm{GRPO}}^{\mathrm{rew}}(\theta)=\frac{1}{K}\sum_{i=1}^{K}\frac{1}{|y_{i}|}\sum_{t=1}^{|y_{i}|}\min\!\left(r_{i,t}(\theta)A_{i,t},\operatorname{clip}(r_{i,t}(\theta),1-\varepsilon,1+\varepsilon)A_{i,t}\right).
+
+The full objective keeps the usual KL penalty:
+
+ℒGRPO(θ)=ℒGRPOrew(θ)−βKL(πθ(⋅∣x)∥πref(⋅∣x)).\mathcal{L}_{\mathrm{GRPO}}(\theta)=\mathcal{L}_{\mathrm{GRPO}}^{\mathrm{rew}}(\theta)-\beta\,\mathrm{KL}\!\left(\pi_{\theta}(\cdot\mid x)\,\|\,\pi_{\mathrm{ref}}(\cdot\mid x)\right).
+
+At θ=θold\theta=\theta_{\mathrm{old}}, when clipping is inactive, the reward-gradient component reduces to the score-function update
+
+∇θℒGRPOrew​(θ)=1K​∑i=1Kai​(1|yi|​∑t=1|yi|∇θ​log​πθ​(yi,t∣x,yi,<t)),\nabla_{\theta}\mathcal{L}_{\mathrm{GRPO}}^{\mathrm{rew}}(\theta)=\frac{1}{K}\sum_{i=1}^{K}a_{i}\left(\frac{1}{|y_{i}|}\sum_{t=1}^{|y_{i}|}\nabla_{\theta}\log\pi_{\theta}(y_{i,t}\mid x,y_{i,<t})\right),
+
+up to the conventional length normalization used by the implementation.
+Therefore, the scalar coefficient aia_{i} is the correct place to insert PGBC or PGFC.
+
+### B.2 PGBC: Corrected-Utility GRPO
+
+PGBC estimates the clean binary reward by inverting the verifier channel.
+Given estimates ρ^0,ρ^1\hat{\rho}_{0},\hat{\rho}_{1}, define
+
+c^=1−ρ^0−ρ^1.\hat{c}=1-\hat{\rho}_{0}-\hat{\rho}_{1}.
+
+We require c^>0\hat{c}>0 and in code clamp it below by a small constant ϵc>0\epsilon_{c}>0 for numerical safety.
+The corrected utility is
+
+r^i=r~i−ρ^0c^.\widehat{r}_{i}=\frac{\tilde{r}_{i}-\hat{\rho}_{0}}{\hat{c}}.
+
+This quantity is used as the trajectory coefficient, optionally with a variance-reduction baseline:
+
+aiBC=r^i−biBCsBC.a_{i}^{\mathrm{BC}}=\frac{\widehat{r}_{i}-b_{i}^{\mathrm{BC}}}{s_{\mathrm{BC}}}.
+
+Here sBC>0s_{\mathrm{BC}}>0 is a fixed or slowly moving positive scale, such as an EMA scale, and should not be the current group’s standard deviation.
+The default baseline is leave-one-out:
+
+biBC=1K−1​∑j≠ir^j(K>1),b_{i}^{\mathrm{BC}}=\frac{1}{K-1}\sum_{j\neq i}\widehat{r}_{j}\qquad(K>1),
+
+with biBC=0b_{i}^{\mathrm{BC}}=0 when K=1K=1.
+The leave-one-out baseline is independent of GiG_{i} conditional on xx, so before clipping and KL it preserves the expected score-function update:
+
+𝔼⁡[1K​∑i=1K(r^i−biBC)​Gi|x]=𝔼⁡[r^​G∣x].\mathbb{E}\!\left[\frac{1}{K}\sum_{i=1}^{K}(\widehat{r}_{i}-b_{i}^{\mathrm{BC}})G_{i}\,\middle|\,x\right]=\mathbb{E}[\widehat{r}\,G\mid x].
+
+When the channel rates are correct, 𝔼⁡[r^​G∣x]\mathbb{E}[\widehat{r}\,G\mid x] equals the clean reward-gradient component.
+Using the group mean including the ii-th sample is also possible, but it introduces the familiar multiplicative factor 1−1/K1-1/K.
+
+The corrected coefficient aiBCa_{i}^{\mathrm{BC}} is then broadcast to all tokens:
+
+Ai,tBC≡aiBC.A_{i,t}^{\mathrm{BC}}\equiv a_{i}^{\mathrm{BC}}.
+
+No current-group zz-score standardization is applied to {r^i}i=1K\{\widehat{r}_{i}\}_{i=1}^{K}, because such standardization would remove the affine calibration induced by PGBC in the binary-reward case.
+
+### B.3 PGFC: Score-Corrected GRPO
+
+PGFC is implemented as a score-level correction rather than as a reward proxy.
+Given an estimate ρ^1\hat{\rho}_{1}, define the signed score multiplier
+
+wr~i=r~i−(1−ρ^1)={ρ^1−1,r~i=0,ρ^1,r~i=1.w_{\tilde{r}_{i}}=\tilde{r}_{i}-(1-\hat{\rho}_{1})=\begin{cases}\hat{\rho}_{1}-1,&\tilde{r}_{i}=0,\\
+\hat{\rho}_{1},&\tilde{r}_{i}=1.\end{cases}
+
+The trajectory coefficient is
+
+aiFC=wr~i−biFCsFC.a_{i}^{\mathrm{FC}}=\frac{w_{\tilde{r}_{i}}-b_{i}^{\mathrm{FC}}}{s_{\mathrm{FC}}}.
+
+Our default is
+
+biFC=0.b_{i}^{\mathrm{FC}}=0.
+
+The reason is that subtracting the current group mean of wr~iw_{\tilde{r}_{i}} would reduce PGFC to an ordinary relative noisy-reward update, because wr~iw_{\tilde{r}_{i}} is an affine function of r~i\tilde{r}_{i}.
+A fixed or historical baseline independent of the current sampled actions may be used, but current-group centering is not the default.
+
+The scale sFC>0s_{\mathrm{FC}}>0 controls the reward–KL trade-off.
+For pure score-function direction, any fixed positive scale preserves the direction.
+When both noise rates are available, one may set
+
+sFC=1−ρ^0−ρ^1s_{\mathrm{FC}}=1-\hat{\rho}_{0}-\hat{\rho}_{1}
+
+to approximately match the clean reward-gradient magnitude.
+In the FN-dominant rule-checker regime where ρ0≈0\rho_{0}\approx 0, a practical choice is
+
+sFC=1−ρ^1.s_{\mathrm{FC}}=1-\hat{\rho}_{1}.
+
+If no calibrated scale is desired, we set sFC=1s_{\mathrm{FC}}=1 and tune β\beta or the learning rate as usual.
+
+The token-level advantage is
+
+Ai,tFC≡aiFC.A_{i,t}^{\mathrm{FC}}\equiv a_{i}^{\mathrm{FC}}.
+
+Before clipping and KL, if ρ^1=ρ1\hat{\rho}_{1}=\rho_{1}, the population score-function component satisfies
+
+𝔼⁡[aiFC​Gi∣x]=1−ρ0−ρ1sFC​∇θJ​(θ∣x).\mathbb{E}[a_{i}^{\mathrm{FC}}G_{i}\mid x]=\frac{1-\rho_{0}-\rho_{1}}{s_{\mathrm{FC}}}\nabla_{\theta}J(\theta\mid x).
+
+Thus PGFC preserves the clean reward-gradient direction and, with a suitable positive scale, can also calibrate the reward-gradient magnitude.
+The KL gradient is not corrected; therefore sFCs_{\mathrm{FC}} and β\beta jointly determine the effective reward–KL trade-off.
+
+#### Remark on the role of ρ^1\hat{\rho}_{1}.
+
+The theoretical conditional-cancellation identity for PGFC uses the true ρ1\rho_{1}.
+In an unclipped population score-function estimator, adding any action-independent constant to r~i\tilde{r}_{i} has zero expected gradient by the score-function identity.
+However, in finite-batch GRPO with clipping, KL regularization, length normalization, and nonstationary rollouts, the fixed channel baseline 1−ρ^11-\hat{\rho}_{1} affects the realized signed advantages and the clipped surrogate.
+
+### B.4 Why We Do Not Use Direct-Group zz-Scoring for Binary Channel Corrections
+
+Let Zi​(u)Z_{i}(u) denote the standard group-normalized advantage
+
+Zi​(u)=ui−u¯std⁡({uj}j=1K)+ϵ,u¯=1K​∑j=1Kuj.Z_{i}(u)=\frac{u_{i}-\bar{u}}{\operatorname{std}(\{u_{j}\}_{j=1}^{K})+\epsilon},\qquad\bar{u}=\frac{1}{K}\sum_{j=1}^{K}u_{j}.
+
+If ui=a​r~i+bu_{i}=a\tilde{r}_{i}+b with a>0a>0, then
+
+ui−u¯=a⁡(r~i−r~¯),std⁡({uj})=a​std⁡({r~j}),u_{i}-\bar{u}=a(\tilde{r}_{i}-\bar{\tilde{r}}),\qquad\operatorname{std}(\{u_{j}\})=a\,\operatorname{std}(\{\tilde{r}_{j}\}),
+
+and therefore
+
+Zi​(u)=r~i−r~¯std⁡({r~j})+ϵ/a.Z_{i}(u)=\frac{\tilde{r}_{i}-\bar{\tilde{r}}}{\operatorname{std}(\{\tilde{r}_{j}\})+\epsilon/a}.
+
+When ϵ\epsilon is small and the group is non-degenerate, this is numerically identical to the uncorrected noisy-reward advantage.
+
+This degeneracy applies to the most obvious binary implementations of both corrections:
+
+r^i=r~i−ρ^01−ρ^0−ρ^1is affine in ​r~i,\widehat{r}_{i}=\frac{\tilde{r}_{i}-\hat{\rho}_{0}}{1-\hat{\rho}_{0}-\hat{\rho}_{1}}\quad\text{is affine in }\tilde{r}_{i},
+
+and
+
+wr~i=r~i+ρ^1−1,r~i​wr~i=ρ^1​r~ifor ​r~i∈{0,1}.w_{\tilde{r}_{i}}=\tilde{r}_{i}+\hat{\rho}_{1}-1,\qquad\tilde{r}_{i}w_{\tilde{r}_{i}}=\hat{\rho}_{1}\tilde{r}_{i}\quad\text{for }\tilde{r}_{i}\in\{0,1\}.
+
+Thus, feeding any of these quantities into the usual current-group zz-score advantage construction can make the corrected method exactly equivalent to the uncorrected noisy baseline.
+For this reason, our corrected implementations use the scalar coefficients aiBCa_{i}^{\mathrm{BC}} and aiFCa_{i}^{\mathrm{FC}} directly, with only fixed or running positive scales.
+
+### B.5 Process-Supervised Extension
+
+For process supervision, suppose response yiy_{i} has step-level verifier rewards
+
+r~i(1),…,r~i(Ji)\tilde{r}_{i}^{(1)},\ldots,\tilde{r}_{i}^{(J_{i})}
+
+attached to step boundaries
+
+τi(1)<⋯<τi(Ji).\tau_{i}^{(1)}<\cdots<\tau_{i}^{(J_{i})}.
+
+PGBC is applied to each step reward:
+
+r^i(j)=r~i(j)−ρ^01−ρ^0−ρ^1.\widehat{r}_{i}^{(j)}=\frac{\tilde{r}_{i}^{(j)}-\hat{\rho}_{0}}{1-\hat{\rho}_{0}-\hat{\rho}_{1}}.
+
+The token coefficient is the return-to-go of corrected utilities:
+
+Ai,tBC=1sBC∑j:τi(j)≥t(r^i(j)−bi,jBC),A_{i,t}^{\mathrm{BC}}=\frac{1}{s_{\mathrm{BC}}}\sum_{j:\tau_{i}^{(j)}\geq t}\left(\widehat{r}_{i}^{(j)}-b_{i,j}^{\mathrm{BC}}\right),
+
+where bi,jBCb_{i,j}^{\mathrm{BC}} is an optional leave-one-out or historical baseline for the corresponding step.
+
+PGFC is applied as a step-level signed score multiplier:
+
+wi(j)=r~i(j)−(1−ρ^1),w_{i}^{(j)}=\tilde{r}_{i}^{(j)}-(1-\hat{\rho}_{1}),
+
+and the token coefficient is
+
+Ai,tFC=1sFC∑j:τi(j)≥twi(j).A_{i,t}^{\mathrm{FC}}=\frac{1}{s_{\mathrm{FC}}}\sum_{j:\tau_{i}^{(j)}\geq t}w_{i}^{(j)}.
+
+As in the outcome case, we avoid current-batch zz-scoring of these binary affine quantities.
+If a positive normalization is needed for numerical stability, we use a fixed or EMA scale rather than the current batch’s standard deviation.
+
+### B.6 When Conditional Independence Is Violated (Bias Decomposition).
+
+Our directional-alignment results rely on conditional independence to factorize
+𝔼⁡[wR~​G∣R∗]=𝔼⁡[wR~∣R∗]​𝔼​[G∣R∗]\mathbb{E}[w_{\tilde{R}}G\mid R^{*}]=\mathbb{E}[w_{\tilde{R}}\mid R^{*}]\mathbb{E}[G\mid R^{*}].
+If verifier errors depend on trajectory features beyond correctness (e.g., style-based FP hacks), the update admits the decomposition
+
+𝔼⁡[wR~​G∣R∗]=𝔼⁡[wR~∣R∗]​𝔼​[G∣R∗]+Cov⁡(wR~,G∣R∗),\mathbb{E}[w_{\tilde{R}}G\mid R^{*}]\;=\;\mathbb{E}[w_{\tilde{R}}\mid R^{*}]\mathbb{E}[G\mid R^{*}]\;+\;\mathrm{Cov}(w_{\tilde{R}},G\mid R^{*}),
+
+so the residual bias is governed by the conditional covariance term.
+This highlights a practical diagnostic: if verifier decisions are strongly predictable from superficial cues that also affect generation likelihood, Cov⁡(wR~,G∣R∗)\mathrm{Cov}(w_{\tilde{R}},G\mid R^{*}) may be non-negligible and one should combine channel-based correction with verifier hardening or instance-dependent reliability modeling.
+
+### B.7 Online FN-Rate Estimation via Appeals
+
+In the FN-dominant rule-checker regime, PGFC requires an estimate of the false-negative rate ρ1\rho_{1}.
+At training step tt, let
+
+𝒩R(t)={i:r~i=0},𝒫R(t)={i:r~i=1}\mathcal{N}_{\mathrm{R}}^{(t)}=\{i:\tilde{r}_{i}=0\},\qquad\mathcal{P}_{\mathrm{R}}^{(t)}=\{i:\tilde{r}_{i}=1\}
+
+be the rule-based negatives and positives.
+We appeal each rule-negative item independently with probability q∈(0,1]q\in(0,1] using a lightweight auxiliary verifier.
+Let S(t)⊆𝒩R(t)S^{(t)}\subseteq\mathcal{N}_{\mathrm{R}}^{(t)} be the appealed subset, and let
+
+𝒫L(t)⊆S(t)\mathcal{P}_{\mathrm{L}}^{(t)}\subseteq S^{(t)}
+
+be the appealed items flipped to positive by the auxiliary verifier.
+The Horvitz–Thompson estimate of the number of false negatives is
+
+FN^(t)=|𝒫L(t)|q.\widehat{\mathrm{FN}}^{(t)}=\frac{|\mathcal{P}_{\mathrm{L}}^{(t)}|}{q}.
+
+Assuming rule-based positives have negligible FP rate, we estimate
+
+ρ^1(t)=FN^(t)+αFN^(t)+|𝒫R(t)|+α+β,\hat{\rho}_{1}^{(t)}=\frac{\widehat{\mathrm{FN}}^{(t)}+\alpha}{\widehat{\mathrm{FN}}^{(t)}+|\mathcal{P}_{\mathrm{R}}^{(t)}|+\alpha+\beta},
+
+where α,β>0\alpha,\beta>0 are small pseudocounts.
+To track policy drift, we use EMA smoothing:
+
+ρ¯1(t)=λ​ρ¯1(t−1)+(1−λ)​ρ^1(t).\bar{\rho}_{1}^{(t)}=\lambda\bar{\rho}_{1}^{(t-1)}+(1-\lambda)\hat{\rho}_{1}^{(t)}.
+
+The smoothed value ρ¯1(t)\bar{\rho}_{1}^{(t)} is used as ρ^1\hat{\rho}_{1} in PGFC.
+The expected number of auxiliary verifier calls per update is
+
+q​|𝒩R(t)|.q\,|\mathcal{N}_{\mathrm{R}}^{(t)}|.
+
+For PGBC, both ρ0\rho_{0} and ρ1\rho_{1} are needed.
+When ρ0\rho_{0} is unavailable or unreliable, we prefer PGFC in the FN-dominant setting.
+When both rates can be estimated from a calibration set or from a dual-verifier protocol, PGBC can be used with the corrected utility above.
+
+## Appendix C Additional Experimental Results
+
+### C.1 Performance under Pass@8 Metric
+
+Table 3 retains the measured pass@8 results for the four backbones. The conclusion remains consistent with the pass@1 results: PGBC and PGFC provide reliable improvements over the noisy baseline.
+
+### C.2 Complementarity with Stronger Verifiers
+
+We additionally investigate whether the proposed correction mechanisms are synergistic with more capable verifiers. While our main experiments instantiated the appeal process with a lightweight LLM verifier (TinyV) to minimize computational overhead, Table 5 demonstrates that the forward correction yields consistent improvements even when complementing stronger verifier baselines. Specifically, we compare against a “Stronger checker” that extracts the final \boxed{} answer and applies numeric/rational equivalence checking, using the Math-Verify library as a robust baseline. Concretely, we parse the gold answer using a gold-appropriate extraction configuration (ExprExtractionConfig for plain expressions or LatexExtractionConfig for LaTeX), and parse model predictions using LatexExtractionConfig together with ExprExtractionConfig. Verification is then performed by Math-Verify’s parse-and-verify pipeline with reward-verification-oriented normalization. Under this setup, PGFC uses the standard rule-based reward as the primary signal and calls the auxiliary Math-Verify checker only on appealed rule-negative samples. With the synthetic noise rates fixed at ρ0=0.1\rho_{0}=0.1 and ρ1=0.2\rho_{1}=0.2 as in the main paper, our Appeals+PGFC method achieves notable gains over the strong baseline (e.g., on MATH500 and AMC2023). These results suggest that the theoretical corrections act orthogonally to verifier engineering: regardless of how accurate the underlying verifier is, explicitly modeling and correcting for the residual false-negative rate provides a reliable performance lift.
+
+### C.3 Training Dynamics under Synthetic Noise
+
+To better understand how the proposed corrections influence the learning process, we analyze the training dynamics under synthetic i.i.d. noise. As shown in Figure 5, we monitor the group reward standard deviation, normalized advantage standard deviation, and gradient norm across training steps. The purpose of this analysis is to verify that the backward and forward corrections actively modify the advantage construction during training, rather than merely shifting the final endpoint scores. The results demonstrate that both PGBC and PGFC measurably alter these intermediate training statistics relative to the uncorrected noisy baseline, providing evidence that our corrections dynamically adjust the policy gradient throughout the optimization process.
+
+Figure 5: Training dynamics under synthetic iid noise. PGBC and PGFC change the group reward standard deviation, normalized advantage standard deviation, and gradient norm relative to uncorrected noisy training, illustrating that the correction is active inside advantage construction rather than only changing endpoint scores.
+
+Table 3: Pass@8 under real-world noise.
+
+Dataset
+AIME2024
+AIME2025
+AMC2023
+MATH500
+Minerva MATH
+Olympiad Bench
+Average
+
+Qwen2.5-Math-1.5B
+
+Base
+32.4 ±\pm 0.5
+16.7 ±\pm 0.7
+79.3 ±\pm 1.4
+62.8 ±\pm 1.3
+15.5 ±\pm 1.1
+31.3 ±\pm 0.8
+39.7 ±\pm 1.0
+
+Rule
+34.3 ±\pm 1.2
+19.9 ±\pm 1.1
+80.7 ±\pm 1.4
+69.6 ±\pm 0.5
+18.0 ±\pm 0.6
+32.8 ±\pm 1.2
+42.6 ±\pm 1.0
+
+LLM-as-Judge
+29.6 ±\pm 1.1
+15.4 ±\pm 0.4
+80.0 ±\pm 0.6
+63.4 ±\pm 1.2
+16.2 ±\pm 0.8
+28.6 ±\pm 0.3
+38.9 ±\pm 0.7
+
+Appeals
+30.5 ±\pm 0.2
+20.5 ±\pm 0.7
+80.7 ±\pm 0.9
+68.9 ±\pm 1.3
+17.6 ±\pm 1.0
+30.5 ±\pm 0.5
+41.5 ±\pm 0.8
+
+Appeals+PGFC (Ours)
+31.0 ±\pm 0.2
+20.0 ±\pm 0.6
+82.2 ±\pm 0.4
+69.8 ±\pm 1.1
+18.2 ±\pm 0.5
+33.3 ±\pm 0.3
+42.4 ±\pm 0.5
+
+DeepSeek-R1-Distill-Qwen-1.5B
+
+Base
+44.8 ±\pm 0.8
+32.8 ±\pm 0.7
+88.2 ±\pm 0.1
+85.9 ±\pm 0.6
+27.8 ±\pm 0.3
+48.6 ±\pm 0.3
+54.7 ±\pm 0.4
+
+Rule
+55.1 ±\pm 0.6
+40.1 ±\pm 0.4
+96.1 ±\pm 0.2
+96.6 ±\pm 0.1
+44.6 ±\pm 0.1
+64.9 ±\pm 0.1
+66.2 ±\pm 0.1
+
+LLM-as-Judge
+55.4 ±\pm 0.9
+39.8 ±\pm 0.7
+96.2 ±\pm 0.2
+95.7 ±\pm 0.2
+43.2 ±\pm 0.7
+62.8 ±\pm 0.7
+65.5 ±\pm 0.3
+
+Appeals
+57.7 ±\pm 1.0
+42.5 ±\pm 0.8
+96.0 ±\pm 0.2
+96.4 ±\pm 0.2
+44.2 ±\pm 0.8
+64.5 ±\pm 0.8
+66.9 ±\pm 0.3
+
+Appeals+PGFC (Ours)
+61.3 ±\pm 0.6
+44.6 ±\pm 0.7
+98.6 ±\pm 0.1
+97.1 ±\pm 0.2
+46.8 ±\pm 0.6
+66.1 ±\pm 0.4
+69.1 ±\pm 0.2
+
+Llama-3.2-3B-Instruct
+
+Base
+18.8 ±\pm 1.1
+3.3 ±\pm 0.2
+54.7 ±\pm 1.4
+40.8 ±\pm 0.8
+5.2 ±\pm 1.1
+16.4 ±\pm 0.5
+23.2 ±\pm 0.8
+
+Rule
+22.4 ±\pm 1.0
+6.7 ±\pm 1.4
+60.0 ±\pm 1.3
+44.8 ±\pm 0.6
+13.3 ±\pm 0.7
+18.7 ±\pm 1.5
+27.7 ±\pm 1.1
+
+LLM-as-Judge
+10.0 ±\pm 0.9
+0.8 ±\pm 0.9
+44.4 ±\pm 1.4
+27.2 ±\pm 0.9
+6.7 ±\pm 1.4
+9.5 ±\pm 0.2
+16.4 ±\pm 0.9
+
+Appeals
+17.5 ±\pm 0.2
+4.2 ±\pm 1.0
+53.8 ±\pm 0.2
+42.3 ±\pm 1.5
+10.8 ±\pm 1.6
+14.9 ±\pm 1.2
+23.9 ±\pm 0.9
+
+Appeals+PGFC (Ours)
+20.8 ±\pm 0.9
+3.3 ±\pm 1.5
+58.1 ±\pm 1.3
+47.6 ±\pm 0.6
+12.6 ±\pm 1.7
+18.5 ±\pm 0.6
+26.8 ±\pm 1.0
+
+Qwen2.5-Math-7B
+
+Base
+36.2 ±\pm 1.2
+23.3 ±\pm 1.0
+81.9 ±\pm 1.3
+66.6 ±\pm 0.5
+11.8 ±\pm 0.6
+33.9 ±\pm 0.7
+42.3 ±\pm 0.9
+
+Rule
+50.0 ±\pm 0.1
+28.7 ±\pm 0.8
+83.4 ±\pm 0.6
+82.8 ±\pm 0.5
+29.0 ±\pm 1.1
+45.8 ±\pm 1.3
+53.3 ±\pm 0.7
+
+LLM-as-Judge
+41.7 ±\pm 0.3
+22.1 ±\pm 0.3
+81.9 ±\pm 1.5
+69.0 ±\pm 0.2
+13.2 ±\pm 1.2
+39.4 ±\pm 1.1
+44.6 ±\pm 0.8
+
+Appeals
+47.1 ±\pm 1.0
+30.4 ±\pm 0.3
+84.4 ±\pm 1.2
+80.8 ±\pm 0.3
+23.5 ±\pm 1.3
+45.6 ±\pm 0.5
+52.0 ±\pm 0.8
+
+Appeals+PGFC (Ours)
+54.6 ±\pm 1.4
+30.4 ±\pm 1.2
+82.8 ±\pm 0.2
+83.2 ±\pm 1.3
+29.0 ±\pm 0.6
+47.6 ±\pm 0.9
+54.6 ±\pm 0.9
+
+### C.4 Appeals Statistics and Computational Overhead
+
+To quantify the computational cost and the empirical behavior of the appeal mechanism under real-world verifier noise, we track the appeal and flip statistics during training on Qwen2.5-Math-1.5B. As detailed in Table 4, we measure the appeal rate (the fraction of rollout responses that trigger an appeal) and the flip rate (the fraction of appealed responses that are successfully overturned by the LLM judge). The two methods use the same negative-side appeal mechanism. Within Appeals+PGFC, these calls support both reward recovery and online FN-rate estimation, without a separate post-appeal verifier pass. The total number of auxiliary TinyV calls remains small relative to the total number of training rollouts, demonstrating that our online false-negative rate estimation and forward correction are highly computationally efficient.
+
+Table 4: Appeals statistics for Qwen2.5-Math-1.5B real-world verifier noise. Appeals+PGFC uses the same appeal stream both for recovery and for online FN-rate estimation.
+
+Method
+Avg pass@1
+Avg pass@8
+Appeal rate
+Flip rate
+TinyV calls
+
+Rule
+31.6±0.431.6{\pm}0.4
+42.6±1.0\mathbf{42.6{\pm}1.0}
+0.000
+0.0000
+0
+
+Appeals
+30.1±0.630.1{\pm}0.6
+41.5±0.841.5{\pm}0.8
+0.081
+0.2288
+7,963
+
+Appeals+PGFC
+33.7±0.8\mathbf{33.7{\pm}0.8}
+42.4±0.542.4{\pm}0.5
+0.093
+0.2745
+8,255
+
+Table 5: Complementarity with a stronger verifier-side baseline on Qwen2.5-Math-1.5B. The correction still improves over a stronger checker, indicating that PGFC is not merely replacing verifier engineering.
+
+Method
+MATH500
+AIME2024
+AIME2025
+AMC2023
+Minerva Math
+OlympiadBench
+Average
+
+Stronger checker
+68.1 / 69.2
+12.3 / 18.4
+7.2 / 12.3
+47.9 / 59.7
+17.8 / 18.6
+30.9 / 33.1
+30.7 / 35.2
+
+Appeals+PGFC
+72.0 / 75.1
+14.2 / 21.6
+8.8 / 15.8
+51.8 / 65.8
+20.9 / 23.8
+33.3 / 37.2
+33.5 / 39.9
+
+### C.5 General Capability Retention
+
+We also check whether the corrections preserve non-math general benchmark performance relative to noisy training. Table 6 reports that PGBC and PGFC recover most of the retention loss caused by uncorrected noisy rewards and remain close to Base/Oracle on these auxiliary evaluations.
+
+Table 6: General capability retention after RLVR training on Llama-3.2-3B-Instruct. Metrics are accuracies.
+
+Method
+MMLU
+ARC-Challenge
+HellaSwag
+GPQA
+
+Base
+60.7
+73.9
+55.0
+28.4
+
+Oracle
+61.1
+73.9
+55.9
+29.1
+
+Noise
+50.0
+43.9
+33.9
+19.4
+
+PGBC
+60.8
+73.8
+55.6
+28.8
+
+PGFC
+61.3
+74.2
+56.1
+29.2
+
+## Appendix D Proofs and Derivations
+
+### D.1 Proof of Proposition 3.2
+
+Proof.
+
+We compute the expectation of the noisy reward R~\tilde{R} conditioned on the clean reward R∗R^{*}, which is a binary variable. By the definition of expectation:
+
+𝔼⁡[R~]\displaystyle\mathbb{E}[\tilde{R}]
+=1⋅ℙ⁡(R~=1∣R∗)+0⋅ℙ⁡(R~=0∣R∗)\displaystyle=1\cdot\mathbb{P}(\tilde{R}=1\mid R^{*})+0\cdot\mathbb{P}(\tilde{R}=0\mid R^{*})
+
+=ℙ⁡(R~=1∣R∗).\displaystyle=\mathbb{P}(\tilde{R}=1\mid R^{*}).
+
+We can expand this using the law of total probability, conditioning on the value of R∗∈{0,1}R^{*}\in\{0,1\}:
+
+𝔼⁡[R~∣R∗]\displaystyle\mathbb{E}[\tilde{R}\mid R^{*}]
+=R∗⋅ℙ⁡(R~=1∣R∗=1)+(1−R∗)⋅ℙ⁡(R~=1∣R∗=0).\displaystyle=R^{*}\cdot\mathbb{P}(\tilde{R}=1\mid R^{*}=1)+(1-R^{*})\cdot\mathbb{P}(\tilde{R}=1\mid R^{*}=0).
+
+From Definition 3.1, we have ℙ⁡(R~=1∣R∗=0)=ρ0\mathbb{P}(\tilde{R}=1\mid R^{*}=0)=\rho_{0} and ℙ⁡(R~=0∣R∗=1)=ρ1\mathbb{P}(\tilde{R}=0\mid R^{*}=1)=\rho_{1}, which implies ℙ⁡(R~=1∣R∗=1)=1−ρ1\mathbb{P}(\tilde{R}=1\mid R^{*}=1)=1-\rho_{1}. Substituting these values:
+
+𝔼⁡[R~∣R∗]\displaystyle\mathbb{E}[\tilde{R}\mid R^{*}]
+=R∗​(1−ρ1)+(1−R∗)​ρ0\displaystyle=R^{*}(1-\rho_{1})+(1-R^{*})\rho_{0}
+
+=R∗−ρ1​R∗+ρ0−ρ0​R∗\displaystyle=R^{*}-\rho_{1}R^{*}+\rho_{0}-\rho_{0}R^{*}
+
+=(1−ρ0−ρ1)​R∗+ρ0.\displaystyle=(1-\rho_{0}-\rho_{1})R^{*}+\rho_{0}.
+
+This completes the proof.
+∎
+
+### D.2 Proof of Theorem 3.3
+
+Proof.
+
+Recall the verifier reward channel (Definition 3.1): for the latent clean reward
+R∗∈{0,1}R^{*}\in\{0,1\} and the observed noisy reward R~∈{0,1}\tilde{R}\in\{0,1\},
+
+Pr⁡(R~=1∣R∗=0)=ρ0,Pr⁡(R~=0∣R∗=1)=ρ1,\Pr(\tilde{R}=1\mid R^{*}=0)=\rho_{0},\qquad\Pr(\tilde{R}=0\mid R^{*}=1)=\rho_{1},
+
+hence Pr⁡(R~=1∣R∗=1)=1−ρ1\Pr(\tilde{R}=1\mid R^{*}=1)=1-\rho_{1} and Pr⁡(R~=0∣R∗=0)=1−ρ0\Pr(\tilde{R}=0\mid R^{*}=0)=1-\rho_{0}.
+Since 1−ρ0−ρ1>01-\rho_{0}-\rho_{1}>0, the estimator
+
+R^≜R~−ρ01−ρ0−ρ1\widehat{R}\;\triangleq\;\frac{\tilde{R}-\rho_{0}}{1-\rho_{0}-\rho_{1}}
+
+is well-defined.
+
+We prove unbiasedness by computing the conditional expectation given R∗R^{*}.
+First note that because R~\tilde{R} is binary,
+
+𝔼⁡[R~∣R∗]= 1⋅Pr⁡(R~=1∣R∗)+0⋅Pr⁡(R~=0∣R∗)=Pr⁡(R~=1∣R∗).\mathbb{E}[\tilde{R}\mid R^{*}]\;=\;1\cdot\Pr(\tilde{R}=1\mid R^{*})+0\cdot\Pr(\tilde{R}=0\mid R^{*})\;=\;\Pr(\tilde{R}=1\mid R^{*}).
+
+(7)
+
+By the channel definition, for the two possible values of R∗R^{*} we have
+
+𝔼⁡[R~∣R∗=1]=1−ρ1,𝔼⁡[R~∣R∗=0]=ρ0.\mathbb{E}[\tilde{R}\mid R^{*}=1]=1-\rho_{1},\qquad\mathbb{E}[\tilde{R}\mid R^{*}=0]=\rho_{0}.
+
+These two cases can be written compactly as the affine form (Proposition 3.2)
+
+𝔼⁡[R~∣R∗]=(1−ρ0−ρ1)​R∗+ρ0.\mathbb{E}[\tilde{R}\mid R^{*}]=(1-\rho_{0}-\rho_{1})R^{*}+\rho_{0}.
+
+(8)
+
+Now take the conditional expectation of R^\widehat{R}:
+
+𝔼⁡[R^∣R∗]\displaystyle\mathbb{E}[\widehat{R}\mid R^{*}]
+=𝔼[R~−ρ01−ρ0−ρ1|R∗]\displaystyle=\mathbb{E}\left[\left.\frac{\tilde{R}-\rho_{0}}{1-\rho_{0}-\rho_{1}}\right|R^{*}\right]
+
+=𝔼⁡[R~∣R∗]−ρ01−ρ0−ρ1\displaystyle=\frac{\mathbb{E}[\tilde{R}\mid R^{*}]-\rho_{0}}{1-\rho_{0}-\rho_{1}}
+
+=(1−ρ0−ρ1)​R∗+ρ0−ρ01−ρ0−ρ1(by (8))\displaystyle=\frac{(1-\rho_{0}-\rho_{1})R^{*}+\rho_{0}-\rho_{0}}{1-\rho_{0}-\rho_{1}}\quad\text{(by \eqref{eq:affine})}
+
+=R∗.\displaystyle=R^{*}.
+
+(9)
+
+Equation (9) shows that R^\widehat{R} is an unbiased estimator of the
+latent clean reward in the conditional sense.
+
+Finally, taking total expectation (law of iterated expectation) yields
+
+𝔼⁡[R^]=𝔼⁡[𝔼⁡[R^∣R∗]]=𝔼⁡[R∗],\mathbb{E}[\widehat{R}]=\mathbb{E}\bigl[\mathbb{E}[\widehat{R}\mid R^{*}]\bigr]=\mathbb{E}[R^{*}],
+
+so R^\widehat{R} is unbiased for the clean reward both conditionally and unconditionally.
+∎
+
+### D.3 Proof of Proposition 3.4
+
+Proof.
+
+The proposition states two claims about the conditional expectation of the forward weights. The weights are defined as:
+
+wR~={w0=ρ1−1if ​R~=0,w1=ρ1if ​R~=1.w_{\tilde{R}}\;=\;\begin{cases}w_{0}=\rho_{1}-1&\text{if }\tilde{R}=0,\\
+w_{1}=\rho_{1}&\text{if }\tilde{R}=1.\end{cases}
+
+The noise model provides the conditional probabilities:
+
+Pr⁡(R~=0∣R∗=1)\displaystyle\Pr(\tilde{R}=0\mid R^{*}=1)
+=ρ1,Pr⁡(R~=1∣R∗=1)=1−ρ1\displaystyle=\rho_{1},\qquad\Pr(\tilde{R}=1\mid R^{*}=1)=1-\rho_{1}
+
+Pr⁡(R~=1∣R∗=0)\displaystyle\Pr(\tilde{R}=1\mid R^{*}=0)
+=ρ0,Pr⁡(R~=0∣R∗=0)=1−ρ0\displaystyle=\rho_{0},\qquad\Pr(\tilde{R}=0\mid R^{*}=0)=1-\rho_{0}
+
+#### Part 1: Proof of 𝔼⁡[wR~∣R∗=1]=0\mathbb{E}[w_{\tilde{R}}\mid R^{*}=1]=0
+
+We compute the expectation of wR~w_{\tilde{R}} conditioned on the true reward being positive (R∗=1R^{*}=1):
+
+𝔼⁡[wR~∣R∗=1]\displaystyle\mathbb{E}[w_{\tilde{R}}\mid R^{*}=1]
+=∑k∈{0,1}wk⋅Pr⁡(R~=k∣R∗=1)\displaystyle=\sum_{k\in\{0,1\}}w_{k}\cdot\Pr(\tilde{R}=k\mid R^{*}=1)
+
+=w0⋅Pr⁡(R~=0∣R∗=1)+w1⋅Pr⁡(R~=1∣R∗=1)\displaystyle=w_{0}\cdot\Pr(\tilde{R}=0\mid R^{*}=1)+w_{1}\cdot\Pr(\tilde{R}=1\mid R^{*}=1)
+
+=(ρ1−1)⋅(ρ1)+(ρ1)⋅(1−ρ1)\displaystyle=(\rho_{1}-1)\cdot(\rho_{1})+(\rho_{1})\cdot(1-\rho_{1})
+
+=(ρ12−ρ1)+(ρ1−ρ12)\displaystyle=(\rho_{1}^{2}-\rho_{1})+(\rho_{1}-\rho_{1}^{2})
+
+=0.\displaystyle=0.
+
+#### Part 2: Proof of 𝔼⁡[wR~∣R∗=0]=−(1−ρ0−ρ1)\mathbb{E}[w_{\tilde{R}}\mid R^{*}=0]=-(1-\rho_{0}-\rho_{1})
+
+Next, we compute the expectation of wR~w_{\tilde{R}} conditioned on the true reward being negative (R∗=0R^{*}=0):
+
+𝔼⁡[wR~∣R∗=0]\displaystyle\mathbb{E}[w_{\tilde{R}}\mid R^{*}=0]
+=∑k∈{0,1}wk⋅Pr⁡(R~=k∣R∗=0)\displaystyle=\sum_{k\in\{0,1\}}w_{k}\cdot\Pr(\tilde{R}=k\mid R^{*}=0)
+
+=w0⋅Pr⁡(R~=0∣R∗=0)+w1⋅Pr⁡(R~=1∣R∗=0)\displaystyle=w_{0}\cdot\Pr(\tilde{R}=0\mid R^{*}=0)+w_{1}\cdot\Pr(\tilde{R}=1\mid R^{*}=0)
+
+=(ρ1−1)⋅(1−ρ0)+(ρ1)⋅(ρ0)\displaystyle=(\rho_{1}-1)\cdot(1-\rho_{0})+(\rho_{1})\cdot(\rho_{0})
+
+=(ρ1−ρ0​ρ1−1+ρ0)+ρ0​ρ1\displaystyle=(\rho_{1}-\rho_{0}\rho_{1}-1+\rho_{0})+\rho_{0}\rho_{1}
+
+=ρ1+ρ0−1\displaystyle=\rho_{1}+\rho_{0}-1
+
+=−(1−ρ0−ρ1).\displaystyle=-(1-\rho_{0}-\rho_{1}).
+
+This proves both claims of the proposition.
+∎
+
+### D.4 Proof of Theorem 3.5
+
+Proof.
+
+We want to show that 𝔼⁡[Δ​θ]=(1−ρ0−ρ1)​∇θJ​(θ)\mathbb{E}[\Delta\theta]=(1-\rho_{0}-\rho_{1})\,\nabla_{\theta}J(\theta), where Δ​θ=1M​∑t=1Mht\Delta\theta=\frac{1}{M}\sum_{t=1}^{M}h_{t} and ht=wR~​Gth_{t}=w_{\tilde{R}}G_{t}. By linearity of expectation and assuming i.i.d. samples, it suffices to show this for a single sample’s contribution, 𝔼⁡[ht]\mathbb{E}[h_{t}].
+
+We use the law of total expectation, conditioning on the latent true reward R∗∈{0,1}R^{*}\in\{0,1\}:
+
+𝔼⁡[ht]=𝔼⁡[wR~​Gt]\displaystyle\mathbb{E}[h_{t}]=\mathbb{E}[w_{\tilde{R}}G_{t}]
+=𝔼⁡[𝔼⁡[wR~​Gt∣R∗]]\displaystyle=\mathbb{E}\left[\mathbb{E}[w_{\tilde{R}}G_{t}\mid R^{*}]\right]
+
+=Pr⁡(R∗=1)​𝔼​[wR~​Gt∣R∗=1]+Pr⁡(R∗=0)​𝔼​[wR~​Gt∣R∗=0].\displaystyle=\Pr(R^{*}=1)\,\mathbb{E}[w_{\tilde{R}}G_{t}\mid R^{*}=1]+\Pr(R^{*}=0)\,\mathbb{E}[w_{\tilde{R}}G_{t}\mid R^{*}=0].
+
+The noise process generating R~\tilde{R} is independent of the policy’s action generation process (which produces GtG_{t}), conditional on the true reward R∗R^{*}. Thus, we can separate the expectations:
+
+𝔼⁡[wR~​Gt∣R∗]=𝔼⁡[wR~∣R∗]⋅𝔼⁡[Gt∣R∗].\mathbb{E}[w_{\tilde{R}}G_{t}\mid R^{*}]=\mathbb{E}[w_{\tilde{R}}\mid R^{*}]\cdot\mathbb{E}[G_{t}\mid R^{*}].
+
+Using the results from Proposition 3.4:
+
+• • 
+
+𝔼⁡[wR~∣R∗=1]=0\mathbb{E}[w_{\tilde{R}}\mid R^{*}=1]=0.
+
+• • 
+
+𝔼⁡[wR~∣R∗=0]=−(1−ρ0−ρ1)\mathbb{E}[w_{\tilde{R}}\mid R^{*}=0]=-(1-\rho_{0}-\rho_{1}).
+
+Substituting these back into the main expectation formula:
+
+𝔼⁡[wR~​Gt]\displaystyle\mathbb{E}[w_{\tilde{R}}G_{t}]
+=Pr⁡(R∗=1)⋅(0)⋅𝔼⁡[Gt∣R∗=1]\displaystyle=\Pr(R^{*}=1)\cdot(0)\cdot\mathbb{E}[G_{t}\mid R^{*}=1]
+
++Pr(R∗=0)⋅(−(1−ρ0−ρ1))⋅𝔼[Gt∣R∗=0]\displaystyle\quad+\Pr(R^{*}=0)\cdot(-(1-\rho_{0}-\rho_{1}))\cdot\mathbb{E}[G_{t}\mid R^{*}=0]
+
+=−(1−ρ0−ρ1)⋅Pr(R∗=0)𝔼[Gt∣R∗=0]\displaystyle=-(1-\rho_{0}-\rho_{1})\cdot\Pr(R^{*}=0)\mathbb{E}[G_{t}\mid R^{*}=0]
+
+=−(1−ρ0−ρ1)⋅𝔼[𝟏{R∗=0}Gt],\displaystyle=-(1-\rho_{0}-\rho_{1})\cdot\mathbb{E}[\mathbf{1}_{\{R^{*}=0\}}G_{t}],
+
+where 𝟏{⋅}\mathbf{1}_{\{\cdot\}} is the indicator function.
+From two fundamental properties of the score function:
+
+• 1. 
+
+The unconditional expectation is zero: 𝔼⁡[Gt]=0\mathbb{E}[G_{t}]=0 (Williams, 1992; Sutton et al., 1999).
+
+• 2. 
+
+The clean policy gradient is ∇θJ​(θ)=𝔼⁡[R∗​Gt]\nabla_{\theta}J(\theta)=\mathbb{E}[R^{*}G_{t}].
+
+From property 1, we have 𝔼[Gt]=𝔼[(𝟏{R∗=1}+𝟏{R∗=0})Gt]=𝔼[R∗Gt]+𝔼[𝟏{R∗=0}Gt]=0\mathbb{E}[G_{t}]=\mathbb{E}[(\mathbf{1}_{\{R^{*}=1\}}+\mathbf{1}_{\{R^{*}=0\}})G_{t}]=\mathbb{E}[R^{*}G_{t}]+\mathbb{E}[\mathbf{1}_{\{R^{*}=0\}}G_{t}]=0.
+This implies that 𝔼[𝟏{R∗=0}Gt]=−𝔼[R∗Gt]=−∇θJ(θ)\mathbb{E}[\mathbf{1}_{\{R^{*}=0\}}G_{t}]=-\mathbb{E}[R^{*}G_{t}]=-\nabla_{\theta}J(\theta).
+
+Finally, we substitute this back into our expression for the expected update direction:
+
+𝔼⁡[ht]\displaystyle\mathbb{E}[h_{t}]
+=𝔼⁡[wR~​Gt]\displaystyle=\mathbb{E}[w_{\tilde{R}}G_{t}]
+
+=−(1−ρ0−ρ1)⋅𝔼[𝟏{R∗=0}Gt]\displaystyle=-(1-\rho_{0}-\rho_{1})\cdot\mathbb{E}[\mathbf{1}_{\{R^{*}=0\}}G_{t}]
+
+=−(1−ρ0−ρ1)⋅(−∇θJ(θ))\displaystyle=-(1-\rho_{0}-\rho_{1})\cdot(-\nabla_{\theta}J(\theta))
+
+=(1−ρ0−ρ1)​∇θJ​(θ).\displaystyle=(1-\rho_{0}-\rho_{1})\nabla_{\theta}J(\theta).
+
+Therefore, the expectation of the full update is 𝔼⁡[Δ​θ]=1M​∑𝔼⁡[ht]=(1−ρ0−ρ1)​∇θJ​(θ)\mathbb{E}[\Delta\theta]=\frac{1}{M}\sum\mathbb{E}[h_{t}]=(1-\rho_{0}-\rho_{1})\nabla_{\theta}J(\theta). This completes the proof.
+∎
+
+## Appendix E Prompt Templates and Training/Evaluation Details
+
+This section records the exact prompt formats and the concrete hyperparameters we used for all experiments in this paper.
+
+### E.1 Prompt Templates
+
+#### Training (generation) prompt.
+
+For each math problem xx (a plain-text question), the user message is built by concatenating the raw question with a short instruction that elicits chain-of-thought and enforces a verifiable answer format.
+
+⬇
+<user>
+
+{QUESTION}
+
+Let’s think step by step and enclose the reasoning process within <think> and </think> tags.
+
+The final result in the answer MUST BE within \boxed{}.
+
+</user>
+
+During data preprocessing, we write chat-style JSON with a single user turn as shown above and attach the rule-based ground-truth answer for reward checking.
+
+#### Evaluation (validation/test) prompt.
+
+We use the same prompt template as training for validation and test-time generation so that the rule-based verifier can parse the boxed answer consistently.
+
+#### Verifier I/O.
+
+The rule-based checker operates on the model’s final string and extracts the last \boxed{...} expression; it then applies numeric/rational parsing and equality tests to produce a binary reward R~∈{0,1}\tilde{R}\in\{0,1\}.
+When the LLM verifier is enabled, it receives the pair (problem,model solution)(\text{problem},\text{model solution}) and returns a binary correctness decision used only to estimate the false negative rate ρ1\rho_{1} over a sliding window. The LLM verifier does not replace the rule-based reward.
+
+### E.2 Data Preprocessing
+
+We load the preview split of the math-reasoning corpus and map each example to a chat-style record as above, keeping the reference (ground-truth) answer for programmatic checking.
+
+### E.3 Training Configuration
+
+Table 7: Core training settings.
+
+Training (GRPO)
+
+Train batch size
+128
+
+Rollouts per question (group size)
+8
+
+Max prompt length (tokens)
+512
+
+Max response length (tokens)
+3072
+
+Sampling temperature (rollouts)
+1.0
+
+Advantage estimator
+GRPO
+
+KL regularization
+Enabled
+
+KL coefficient β\beta
+0.001
+
+Entropy coefficient
+0.0
+
+Optimizer
+AdamW
+
+Learning rate
+3e-6
+
+Total epochs
 1
-    https://github.com/huggingface/math-verify, version 0.9.0 with antlr4 4.13.2 in this
-    work.
-2         T. S. Nguyen and D. A. Tran
-
-    The same gap runs through reinforcement learning with veriﬁable rewards
-(RLVR), which reports large gains at this scale: GRPO on a single training
-example lifts Qwen2.5-Math-1.5B from 36.0% to 73.6% on MATH-500 [14], a
-gain whose authors report only 8.6 points beyond format correction, and similar
-recipes improve DeepSeek-R1-Distill-Qwen-1.5B [3] and open base models from
-0.5B up [20]. Yet Shao et al. [9] ﬁnd that GRPO with random rewards raises
-Qwen2.5-Math-7B by 21.4 points on MATH-500, against 29.1 with ground-truth
-rewards. A rising score therefore does not by itself show that a model has learned
-to solve more problems, rather than to surface behaviour it already had or to
-produce what its reward accepts. In RLVR, per-step false-negative rates on the
-policy’s own rollouts have been tracked [4,16], and Egashira et al. report that
-a policy ﬁrst unlearns the behaviour that triggers false negatives. This paper
-studies the question in the cheapest and most widely used form of the loop, oﬄine
-rejection-sampling SFT, where a false reject only removes a training example,
-and applies the same kind of per-round false-reject measurement there, post hoc,
-for one defect of our pipeline.
-    We ask: after several GVT rounds, is the model better at mathematics, or
-has it only learned to write what the veriﬁer accepts? We ﬁxed four measures
-in advance: (i) pass@1; (ii) pass@k; (iii) output style, chieﬂy the share of gen-
-erations containing \boxed; and (iv) per-problem transitions (problems added
-and lost between rounds). The pre-set reading rule was that “learning the veri-
-ﬁer’s style” requires pass@1 to rise, pass@k to stay ﬂat and style to converge at
-once. In hindsight the rule is one-sided: it can only ﬁre when accuracy rises (Sec-
-tion 5.1). Only these measures and the rule were ﬁxed in advance. The higher
-learning rates, the controls, the round count and k at those rates, sample ac-
-curacy as primary measure, the termination measures and the re-scoring for a
-second veriﬁer defect were all chosen after seeing earlier runs; we mark them as
-post hoc.
-    Our answer is negative on the ﬁrst branch, within the power of the design: we
-detect no improvement on held-out problems at any learning rate we tried, but
-gains below about 10 points of pass@1 or 3.5–5.5 of sample accuracy could have
-been missed, and no arm of this recipe improves at all. On the second branch
-the pre-set rule is silent. The post hoc audit of Section 5.3 ﬁnds no sign that
-the model learns to avoid one veriﬁer defect, but it has little power to see such
-learning. What appears, most clearly at the highest rate, is lower accuracy on
-the solutions the model does ﬁnish and, clearly at only one of two seeds, more
-generations that run out of tokens. Two earlier readings did not hold up, and
-we report why: a pooled design whose sharp decline did not reproduce under
-isolation (Section 4.1), and an isolated design at a learning rate that changed
-the outputs little (Section 4.2).
-
-Contributions.
-
-    – For a 1.5B model, LoRA SFT and one rule-based veriﬁer, no gain is de-
-      tectable on a held-out exam at any learning rate we tried, with problem-level
-      bootstrap intervals and the smallest eﬀects the design could detect. No arm
-                                              Mathematics or the Veriﬁer?       3
-
-   improves, not even training on reference solutions, so this is a null for the
-   recipe, not for self-training.
- – A post hoc per-round false-reject audit of one veriﬁer defect, carried over
-   from RLVR [4,16] to oﬄine SFT self-training. The rejected share falls by
-   1.5–2.6 points, which a falling \boxed share accounts for, and is ﬂat on the
-   aﬀected problems; the test has little power and no positive control (Sec-
-   tion 5.3).
- – A decomposition of an accuracy decline under a ﬁxed token cap into a
-   ﬁnished-accuracy part and a cap-share part: at the highest rate, ﬁnished
-   generations lose 5.5–10.6 points against the untrained model on the same
-   problem mix, and the cap-hit share rises only at that rate.
-
-
-2   Related Work
-
-Self-training and its limits. STaR [19] introduced the generate–ﬁlter–retrain
-loop, and ReST [12], ReST-EM [11] and RFT [17] formalise it; ReST-EM, which
-like us restarts from the base model each iteration, reports diminishing gains af-
-ter the ﬁrst round. None measures how the ﬁlter’s errors depend on the form of
-the answer. Yue et al. [18] show that RL raises pass@1 while the base model wins
-at large pass@k, and Teacher-Free Self-Training [13] concludes that self-training
-“ampliﬁes but does not compound”. Training repeatedly on model-generated
-data erodes distribution tails [10], and a narrow selector can accelerate col-
-lapse [8].
-
-RL with veriﬁable rewards at small scale. RLVR with GRPO reports large gains
-near our model size: one training example lifts Qwen2.5-Math-1.5B on MATH-
-500 from 36.0% to 73.6% [14], about 7,000 examples lift DeepSeek-R1-Distill-
-Qwen-1.5B on AMC23 from 63% to 80% [3], and zero-RL works across ten open
-base models including Qwen2.5 from 0.5B [20]. These studies improve accuracy,
-which our SFT loop does not; Wang et al. separate out format correction and
-report only 8.6 of their 37.6 points as lying beyond it, but the studies mostly do
-not ask what the rest consists of. Shao et al. [9] show that it need not be reward
-learning: random rewards raise Qwen2.5-Math-7B by 21.4 points on MATH-
-500, which they trace to ampliﬁed pre-existing behaviour, and the eﬀect varies
-by model family. We do not compete with RLVR on accuracy; the audit of
-Section 5.3 asks of a loop whether the model has adapted to one veriﬁer defect,
-and we apply it only to SFT.
-
-Veriﬁer error. TinyV [16] ﬁnds that rule-based veriﬁers reject many correct
-solutions; From Accuracy to Robustness [6] reports an average recall of 86%,
-and 0.95 for math-verify on their MATH subset. Imperfect Veriﬁers [1] models
-ﬁxed false-accept and false-reject rates. Egashira et al. [4] ﬁnd in RLVR that
-systematic false negatives behave like random noise whereas false positives can
-cause plateau or collapse. They also track the false-negative rate on the policy’s
-own rollouts per training step and observe that the policy ﬁrst unlearns the
-4      T. S. Nguyen and D. A. Tran
-
-behaviour that triggers false negatives; TinyV likewise tracks the share of false
-negatives across GRPO steps. Our setting diﬀers in paradigm (oﬄine SFT with
-a fresh adapter per round) and task, and our controls cannot test their ﬁndings
-(Section 4.3).
-
-Auditing self-improvement. Xu et al. [15] audit LoRA self-training of Qwen3-
-8B against a frozen control and identify seven measurement failures, including
-training-seed variance and a ﬁxed token cap under style drift, that each invert
-a ﬁnding when uncontrolled. This is the study closest to ours; it is why we
-separate ﬁnished accuracy from termination (Section 4.5). We diﬀer in scale (a
-1.5B model), in the veriﬁer (a rule-based one whose rejection defect we mea-
-sured) and in auditing what that veriﬁer’s ﬁltering does to the training pool,
-not only whether accuracy moved. Kim et al. [7] show that self-distillation on
-ground-truth solutions can cut accuracy while shortening responses; our train-
-on-gold control shows a similar surface signature. We found no multi-round study
-combining a measured format-biased rule-based veriﬁer with a patched-veriﬁer
-control, but since our patch proved too weak (Section 4.3) we do not claim
-this combination as the contribution. The per-round false-reject measurement
-of Section 5.3 is not new either: it is the per-step tracking of Egashira et al.
-and TinyV, applied here to oﬄine SFT self-training and to a defect of our own
-pipeline. Supplementary Appendix ?? gives the full comparison.
-
-
-3     Setup
-3.1   The GVT Loop
-Each round t has four steps. Generate: the current model samples k solutions per
-problem. Verify: math-verify extracts the ﬁnal answer and compares it with the
-gold. Select: accepted solutions are kept. Train: a fresh LoRA adapter is attached
-to the base model and trained on the kept solutions for one epoch. Round 0 is
-the untrained base model; the round-t model (t ≥ 1) is the base plus an adapter
-trained on the pool accepted at round t − 1. Adapters are not accumulated, so
-earlier rounds aﬀect later ones only through the data they generate; conclusions
-about (non-)compounding below apply to this restart-from-base design, which
-gives compounding less room than continued training would.
-
-3.2   The Veriﬁer and Its Directional Bias
-A format probe that re-renders gold answers in individually valid forms shows
-that \dfrac/\tfrac are rejected 100% of the time on both datasets (the com-
-mand is not parsed). On real solutions (one public Qwen2.5-7B-Instruct solution
-per problem for 200 MATH-500 problems, judged correct by a scripted nor-
-malised comparison) the false-negative rate is 7.8% (10 of 128; Wilson interval
-4.3–13.8%) on MATH-500 and 0% on GSM8K. Eight of the ten fail when the
-whole solution is veriﬁed but pass when only the boxed answer is; most are com-
-pound answers, so they are probably largely the gold-storage defect described
-                                               Mathematics or the Veriﬁer?       5
-
-below rather than extraction of a wrong token. The audit inspected only rejec-
-tions, so it gives no false-positive rate. The veriﬁer also cannot parse 51 of the
-500 stored MATH-500 golds (10.2%); these problems always count as unsolved.
-That is a constant oﬀset in counts within a partition, so it cancels in within-run
-and same-partition diﬀerences, but not in ratios or in levels compared across
-partitions (11–18 such problems per exam partition).
-    The patch. For the control we rewrote \dfrac and \tfrac to \frac before
-parsing, removing the 100%-rejection class and nothing else.
-    The gold-storage defect (post hoc). Our pipeline stores the gold without a de-
-limiter, and math-verify applies its full LATEX extraction only inside \boxed{}
-or $...$, so a correct boxed prediction can fail against a bare gold (e.g. the
-prediction \boxed{\frac{4}{3}} against the stored gold \frac43). Re-scoring
-the saved generations with a veriﬁer V ′ that wraps the gold in \boxed{} when
-the prediction contains one shows that this defect rejects 15.5–18.4% of the gen-
-erations V ′ accepts. It would enlarge the round-0 kept pool by about a ﬁfth
-(440 → 542), against 0–4 examples for the \dfrac patch, and it lowers absolute
-pass@1 by 4.7–8.0 points in self-training. It is bound to the problem, not to the
-answer: on the 54–62 problems where it ever ﬁres, it rejects 94–98% of correct
-answers in every round, and 29–34 of these problems have a gold the original
-veriﬁer cannot parse at all, so no answer form avoids it there. Re-scored, sample
-accuracy still falls in all ﬁve runs we re-scored; the original-veriﬁer changes are
-0.73–0.85 of the re-scored ones, an observed ratio that we do not use to rescale
-other numbers or intervals. All tables keep the original veriﬁer, the one the loop
-trained with. Section 5.3 uses this defect for the adaptation audit; Supplemen-
-tary Appendix ?? gives the full analysis.
-
-3.3   Two Experimental Designs
-Design P (pooled) loads both datasets (500 problems each) together and trains
-one adapter per round on the union of accepted solutions, with selection and
-evaluation on the same 1,000 problems. Design I (isolated) uses one dataset and
-one adapter per run, and holds out 30% of the 500 problems (150) as an exam
-set; generation runs on all 500 problems each round, but only the other 350 can
-enter the training pool, and all Design I pass rates are on the exam set. Table ??
-summarises them.
-    Design I has three runs, all Qwen2.5-1.5B-Instruct, ﬁve rounds, k = 8, diﬀer-
-ing in one respect each: Run A (MATH-500, original veriﬁer), Run B (MATH-
-500, patched veriﬁer) and Run C (GSM8K, original veriﬁer). Runs A and B were
-repeated at a second seed; since the seed also sets the train/exam partition, the
-repetition draws a diﬀerent 150-problem exam set. Most of the later evidence
-comes from higher-rate runs introduced in Section 4.4; Table ?? (Supplementary
-Appendix ??) lists every run. A “seed” sets the exam partition, the selection set
-and the training randomness at once; runs with the same seed share the par-
-tition. “Five rounds” means round 0 (the untrained model) and four adapters,
-each trained once on the previous round’s pool; “three rounds” means round 0
-and two adapters, so the round-2 model is a single adapter (about 195 optimizer
-6      T. S. Nguyen and D. A. Tran
-
-steps for Run A at 5 × 10−4 ) trained on the round-1 pool. All runs use one model
-family, Qwen2.5.
-
-3.4   Models, Data, Training, Metrics
-We use Qwen2.5-0.5B-Instruct and Qwen2.5-1.5B-Instruct (Design P uses both,
-Design I the 1.5B model only) and the ﬁrst 500 problems of the GSM8K test
-split [2] and MATH-500, the 500-problem subset of MATH [5]. The prompt is
-a single user turn in the model’s chat template: “Solve the math problem. Put
-the ﬁnal answer in \boxed{}.” followed by the problem. Generation samples at
-temperature 0.8 with a cap of 512 new tokens; the other decoding settings come
-from the checkpoint’s generation conﬁguration (top-p 0.8, top-k 20, repetition
-penalty 1.1). Training is LoRA SFT (transformers 5.0.0, peft 0.19.1, TRL
-1.10.0 SFTTrainer; rank 16, α = 32, on q_proj and v_proj, LoRA dropout and
-weight decay at the library defaults; batch size 2; one epoch; AdamW with linear
-learning-rate decay and no warmup; loss over the whole chat sequence, prompt
-included; fp16 on one Kaggle T4), with a training sequence limit of 512 tokens
-that includes the prompt. Because this limit equals the generation cap but also
-holds the prompt, any kept solution longer than about 512 tokens minus the
-prompt length is cut in training and loses its ﬁnal answer and end-of-sequence
-token (24–26% of the round-0 pool; Section 4.5). All kept solutions are used, so
-the number of optimizer steps per round is half the pool size. The learning rate
-is 10−5 unless stated otherwise; this value was the default of our training code
-and was not tuned (Section 4.4). Metrics per round, on the exam set: pass@1
-is the correctness of the ﬁrst of the k samples (one draw per problem, so it
-carries sampling noise); pass@k; sample accuracy, the mean over all k samples;
-style counts over all generations (boxed, dfrac, dollar, . . . ); and per-problem
-added/lost counts between consecutive rounds, where a problem is solved in a
-round if at least one of its k samples is accepted. Added minus lost therefore
-equals 150 × ∆pass@k, so these counts add only the gross churn behind the net
-change, not an independent test. pass@1 was ﬁxed in advance; sample accuracy
-was not among the pre-set measures, but it estimates the same quantity from
-all k samples with less variance, so after the runs we chose it as the primary
-accuracy measure. Claims that rest on it, including the 2.2-point bound, are
-therefore post hoc in the choice of measure. “Correct” always means accepted
-by the veriﬁer (preset reward), the same veriﬁer that selects the training data.
-
-Uncertainty. For every within-run change (round 0 against the last round) and
-every paired comparison of two runs on the same exam partition we report a
-95% interval from a paired problem-level bootstrap (10,000 resamples of the
-150 exam problems), which respects the clustering of the k samples within a
-problem. These intervals do not cover training-seed variance, which we see only
-across two or three seeds: the one same-conﬁguration replicate pair we have
-ends 3.2 points of sample accuracy apart. We make no multiplicity correction,
-so we rest conclusions on patterns across runs and seeds, not on single intervals.
-Single proportions use Wilson intervals. Detectable eﬀects. From the interval
-                                              Mathematics or the Veriﬁer?      7
-
-half-widths h in Table 2, a change would be detected with 80% power at the
-5% level only if it exceeded about 2.8 h/1.96: about 10 points of pass@1, 8–10
-of pass@k and 3.5–5.5 of sample accuracy on MATH-500. A null in this paper
-means no gain of roughly that size. Details are in Supplementary Appendix ??.
-
-Reproducibility. The analysis scripts named in the paper and the saved gener-
-ations of every run are in our project repository. Token counts at generation
-time, Design P’s training logs and the per-sample outputs of the 1,536-token re-
-scorings were not saved. Every accuracy number in the paper is graded by the
-same biased veriﬁer that selects the training data, except the re-scored ﬁgures
-of Supplementary Appendix ??.
-
-
-4     Results
-
-4.1   Design P: An Apparent Collapse
-
-In the pooled design the 1.5B model declines severely and with acceleration
-(pass@1 50.0% → 18.6%, pass@8 72.6% → 48.6%; Table ??, Supplementary
-Appendix ??), on both datasets (Table ??); the 0.5B decline is small. The ac-
-cepted pool contracts every round and \boxed{} falls from 5,608 to 2,693 of
-8,000 generations. This design cannot be read causally: one adapter trains on
-both datasets’ pools; it scores on the problems it selects from; and it trains on
-about 4.5× as many examples per round as the isolated MATH-500 run (3,962
-against 872 at round 0). No run separates these explanations (Supplementary
-Appendix ??).
-
-
-4.2   Design I at 10−5 : Small Declines, a Larger One on GSM8K
-
-On the held-out exam (Fig. ?? and Table ?? in Supplementary Appendix ??)
-pass@8 ends within 4 points of round 0 in every run. On MATH-500, pass@1
-is 2.7–4.0 points lower at round 4, with every interval including zero (Table 2);
-sample accuracy falls 1.2–3.2 points, with an interval excluding zero only for
-B at seed 0 (A at seed 0 reaches 0.0), and matched ﬁnished accuracy 1.1–4.2,
-with intervals that only just exclude zero for A and B at seed 0, which are close
-to one replicate. We read this as a possible small decline, not an established
-one; what we do not see is a gain of the size the design could detect. Run C
-(GSM8K) declines more: pass@1 falls 12.7 points ([−21.3, −4.0]), almost all in
-ﬁnished accuracy, but it took about twice Run A’s optimizer steps, so we do not
-attribute this to the dataset alone. At this rate the training loss falls, but on
-MATH-500 two coarse output statistics, length and cap-hit share, barely change;
-we did not measure a ﬁner one, so this is weak evidence that the adapter did
-little, and a ﬂat curve there does not show that GVT is stable (Supplementary
-Appendix ??).
-8      T. S. Nguyen and D. A. Tran
-
-4.3   The Patch Control Could Not Detect an Eﬀect
-
-Runs A and B diﬀer only in the \dfrac/\tfrac patch. At round 4, B minus A
-is −0.7 [−3.3, +2.0] points of pass@1 at seed 0 and +0.0 [−2.7, +2.7] at seed 1.
-This null is uninformative: \dfrac appears in 0.50–0.73% of generations, so the
-kept pools diﬀer by 3–4 examples (under 0.5%), and at 10−5 the adapter changes
-the outputs little anyway. Removing one rare format defect had no detectable
-eﬀect, which a prevalence count alone predicts; the frequent gold-storage defect
-is present in both arms. The pre-ﬁlter share of problems on which all k samples
-agree falls in each of the four runs where we measured it (Design P 1.5B and the
-seed-0 10−5 runs, over all 500 items), but it is mechanically tied to accuracy, so
-we draw no conclusion from it (Supplementary Appendix ??).
-
-
-4.4   Higher Learning Rates
-
-Because 10−5 changed the MATH-500 outputs little, we reran Run A at 10−4
-(three seeds), 2 × 10−4 (two) and 5 × 10−4 (two, with Run B), with three rounds
-and k = 4 (Table 1). These runs therefore diﬀer from the 10−5 runs in k, round
-count, pool size (and so optimizer steps) and the pass@k metric as well as in
-rate, so only the comparison among 10−4 , 2 × 10−4 and 5 × 10−4 isolates the
-rate. At 5×10−4 every run declines: pass@1 falls 4.0–11.3 points and the sample-
-accuracy intervals exclude zero in all four A/B runs, though same-seed A and
-B are closer to two replicates than four. The decline may grow with the rate
-on one seed: at seed 1 sample accuracy falls 1.5, 3.5 and 8.3 points across the
-three rates, at seed 2 an almost ﬂat 3.7, 3.8 and 4.7. The cap-hit share rises
-only at 5 × 10−4 . The patch has no consistent eﬀect: B minus A in round-2
-pass@1 is +5.3 at seed 1 and −7.3 [−14.0, −0.7] at seed 2, a sign ﬂip from pools
-that diﬀer by 0–3 examples, which illustrates trajectory noise. Style does not
-separate imitation from drift: ﬁnished exam generations start more boxed than
-the veriﬁer-accepted pool and fall below it as the pool falls too, which imitation
-of the pool and drift would both produce.
-
-Two controls at 5 × 10−4 . The no-ﬁlter run trains on all k samples of every
-selection problem (1,400 examples per round), removing the veriﬁer; the train-
-on-gold run trains on the 350 reference solutions every round (Table 3). Neither
-is a single-variable control: no-ﬁlter takes 3–4× Run A’s optimizer steps, train-
-on-gold about the same. Removing the ﬁlter is never better than keeping it
-beyond noise and is worse on pass@4 at both seeds (round-2 diﬀerences −2.0 and
-−5.3 points, intervals including zero), but the dose diﬀerence means this cannot
-be attributed to the ﬁlter; the no-ﬁlter pool is also truncated far more often
-in training (62.4% against 24.5% at round 0). Training on reference solutions
-is followed by a much larger decline (pass@4 down about 21 points at both
-seeds) while the model adopts the reference style ($-delimited spans 5% → 98%).
-Post hoc checks bound veriﬁer error from below only (about 2 points of sample
-accuracy among boxed answers), and the 14% of round-2 generations without
-\boxed are not covered, so we think this fall is unlikely to be mainly veriﬁer
-                                                      Mathematics or the Veriﬁer?               9
-
-Table 1. Run A (MATH-500, original veriﬁer, k = 4, three rounds) across learning rates
-and seeds: pass@1, pass@4 and sample accuracy (600 exam generations) at round 0
-→ round 2, the share of round-2 generations that hit the 512-token cap (decoded text
-re-tokenised to ≥ 508 tokens; round 0 is 43.0–43.2%, 48.2% at seed 3), and problems
-added/lost summed over rounds 1–2. The two 5×10−4 rows are the A rows of Table ??.
-
-  Rate       Seed     pass@1        pass@4       Sample acc. Cap-hit (R2) Added/lost
-    −4
-  10         1      33.3 → 34.0 50.0 → 49.3 33.7 → 32.2             42.7%          20/21
-  10−4       2      31.3 → 28.0 51.3 → 45.3 30.8 → 27.2             42.8%          25/34
-  10−4       3      29.3 → 26.7 40.0 → 41.3 28.5 → 27.5             45.7%          16/14
-  2 × 10−4   1      33.3 → 31.3 50.0 → 46.7 33.7 → 30.2             40.8%          23/28
-  2 × 10−4   2      31.3 → 25.3 51.3 → 45.3 30.8 → 27.0             39.7%          21/30
-  5 × 10−4   1      33.3 → 23.3 50.0 → 42.7 33.7 → 25.3             46.2%          22/33
-  5 × 10−4   2      31.3 → 27.3 51.3 → 44.7 30.8 → 26.2             51.2%          26/36
-
-
-Table 2. Change from round 0 to the last round (percentage points) with 95%
-paired problem-level bootstrap intervals over the 150 exam problems (10,000 resam-
-ples; bootstrap_ci.py in the code repository). Last round is R4 at 10−5 (k = 8) and
-R2 elsewhere (k = 4). “Finished, matched” is the last-round accuracy of generations
-below the 512-token cap minus the untrained model’s accuracy on the same problem
-mix (Section 4.5; 2,000 resamples, capanat.py in the repository). The intervals do
-not include training-seed variance. Recomputed values match the reported ones ex-
-cept six round values that diﬀer by one problem (Section 3.4), e.g. B, seed 1 at 10−5 ,
-whose round-4 pass@8 is 58.0% against 58.7%; the matched column uses the separate
-re-scoring described there.
-
-Run, seed        ∆pass@1             ∆pass@k            ∆sample acc.        Finished, matched
-Learning rate 10−5
-A, 0          −2.7 [−9.3, 4.0]    −1.3 [−8.0, 5.3]     −2.4 [−4.8, 0.0]    −3.8 [−7.2, −0.5]
-A, 1         −3.3 [−10.0, 3.3]    +0.0 [−6.0, 6.0]     −1.5 [−4.1, 1.0]     −2.3 [−5.9, 1.2]
-B, 0         −3.3 [−10.0, 3.3]    −4.0 [−10.7, 2.7]    −3.2 [−5.9, −0.6]   −4.2 [−7.8, −0.9]
-B, 1         −4.0 [−10.7, 2.7]    −1.3 [−7.3, 4.7]      −1.2 [−3.7, 1.3]    −1.1 [−4.6, 2.6]
-C, 0       −12.7 [−21.3, −4.0]    −2.7 [−7.3, 2.0]    −13.1 [−16.7, −9.8] −12.8 [−16.5, −9.4]
-Learning rate 10−4
-A, 1          +0.7 [−6.7, 8.0]    −0.7 [−6.0, 4.7]     −1.5 [−5.3, 2.2]      −4.3 [−9.6, 1.1]
-A, 2          −3.3 [−9.3, 2.7]    −6.0 [−12.7, 0.7]    −3.7 [−7.3, −0.2]     −3.5 [−9.2, 2.3]
-A, 3         −2.7 [−10.0, 4.0]    +1.3 [−4.7, 7.3]      −1.0 [−4.3, 2.2]     −0.6 [−6.0, 4.7]
-Learning rate 2×10−4
-A, 1          −2.0 [−8.0, 4.0]    −3.3 [−10.0, 2.7]    −3.5 [−7.2, 0.0]     −4.0 [−8.9, 0.5]
-A, 2         −6.0 [−12.7, 0.7]    −6.0 [−12.7, 0.7]    −3.8 [−7.5, −0.2]    −4.7 [−10.1, 1.0]
-Learning rate 5×10−4
-A, 1        −10.0 [−16.7, −3.3]  −7.3 [−14.0, 0.0]    −8.3 [−12.3, −4.5]   −9.1 [−14.2, −4.2]
-A, 2         −4.0 [−11.3, 3.3]   −6.7 [−13.3, 0.0]    −4.7 [−8.2, −1.2]     −5.5 [−11.7, 0.1]
-B, 1         −4.7 [−12.0, 2.7]    −2.0 [−8.7, 4.7]    −6.7 [−10.5, −2.8]   −6.8 [−12.4, −1.0]
-B, 2        −11.3 [−17.3, −5.3] −11.3 [−18.0, −4.7] −9.2 [−12.8, −5.5]     −5.9 [−10.9, −1.0]
-No ﬁlter, 1 −6.0 [−12.7, 1.3]    −9.3 [−16.7, −2.7]   −8.2 [−12.2, −4.3] −10.6 [−16.4, −5.5]
-No ﬁlter, 2 −8.7 [−16.0, −1.3] −12.0 [−19.3, −4.7] −10.2 [−14.2, −6.3] −6.6 [−11.4, −2.0]
-Gold, 1    −18.0 [−26.7, −10.0] −20.7 [−28.7, −12.7] −19.7 [−25.3, −14.2] −25.6 [−32.1, −18.9]
-Gold, 2    −21.3 [−28.7, −14.0] −20.7 [−29.3, −12.7] −18.7 [−23.7, −13.7] −25.9 [−31.7, −20.0]
-C, 1       −22.0 [−29.3, −15.3] −9.3 [−15.3, −3.3] −15.3 [−19.8, −11.2] −12.1 [−16.6, −7.9]
-10      T. S. Nguyen and D. A. Tran
-
-error but cannot bound it from above. That no arm, this one included, improves
-on the untrained model means we have no positive reference: the nulls above
-may reﬂect the recipe (LoRA on q/v projections, loss over the prompt, a 512-
-token limit) rather than self-training. Run C at 5 × 10−4 (GSM8K, one run) falls
-22.0 points of pass@1, from both less accurate and more unﬁnished solutions
-(Supplementary Appendix ??).
-
-
-Table 3. Controls at 5×10−4 (MATH-500, k = 4, three rounds), on the exam partition
-of Run A at the same seed. Pool is the number of training examples per round; optimizer
-steps are half of it.
-
-        Run                     Pool            pass@1                pass@4
-                                          R0      R1   R2      R0       R1   R2
-        Seed 1
-        A (veriﬁer-ﬁltered)   440→326    33.3    32.7   23.3   50.0    49.3   42.7
-        No ﬁlter                1400     33.3    26.7   27.3   50.0    49.3   40.7
-        Train on gold           350      33.3    18.0   15.3   50.0    33.3   29.3
-        Seed 2
-        A (veriﬁer-ﬁltered)   424→350    31.3    31.3   27.3   51.3    46.0   44.7
-        No ﬁlter                1400     31.3    34.7   22.7   51.3    48.7   39.3
-        Train on gold           350      31.3    8.7    10.0   51.3    28.7   30.7
-
-
-
-
-4.5   Anatomy of the Decline
-This subsection is post hoc and descriptive. Sample accuracy mixes whether a ﬁn-
-ished solution is right with whether the model ﬁnishes within the 512-token cap
-at all. Re-tokenising the saved text, we call a generation cap-hit at ≥ 508 tokens.
-The untrained model already hits the cap in 41–48% of MATH-500 generations,
-so the cap binds from the start. An earlier character-length proxy for unﬁnished
-generations overstated termination, because drifting prose crosses its threshold
-within the same token budget. At 5 × 10−4 , compared with the untrained model
-on the same problem mix, ﬁnished generations lose 5.5–10.6 points, with in-
-tervals excluding zero in ﬁve of six runs (the six include two same-seed A/B
-pairs, which are close to replicates), while the cap-hit share rises 2–14 points.
-The matched measure assumes that a problem’s round-0 ﬁnished accuracy is
-the right baseline for the samples that still ﬁnish, and it conditions on which
-problems ﬁnish after training, so it is descriptive. A three-part decomposition
-attributes 12–30% of the decline to the cap share in the three original seed-1 runs
-(and −2 and 5% in the replicate and the 1,024-limit run) and 52–72% at seed 2
-(Table ??, Supplementary Appendix ??). At 10−4 and 2×10−4 the cap-hit share
-does not rise and ﬁnished accuracy carries the whole change. Train-on-gold is
-diﬀerent: responses shorten by more than half and ﬁnished accuracy collapses.
-Retraining without truncated examples changes little within the noise of single
-                                              Mathematics or the Veriﬁer?      11
-
-runs; re-scoring adapters at a 1,536-token cap leaves their deﬁcit in place, and
-the character proxy there points to generations that do not stop rather than to
-less accurate ﬁnished ones (Supplementary Appendix ??).
-
-
-5     Discussion
-
-5.1   Answer to the Research Question
-
-Does the model get better at mathematics? Not detectably. No run raises pass@1
-or pass@k by an amount whose interval excludes zero, at any rate, and the
-sample-accuracy intervals exclude gains above about 2.2 points. The bound is
-loose: it is read oﬀ observed intervals rather than a pre-speciﬁed equivalence
-test, uses a measure chosen after the runs (on pass@1 and pass@k the upper
-ends reach +8.0 and +7.3), and omits training-seed variance. On the pre-set
-measures the design could detect only gains of about 10 points of pass@1 and
-8–10 of pass@k, so “no gain” means no gain of that size. In every MATH-500
-run but one the problems lost equal or outnumber those gained, which restates
-the sign of the pass@k change rather than adding evidence. Because no arm
-improves, including training on reference solutions, the null may be a property
-of this LoRA recipe rather than of self-training.
-    Does it learn to write what the veriﬁer accepts? The data cannot settle this.
-The pre-set pattern requires pass@1 to rise, which never happens detectably (the
-largest rise is +0.7 [−6.7, +8.0]), so the rule’s silence is not evidence against
-veriﬁer-style learning. The \boxed share falls in a way imitation and drift would
-both produce. The post hoc audit of Section 5.3 ﬁnds no sign of adaptation to
-the gold-storage defect, but it is too weak to rule adaptation out.
-    What happened to the pooled collapse? It does not reproduce when each
-dataset has its own adapter and is scored on held-out problems. Because the
-pooled design also trained on about 4.5× more examples per round, we cannot
-say whether pooling, selection-set scoring or dose produced it.
-
-
-5.2   Interpretation
-
-An earlier version explained the Design P curves by a self-reinforcing shrinking
-pool shaped by the biased veriﬁer. The data neither support nor rule it out: the
-patch tests how strong a rare bias is, not whether a frequent bias compounds;
-the no-ﬁlter control declines without any veriﬁer but with more dose. The de-
-fensible statement is narrow: removing a format defect present in under 1% of
-generations, or removing the ﬁlter entirely, made no consistent diﬀerence at the
-resolution of this setup. The frequent gold-storage defect was never varied, so
-whether systematic false negatives are harmless in general, as Egashira et al. ﬁnd
-for RLVR, our data cannot say; and the no-ﬁlter control admits unstructured
-wrong answers, not the systematic false positives they ﬁnd harmful, so it does
-not test that side either. Practices our experience suggests, none of them tested
-here, are listed in Supplementary Appendix ??.
-12      T. S. Nguyen and D. A. Tran
-
-5.3   A Proposed Audit for GVT with a Biased Veriﬁer
-Our pre-set reading rule failed in a predictable way: it tied “learning the veriﬁer’s
-style” to rising accuracy, so it could not speak once accuracy fell. From the
-analyses we added after the runs we propose four checks for self-training with
-a rule-based veriﬁer. All four were deﬁned post hoc here; we oﬀer them as a
-protocol for future studies, not as tested methods.
-    (i) A per-round false-reject audit. Fix a repaired veriﬁer V ′ that corrects a
-known defect class of the training veriﬁer V . At each round t, on the loop’s own
-generations, compute
-                          #{accepted by V ′ but rejected by V }
-                   rt =                                         .
-                                  #{accepted by V ′ }
-If the model learns to write what V accepts, rt should fall over rounds, whatever
-happens to accuracy. This is the per-step false-negative tracking of RLVR stud-
-ies [4,16] applied to oﬄine SFT. Our data show that overall rt is not enough on
-its own (Table 4; rt_audit.py in the repository). For the gold-storage defect it
-falls in all three self-training runs we re-scored, by 2.6, 2.6 and 1.5 points, with
-intervals reaching or just touching zero. But V ′ diﬀers from V only on boxed
-predictions, so unboxed correct answers enter only the denominator, and the
-fall matches the falling \boxed share among correct answers (91 → 76% and
-93 → 78% at 5 × 10−4 ). On boxed answers alone rt is ﬂat (changes −0.4 to +0.7
-points). The defect is also bound to the problem: it ﬁres on only 54–62 of the
-500 problems, where it rejects 94–98% of correct answers in every round, and
-29–34 of them have a gold that V cannot parse, so no answer form could escape
-it there. On the 24–28 aﬀected problems where some form could, rt moves by
-−5.5, −1.6 and −0.2 points, with intervals 10–26 points wide. A model adapting
-to the defect would have to write these answers unboxed, and the training pool
-holds only 2–12 examples per round from these problems that do so. Under SFT
-the pressure to adapt is therefore weak, and we have no positive control showing
-the audit would detect adaptation that did occur. We conclude only that we
-see no adaptation to this defect, in one defect class, three runs and three to ﬁve
-rounds. Train-on-gold, with no veriﬁer in the loop, gives rt rises of 2.1–3.3 points
-as its outputs become more boxed, a reminder that rt moves with format for
-reasons unrelated to the veriﬁer. For the test to be informative, rt should be
-reported on the subset of answers and problems where V and V ′ can diﬀer and
-an accepted form exists, with a count of the training examples that could teach
-the avoidance.
-    (ii) Decompose declines under a ﬁxed cap. Report the change in sample ac-
-curacy split into a ﬁnished-accuracy part and a cap-share part (Table ??, Sup-
-plementary Appendix ??). Here the split is descriptive and its balance diﬀers by
-partition: at 5 × 10−4 the cap share accounts for 12–30% of the decline in the
-three original seed-1 runs and 52–72% at seed 2.
-    (iii) Check the dose of a control before running it. Count how many training
-examples the treatment changes. Our \dfrac patch changed 0–4 examples, while
-the unvaried gold-storage defect would have changed about a ﬁfth of the pool
-                                                        Mathematics or the Veriﬁer?         13
-
-Table 4. The false-reject audit for the gold-storage defect (post hoc), in percent (all 500
-problems), round 0 → last round, with the change and a 95% problem-level bootstrap
-interval (2,000 resamples). “Boxed only” restricts to predictions containing \boxed;
-“aﬀected, parseable” to problems where the defect ever ﬁres and V can parse the gold.
-Pool: examples per round from aﬀected problems that V accepts (and so avoid the
-defect).
-
-    Run                      rt subset            R0 Last         ∆ 95% interval Pool
-                −4
-    A, 5 × 10        , seed 1 all                18.3     15.7 −2.6     [−5.3, 0.3]   3–5
-                              boxed only         20.0     20.7 +0.7     [−2.9, 4.3]
-                              aﬀected, parseable 92.8     87.2 −5.5    [−20.1, 6.3]
-    A, 5 × 10−4 , seed 2 all                18.1          15.5 −2.6     [−5.2, 0.1]   2–3
-                         boxed only         19.4          19.8 +0.4     [−2.8, 3.4]
-                         aﬀected, parseable 95.1          93.5 −1.6    [−14.7, 9.5]
-    A, 10−5 , seed 0         all                18.3      16.8 −1.5     [−2.9, 0.0] 9–12
-                             boxed only         19.9      19.5 −0.4     [−2.0, 1.2]
-                             aﬀected, parseable 92.3      92.0 −0.2     [−4.9, 4.6]
-    Gold, seed 1             all                18.2      21.5 +3.3     [−1.2, 8.1]   —
-                             boxed only         20.0      22.8 +2.8     [−2.0, 7.7]
-                             aﬀected, parseable 95.5      94.7 −0.7     [−9.1, 6.2]
-    Gold, seed 2             all                18.0      20.2 +2.1     [−2.2, 6.7]   —
-                             boxed only         19.4      21.1 +1.7     [−3.3, 6.5]
-                             aﬀected, parseable 95.1      97.6 +2.5    [−4.8, 11.9]
-
-
-
-(440 → 542 at round 0); the ﬁrst number alone shows the patch control could
-not detect an eﬀect.
-    (iv) Match training dose across designs. Our pooled design trained on about
-4.5× more examples per round than the isolated one, so its sharp decline cannot
-be attributed to pooling.
-    Check (i) in RLVR. There a false reject gives the correct answer zero reward,
-a direct pressure that SFT lacks, and Egashira et al. already observe the policy
-unlearning behaviour that triggers false negatives. The audit needs only check-
-points, their generations on ﬁxed problems and a repaired veriﬁer, so it can be
-run on public RLVR checkpoints, with the conditioning above; we have not done
-so.
-
-
-6     Limitations
-Unequal training doses confound every cross-arm comparison. The controls are
-underpowered: the patch changes 0–4 training examples, and the no-ﬁlter and
-train-on-gold controls have two seeds each. Intervals cover only problem draw
-and sampling, not training-seed variance; several conditions have one seed, and
-no multiplicity correction is applied. The learning-rate grid is coarse, with three
-rounds and k = 4, and it changes k, rounds, dose and metric along with the rate.
-14     T. S. Nguyen and D. A. Tran
-
-The power is limited: with 150 exam problems only gains of about 10 points of
-pass@1 or 3.5–5.5 of sample accuracy would be detected. The adaptation audit
-is weak: 24–28 problems, 2–12 training examples per round that could teach the
-avoidance, and no positive control. Cap-hit is reconstructed from decoded text.
-The veriﬁer audit used other models’ solutions and inspected only rejections;
-the gold-storage defect was measured afterwards and ran unvaried through every
-run. Every headline number is graded by the biased veriﬁer that also selects the
-data. The 512-token cap binds from the start, and the equal training limit, which
-includes the prompt, truncates a quarter of the pool. Scope: one model family
-(Qwen2.5) and one size in Design I, one veriﬁer, one LoRA recipe with loss over
-the prompt, a restart-from-base design that leaves compounding little room,
-and possible test-set contamination. No arm improves on round 0, so we have
-no positive reference showing this recipe can help a 1.5B model. Supplementary
-Appendix ?? gives the full list.
-
-
-7    Conclusion
-
-We asked whether generate–verify–select–train iterations make a 1.5B model bet-
-ter at mathematics or only teach it to write what a rule-based veriﬁer accepts.
-On a held-out exam, the ﬁrst answer is no gain that this design could detect: on
-pass@1 and pass@k, the pre-set accuracy measures, no run improves detectably,
-though gains below about 10 and 8–10 points could have been missed; the in-
-tervals for sample accuracy (a primary measure chosen after the runs) exclude
-gains above about 2.2 points, a loose bound because they omit training-seed
-variance and are not an equivalence test. No arm improves, including training
-on reference solutions, so this is a null for the recipe. The second question stays
-open, because our pre-set rule for it could only ﬁre if accuracy rose, and the post
-hoc \boxed share falls in a way that imitation of the less-boxed training pool and
-drift would both produce. A post hoc per-round false-reject audit, carried over
-from RLVR, ﬁnds no sign that the model learns to avoid one veriﬁer defect once
-the falling \boxed share is accounted for, but with about 25 aﬀected problems,
-a handful of training examples per round and no positive control it cannot rule
-such learning out. In a post hoc description, most clearly at the highest rate, the
-model becomes less accurate on the solutions it does ﬁnish; more generations
-hit the token cap only at the highest rate, and clearly only at one of its two
-seeds, where the change in cap-hit share accounts for 12–30% of the decline in
-the original seed-1 runs and 52–72% at seed 2; a character-length heuristic we
-ﬁrst used overstated that part. Reference-solution training degrades the model
-more, with much shorter answers. Patching a rare veriﬁer defect and removing
-the ﬁlter made no diﬀerence of consistent sign across measures and seeds (pass@1
-ﬂips sign between seeds; removing the ﬁlter lowers pass@4 at both seeds, within
-noise; single-seed intervals sometimes exclude zero), neither control could have
-detected a small eﬀect, and a frequent defect in our gold storage, which rejects
-about one in six correct solutions, ran unvaried through every experiment. A
-sharp decline seen in an earlier pooled design does not reproduce under isolation
-                                                  Mathematics or the Veriﬁer?        15
-
-and held-out scoring, and because that design also trained several times longer
-per round, we leave its cause open. We report the earlier readings that did not
-hold up because the designs that produced them are common.
-   A rising score, in self-training or in RLVR, does not by itself show that
-a model learned mathematics rather than its veriﬁer. A per-round false-reject
-audit asks part of that question whether accuracy rises or falls, but our data
-show it must be conditioned on answer format and on the problems where the
-defect can be avoided, and it needs a positive control; applying it so to public
-RLVR checkpoints, where the pressure to adapt is direct, is a natural next step.
-Future work, including a dose-matched control for the gold-storage defect, is
-outlined in Supplementary Appendix ??.
-
-Acknowledgments. This work was carried out as an undergraduate research project.
-No external funding was received.
-
-Disclosure of Interests. The authors have no competing interests to declare that
-are relevant to the content of this article.
-
-Code availability Code, saved generations and analysis scripts are at https://github.
-com/tsan2711/DACNTT_2026.
-
-Use of AI tools The authors used Claude (Anthropic), through Claude Code, to
-help write and revise the manuscript, to write analysis and training scripts, and to run
-automated paper reviews. The authors designed the study, ran the experiments and
-take responsibility for the content.
-
-
-References
- 1. Cai, X.-Q., Wang, W., Liu, F., Liu, T., Niu, G., Sugiyama, M.: Reinforce-
-    ment Learning with Veriﬁable yet Noisy Rewards under Imperfect Veriﬁers.
-    arXiv:2510.00915 (2025)
- 2. Cobbe, K., Kosaraju, V., Bavarian, M., Chen, M., Jun, H., Kaiser, L., Plappert,
-    M., Tworek, J., Hilton, J., Nakano, R., Hesse, C., Schulman, J.: Training Veriﬁers
-    to Solve Math Word Problems. arXiv:2110.14168 (2021)
- 3. Dang, Q.-A., Ngo, C.: Reinforcement Learning for Reasoning in Small LLMs: What
-    Works and What Doesn’t. arXiv:2503.16219 (2025)
- 4. Egashira, K., Vero, M., Dekoninck, J., Dörner, F.E., Staab, R., Vechev, M.: Delay,
-    Plateau, or Collapse: Evaluating the Impact of Systematic Veriﬁcation Error on
-    RLVR. arXiv:2605.02909 (2026)
- 5. Hendrycks, D., Burns, C., Kadavath, S., Arora, A., Basart, S., Tang, E., Song,
-    D., Steinhardt, J.: Measuring Mathematical Problem Solving With the MATH
-    Dataset. arXiv:2103.03874 (2021)
- 6. Huang, Y., Zeng, W., Zeng, X., Zhu, Q., He, J.: From Accuracy to Robust-
-    ness: A Study of Rule- and Model-based Veriﬁers in Mathematical Reasoning.
-    arXiv:2505.22203 (2025)
- 7. Kim, J., Luo, X., Kim, M., Lee, S., Kim, D., Jeon, J., Li, D., Yang, Y.: Why
-    Does Self-Distillation (Sometimes) Degrade the Reasoning Capability of LLMs?
-    arXiv:2603.24472 (2026)
-16      T. S. Nguyen and D. A. Tran
-
- 8. Qiao, X., Du, X., Liu, W., Zhang, J., Mai, P., Zhang, M., Pang, Y.: When Sample
-    Selection Bias Precipitates Model Collapse. arXiv:2606.13732 (2026)
- 9. Shao, R., Li, S.S., Xin, R., Geng, S., Wang, Y., Oh, S., Du, S.S., Lambert, N., Min,
-    S., Krishna, R., Tsvetkov, Y., Hajishirzi, H., Koh, P.W., Zettlemoyer, L.: Spurious
-    Rewards: Rethinking Training Signals in RLVR. arXiv:2506.10947 (2025)
-10. Shumailov, I., Shumaylov, Z., Zhao, Y., Papernot, N., Anderson, R., Gal, Y.: AI
-    models collapse when trained on recursively generated data. Nature (2024). https:
-    //doi.org/10.1038/s41586-024-07566-y
-11. Singh, A., Co-Reyes, J.D., Agarwal, R., et al.: Beyond Human Data: Scaling Self-
-    Training for Problem-Solving with Language Models. arXiv:2312.06585 (2023)
-12. Gulcehre, C., Le Paine, T., Srinivasan, S., et al.: Reinforced Self-Training (ReST)
-    for Language Modeling. arXiv:2308.08998 (2023)
-13. Strozzi, I.L.: Teacher-Free Self-Training Ampliﬁes but Does Not Compound: A
-    Pass@k Crossover on a Free-Veriﬁer Domain. arXiv:2606.07856 (2026)
-14. Wang, Y., Yang, Q., Zeng, Z., Ren, L., Liu, L., Peng, B., Cheng, H., He, X., Wang,
-    K., Gao, J., Chen, W., Wang, S., Du, S.S., Shen, Y.: Reinforcement Learning for
-    Reasoning in Large Language Models with One Training Example. In: NeurIPS
-    (2025). arXiv:2504.20571
-15. Xu, C., Yan, N., Chen, L., Kechadi, M.-T.: Phantom Gains: Auditing Self-
-    Improvement Against a Measured Null. arXiv:2608.20290 (2026)
-16. Xu, Z., Li, Y., Jiang, F., Ramasubramanian, B., Niu, L., Lin, B., Poovendran, R.:
-    TinyV: Reducing False Negatives in Veriﬁcation Improves RL for LLM Reasoning.
-    arXiv:2505.14625 (2025)
-17. Yuan, Z., Yuan, H., Li, C., Dong, G., Lu, K., Tan, C., Zhou, C., Zhou, J.: Scaling
-    Relationship on Learning Mathematical Reasoning with Large Language Models.
-    arXiv:2308.01825 (2023)
-18. Yue, Y., Chen, Z., Lu, R., Zhao, A., Wang, Z., Yue, Y., Song, S., Huang, G.: Does
-    Reinforcement Learning Really Incentivize Reasoning Capacity in LLMs Beyond
-    the Base Model? arXiv:2504.13837 (2025)
-19. Zelikman, E., Wu, Y., Mu, J., Goodman, N.D.: STaR: Bootstrapping Reasoning
-    With Reasoning. arXiv:2203.14465 (2022)
-20. Zeng, W., Huang, Y., Liu, Q., Liu, W., He, K., Ma, Z., He, J.: SimpleRL-Zoo:
-    Investigating and Taming Zero Reinforcement Learning for Open Base Models in
-    the Wild. arXiv:2503.18892 (2025)
-
+
+#### Model/backbone.
+
+We load the base model from local cache (HuggingFace layout), enable FSDP2 for actor/ref, and use shared-memory weights with remove-padding for efficient vLLM rollouts. The KL is computed w.r.t. a frozen reference initialized from the same base.
+
+### E.4 Online FN-Rate Estimation Hyperparameters and Ablations
+
+This subsection reports the concrete hyperparameters for our online false-negative (FN) rate estimation ρ^1\hat{\rho}_{1} used in the real-world-noise experiments (Section 4.3).
+
+#### Appeals protocol and estimator.
+
+At training step tt, let 𝒩R(t)\mathcal{N}_{\mathrm{R}}^{(t)} and 𝒫R(t)\mathcal{P}_{\mathrm{R}}^{(t)} be the sets labeled negative/positive by the primary rule-based verifier.
+We appeal each item in 𝒩R(t)\mathcal{N}_{\mathrm{R}}^{(t)} independently with probability q∈(0,1]q\in(0,1] and re-evaluate it with a lightweight LLM verifier (TinyV).
+Let 𝒫L(t)\mathcal{P}_{\mathrm{L}}^{(t)} be the appealed negatives that TinyV flips to positive.
+We use the Horvitz–Thompson estimator
+
+FN^(t)=|𝒫L(t)|q\widehat{\mathrm{FN}}^{(t)}\;=\;\frac{|\mathcal{P}_{\mathrm{L}}^{(t)}|}{q}
+
+(10)
+
+and estimate the FN rate with a Beta prior:
+
+ρ^1(t)=FN^(t)+αFN^(t)+|𝒫R(t)|+α+β.\hat{\rho}_{1}^{(t)}\;=\;\frac{\widehat{\mathrm{FN}}^{(t)}+\alpha}{\widehat{\mathrm{FN}}^{(t)}+|\mathcal{P}_{\mathrm{R}}^{(t)}|+\alpha+\beta}\,.
+
+(11)
+
+We then apply exponential moving average (EMA) smoothing
+
+ρ¯1(t)=λ​ρ¯1(t−1)+(1−λ)​ρ^1(t),\bar{\rho}_{1}^{(t)}\;=\;\lambda\,\bar{\rho}_{1}^{(t-1)}+(1-\lambda)\,\hat{\rho}_{1}^{(t)}\,,
+
+(12)
+
+and use ρ¯1(t)\bar{\rho}_{1}^{(t)} as the plug-in estimate for PGFC weights wr~∈{ρ¯1(t)−1,ρ¯1(t)}w_{\tilde{r}}\in\{\bar{\rho}_{1}^{(t)}-1,\ \bar{\rho}_{1}^{(t)}\}.
+
+#### Default hyperparameters.
+
+Unless otherwise stated, real-world-noise runs use:
+(i) appeal probability q=0.1q=0.1;
+(ii) Beta prior pseudocounts α=β=10−5\alpha=\beta=10^{-5} in Eq. (11);
+(iii) EMA decay λ=0.9\lambda=0.9 in Eq. (12).
+We compute ρ^1(t)\hat{\rho}_{1}^{(t)} and update ρ¯1(t)\bar{\rho}_{1}^{(t)} once per policy-update step.
+The expected number of TinyV calls per update is q⋅|𝒩R(t)|q\cdot|\mathcal{N}_{\mathrm{R}}^{(t)}|.
+
+### E.5 Datasets
+
+#### Training.
+
+• • 
+
+DeepScaleR (Luo et al., 2025): the math-reasoning corpus used for RLVR rollouts and policy updates.
+
+#### Evaluation.
+
+We evaluate with the standard official/problem releases for each benchmark.
+
+• • 
+
+MATH500 (Lightman et al., 2024): a verifiable subset of math reasoning problems for reliable evaluation.
+
+• • 
+
+AIME 2024 (HuggingFaceH4, 2024): the 2024 American Invitational Mathematics Examination set.
+
+• • 
+
+AIME 2025 (OpenCompass, 2025): the 2025 AIME set.
+
+• • 
+
+AMC 2023 (math-ai, 2025): problems from the 2023 American Mathematics Competitions.
+
+• • 
+
+Minerva Math (Lewkowycz et al., 2022): the Minerva math evaluation suite.
+
+• • 
+
+OlympiadBench (He et al., 2024): olympiad-level mathematics benchmark.
+
+• • 
+
+MMLU (Hendrycks et al., 2021): a broad multi-task benchmark covering 57 academic and professional subjects for evaluating world knowledge and problem solving.
+
+• • 
+
+ARC-C (Clark et al., 2018): the Challenge split of the AI2 Reasoning Challenge, consisting of grade-school science questions that are difficult for retrieval and word co-occurrence baselines.
+
+• • 
+
+HellaSwag (Zellers et al., 2019): a commonsense natural language inference benchmark for physically grounded sentence-completion reasoning.
+
+• • 
+
+GPQA (Rein et al., 2024): a graduate-level, Google-proof multiple-choice QA benchmark written by domain experts in biology, physics, and chemistry.
+
+## Appendix F False Positive (FP) and False Negative (FN) Examples
+
+We also provide typical failure modes observed during math RL with automated verifiers on Qwen2.5-Math-7B under MATH500 dataset. For rule-based verifier: 52 FNs and 0 FP out of 500 items (marginal rates 10.4% and 0%); for LLM verifier: 81 FNs and 168 FPs out of 500 items (marginal rates 16.2% and 33.6%). The FP case shows an LLM judge over-crediting a malformed solution, while the FN case shows a rule-based checker rejecting a numerically correct answer due to formatting. The raw JSON context for these examples is provided below.
+
+False Positive (FP). 
+Problem. Compute: 1−2+3−4+⋯+99−1001-2+3-4+\dots+99-100. 
+Ground truth. −50\boxed{-50} 
+
+Model response (excerpt).
+⬇
+Compute: $1+2-3-4+5+6-7-8+\dots+97+98-99-100$.
+
+\boxed{ } \boxed{ } \boxed{ } \dots
+
+Verifier signals. Rule-based checker: ✗ (incorrect); LLM judge: ✓ (incorrectly accepts)  ⇒\Rightarrow FP.
+
+False Negative (FN). 
+Problem. Each of seven islands independently has treasure with probability 15\tfrac{1}{5}. What is the probability that exactly four islands have treasure? 
+Correct answer. 44815625\displaystyle\boxed{\frac{448}{15625}} (equals 0.0286720.028672). 
+
+Model answer. 0.028672\boxed{0.028672} 
+Verifier signals. Rule-based exact-match: ✗ (expects a fraction); numeric equivalence check: ✓ (values match)  ⇒\Rightarrow FN.
+
+We provide FP and FN examples using Qwen2.5-Math-7B base model on MATH500.
+
+#### FP
+
+⬇
+{
+
+    "idx": 16,
+
+    "question": "Compute: $1-2+3-4+5- \\dots +99-100$.",
+
+    "model_prediction": "{}",
+
+    "model_response": "Compute: $1+2-3-4+5+6-7-8+ \\dots +97+98-99-100$.  \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}. \\boxed{{}}.  \\",
+
+    "ground_truth": "-50",
+
+    "rule_based": false,
+
+    "llm_verifier": true,
+
+    "llm_verifier_score": 1.0,
+
+    "llm_verifier_raw_value": "1.0",
+
+    "math_verify": false,
+
+    "math_verify_score": 0.0
+
+  },
+
+#### FN
+
+⬇
+{
+
+    "idx": 92,
+
+    "question": "A pirate searches seven islands for buried treasure. If each island has a $\\frac{1}{5}$ chance of having treasure, what is the probability that exactly 4 of the islands have treasure?",
+
+    "answer": "\\frac{448}{15625}",
+
+    "model_prediction": "0.028672",
+
+    "model_response": "To solve this problem, we can use the binomial probability formula. The probability of having exactly $k$ successes in $n$ independent Bernoulli trials (each with success probability $p$) is given by:\n\n\\[ P(X = k) = \\binom{n}{k} p^k (1-p)^{n-k} \\]\n\nHere, $n = 7$ (the number of islands), $k = 4$ (the number of islands with treasure), and $p = \\frac{1}{5}$ (the probability that a single island has treasure).\n\nThe binomial coefficient $\\binom{n}{k}$ is the number of ways to choose $k$ successes out of $n$ trials, and it is calculated as:\n\n\\[ \\binom{n}{k} = \\frac{n!}{k!(n-k)!} \\]\n\n So, the probability that exactly 4 of the 7 islands have treasure is:\n\n\\[ P(X = 4) = \\binom{7}{4} \\left(\\frac{1}{5}\\right)^4 \\left(\\frac{4}{5}\\right)^{3} \\]\n\nLet’s calculate this using Python.\n‘‘‘python\nimport math\n\n# Number of islands\nn = 7\n# Number of islands with treasure\nk = 4\n# Probability of a single island having treasure\np = 1/5\n\n# Binomial coefficient\nbinom_coeff = math.comb(n, k)\n\n# Probability calculation\nprobability = binom_coeff * (p**k) * ((1-p)**(n-k))\nprint(probability)\n‘‘‘\n‘‘‘output\n0.02867200000000001\n‘‘‘\nThe probability that exactly 4 of the 7 islands have treasure is \\(\\boxed{0.028672}\\).",
+
+    "ground_truth": "\\frac{448}{15625}",
+
+    "rule_based": false,
+
+    "llm_verifier": false,
+
+    "llm_verifier_score": 0.0,
+
+    "llm_verifier_raw_value": "0.0",
+
+    "math_verify": true,
+
+    "math_verify_score": 1.0
+
+  }
+
+## Appendix G Additional Evaluations and Analysis
+
+### G.1 Estimated-Rate Corrections with CompassVerifier
+
+TinyV appeals a random subset of rule-negative responses and supports false-negative-rate estimation under the FN-dominant assumption. This stream does not independently audit rule-positive outputs and therefore does not supply a calibrated estimate of ρ0\rho_{0}. PGBC additionally requires that rate. We evaluate Qwen2.5-Math-1.5B with CompassVerifier-3B (Liu et al., 2025) using stratified audits of both rule-negative and rule-positive outputs. PGFC uses the negative-side estimate of ρ1\rho_{1}, while PGBC uses estimates of both rates. Both corrections improve over direct verifier training and Compass Appeals in Table 8.
+
+Table 8: Qwen2.5-Math-1.5B with CompassVerifier-3B and estimated channel rates. Scores are percentages.
+
+Method
+AIME 2024
+AIME 2025
+AMC 2023
+MATH-500
+Minerva MATH
+OlympiadBench
+
+Rule
+15.0±0.415.0\pm 0.4
+5.6±0.65.6\pm 0.6
+50.3±0.650.3\pm 0.6
+69.4±0.469.4\pm 0.4
+17.8±0.617.8\pm 0.6
+31.6±0.031.6\pm 0.0
+
+LLM-Verifier
+16.4±1.016.4\pm 1.0
+7.2±0.97.2\pm 0.9
+51.5±1.051.5\pm 1.0
+70.8±0.770.8\pm 0.7
+18.5±0.818.5\pm 0.8
+32.0±0.632.0\pm 0.6
+
+Compass Appeals
+16.7±0.816.7\pm 0.8
+7.4±0.87.4\pm 0.8
+51.8±0.851.8\pm 0.8
+71.0±0.671.0\pm 0.6
+18.9±0.718.9\pm 0.7
+32.3±0.532.3\pm 0.5
+
+Compass Appeals+PGBC
+18.7±0.718.7\pm 0.7
+8.9±0.88.9\pm 0.8
+53.0±0.753.0\pm 0.7
+71.7±0.571.7\pm 0.5
+21.5±0.621.5\pm 0.6
+33.1±0.533.1\pm 0.5
+
+Compass Appeals+PGFC
+19.8±0.419.8\pm 0.4
+9.8±0.19.8\pm 0.1
+54.0±0.354.0\pm 0.3
+72.1±0.772.1\pm 0.7
+20.1±0.320.1\pm 0.3
+33.8±0.933.8\pm 0.9
+
+### G.2 Varying the True Noise Channel
+
+The rate-misspecification experiment varies supplied estimates around a fixed true channel. Table 9 instead changes the true input channel and reports average accuracy across the six math datasets. PGBC performance decreases as c=1−ρ0−ρ1c=1-\rho_{0}-\rho_{1} shrinks, while PGFC is more stable over the tested range. This pattern is consistent with the inverse factor in PGBC; it does not imply that PGFC can recover a signal from an uninformative channel.
+
+Table 9: True-channel sweep: average accuracy (%) across six math benchmarks.
+
+ρ0\rho_{0}
+ρ1\rho_{1}
+cc
+Noise
+PGBC
+PGFC
+Oracle
+
+0.05
+0.10
+0.85
+27.0±0.827.0\pm 0.8
+31.5±0.631.5\pm 0.6
+31.1±0.331.1\pm 0.3
+31.8±0.531.8\pm 0.5
+
+0.10
+0.20
+0.70
+20.4±0.820.4\pm 0.8
+31.1±0.631.1\pm 0.6
+31.6±0.631.6\pm 0.6
+31.8±0.531.8\pm 0.5
+
+0.15
+0.30
+0.55
+17.2±1.017.2\pm 1.0
+29.4±0.829.4\pm 0.8
+30.7±0.730.7\pm 0.7
+31.8±0.531.8\pm 0.5
+
+0.20
+0.40
+0.40
+14.5±1.214.5\pm 1.2
+26.4±1.026.4\pm 1.0
+30.5±0.930.5\pm 0.9
+31.8±0.531.8\pm 0.5
+
+### G.3 Auxiliary-Verifier Calibration and Estimation Error
+
+Let ss and ff be the auxiliary verifier’s sensitivity and false-positive rate on appealed rule negatives, and let π\pi denote the prevalence of true false negatives in that pool. Provided s≠fs\neq f, calibration gives
+
+pflip\displaystyle p_{\mathrm{flip}}
+=f+(s−f)​π,\displaystyle=f+(s-f)\pi,
+π^\displaystyle\widehat{\pi}
+=clip[0,1]⁡(p^flip−f^s^−f^),\displaystyle=\operatorname{clip}_{[0,1]}\!\left(\frac{\widehat{p}_{\mathrm{flip}}-\widehat{f}}{\widehat{s}-\widehat{f}}\right),
+
+(13)
+
+ρ^1\displaystyle\widehat{\rho}_{1}
+=|𝒩R|​π^|𝒩R|​π^+|𝒫R|.\displaystyle=\frac{|\mathcal{N}_{\mathrm{R}}|\widehat{\pi}}{|\mathcal{N}_{\mathrm{R}}|\widehat{\pi}+|\mathcal{P}_{\mathrm{R}}|}.
+
+(14)
+
+The final expression assumes negligible false positives from the rule verifier. The uncalibrated estimator corresponds to s=1s=1 and f=0f=0 before smoothing and pseudocounts. Deployment-time calibration of TinyV on appealed rule negatives yields Table 10.
+
+Table 10: Reported deployment-time calibration on appealed rule-negative responses.
+
+Statistic
+Value
+
+Sensitivity on true false negatives
+0.93
+
+False-positive rate on true negatives
+0.03
+
+Naive ρ^1\widehat{\rho}_{1}
+0.785
+
+Calibration-corrected ρ^1\widehat{\rho}_{1}
+0.780
+
+For an estimate based on historical data and independent of the current rollout, condition on its error δ=ρ^1−ρ1\delta=\widehat{\rho}_{1}-\rho_{1}. Both PGFC weights shift by the same constant: w^R~=wR~+δ\widehat{w}_{\widetilde{R}}=w_{\widetilde{R}}+\delta. With G=∇θ​log​πθ​(y∣x)G=\nabla_{\theta}\log\pi_{\theta}(y\mid x), the score identity 𝔼⁡[G]=0\mathbb{E}[G]=0 implies
+
+𝔼⁡[w^R~​G]\displaystyle\mathbb{E}[\widehat{w}_{\widetilde{R}}G]
+=𝔼⁡[wR~​G],\displaystyle=\mathbb{E}[w_{\widetilde{R}}G],
+
+(15)
+
+𝔼⁡[‖g^​(ρ^1)−g^​(ρ1)‖2]\displaystyle\mathbb{E}\!\left[\|\widehat{g}(\widehat{\rho}_{1})-\widehat{g}(\rho_{1})\|^{2}\right]
+=δ2M​tr⁡(Cov⁡(G))\displaystyle=\frac{\delta^{2}}{M}\operatorname{tr}\!\left(\operatorname{Cov}(G)\right)
+
+(16)
+
+for the average of MM independent rollouts. Thus this ideal unclipped estimator has no population-gradient bias from a fixed rate error, and the mean-square finite-sample perturbation is quadratic in δ\delta. Same-batch estimation and clipping can introduce residual effects; this identity is not a guarantee for the full clipped training objective.
+
+### G.4 Conditional Advantage and Gradient Variance
+
+We pool final trajectory-level advantages across rollout groups conditional on clean correctness. For method mm, define ℐr={(b,i):Rb​i∗=r}\mathcal{I}_{r}=\{(b,i):R^{*}_{bi}=r\}, nr=|ℐr|n_{r}=|\mathcal{I}_{r}|, and a¯r(m)=nr−1​∑(b,i)∈ℐrab​i(m)\bar{a}_{r}^{(m)}=n_{r}^{-1}\sum_{(b,i)\in\mathcal{I}_{r}}a_{bi}^{(m)}. The conditional sample variance is
+
+Var^​(a(m)∣R∗=r)=1nr−1​∑(b,i)∈ℐr(ab​i(m)−a¯r(m))2,r∈{0,1}.\widehat{\operatorname{Var}}(a^{(m)}\mid R^{*}=r)=\frac{1}{n_{r}-1}\sum_{(b,i)\in\mathcal{I}_{r}}\left(a_{bi}^{(m)}-\bar{a}_{r}^{(m)}\right)^{2},\qquad r\in\{0,1\}.
+
+(17)
+
+Table 11 also reports gradient covariance trace relative to Noise and the coefficient of variation (CV) of gradient norms. PGBC has larger conditional advantage variance in both classes and a larger covariance trace than either Noise or PGFC in this measurement.
+
+Table 11: Direct variance measurements. Gradient covariance trace is normalized to the Noise value.
+
+Method
+Var^​(a∣R∗=0)\widehat{\operatorname{Var}}(a\mid R^{*}=0)
+Var^​(a∣R∗=1)\widehat{\operatorname{Var}}(a\mid R^{*}=1)
+tr⁡Cov^​(g)\operatorname{tr}\widehat{\operatorname{Cov}}(g)
+Gradient-norm CV
+
+Noise
+0.107
+0.482
+1.000×1.000\times
+0.729
+
+PGBC
+0.671
+1.194
+3.046×3.046\times
+0.873
+
+PGFC
+0.181
+0.382
+0.905×0.905\times
+0.730
+
+### G.5 Direct-Coefficient REINFORCE
+
+To examine the corrections outside the clipped GRPO variant, we additionally optimize a direct-coefficient REINFORCE estimator. For each response, set
+
+ui={Ri∗,Oracle,R~i,Noise,(R~i−ρ^0)/(1−ρ^0−ρ^1),PGBC,R~i−(1−ρ^1),PGFC.u_{i}=\begin{cases}R_{i}^{*},&\text{Oracle},\\
+\widetilde{R}_{i},&\text{Noise},\\
+(\widetilde{R}_{i}-\widehat{\rho}_{0})/(1-\widehat{\rho}_{0}-\widehat{\rho}_{1}),&\text{PGBC},\\
+\widetilde{R}_{i}-(1-\widehat{\rho}_{1}),&\text{PGFC}.\end{cases}
+
+(18)
+
+Broadcasting Ai,t=uiA_{i,t}=u_{i} to response tokens yields
+
+g^=1K​∑i=1Kui​∑t∇θ​log​πθ​(yi,t∣x,yi,<t).\widehat{g}=\frac{1}{K}\sum_{i=1}^{K}u_{i}\sum_{t}\nabla_{\theta}\log\pi_{\theta}(y_{i,t}\mid x,y_{i,<t}).
+
+(19)
+
+Both corrections improve over Noise on every benchmark in Table 12. This comparison provides evidence for the correction beyond the clipped surrogate used in the main experiments.
+
+Table 12: Additional direct-coefficient REINFORCE results on Qwen2.5-Math-1.5B.
+
+Method
+AIME 2024
+AIME 2025
+AMC 2023
+MATH-500
+Minerva MATH
+OlympiadBench
+
+Oracle
+10.8±0.210.8\pm 0.2
+7.6±0.17.6\pm 0.1
+50.9±0.450.9\pm 0.4
+69.3±0.169.3\pm 0.1
+29.2±0.529.2\pm 0.5
+33.4±0.333.4\pm 0.3
+
+Noise
+7.1±0.77.1\pm 0.7
+4.2±0.64.2\pm 0.6
+37.8±0.837.8\pm 0.8
+54.6±0.554.6\pm 0.5
+15.8±1.015.8\pm 1.0
+25.9±0.625.9\pm 0.6
+
+PGBC
+10.2±0.510.2\pm 0.5
+9.1±0.49.1\pm 0.4
+47.8±0.747.8\pm 0.7
+67.9±0.467.9\pm 0.4
+30.6±0.830.6\pm 0.8
+31.4±0.531.4\pm 0.5
+
+PGFC
+11.1±0.411.1\pm 0.4
+9.4±0.39.4\pm 0.3
+48.4±0.548.4\pm 0.5
+69.2±0.369.2\pm 0.3
+30.0±0.730.0\pm 0.7
+32.2±0.432.2\pm 0.4
+
+### G.6 Increasing the Rollout Count
+
+Table 13 compares Qwen2.5-Math-1.5B with K∈{8,16,32}K\in\{8,16,32\} rollouts. Increasing the sample count improves Noise, but a gap to Oracle remains at every tested KK. More rollouts reduce Monte Carlo variance; they do not remove the underlying reward-channel distortion.
+
+Table 13: Additional rollout-count comparison on Qwen2.5-Math-1.5B.
+
+Rollouts KK
+Oracle
+Noise
+PGBC
+PGFC
+
+8
+33.5±0.333.5\pm 0.3
+24.2±0.724.2\pm 0.7
+32.8±0.632.8\pm 0.6
+33.4±0.533.4\pm 0.5
+
+16
+34.0±0.534.0\pm 0.5
+26.0±0.826.0\pm 0.8
+33.2±0.433.2\pm 0.4
+33.8±0.233.8\pm 0.2
+
+32
+35.2±0.335.2\pm 0.3
+28.7±0.428.7\pm 0.4
+34.4±0.534.4\pm 0.5
+35.0±0.435.0\pm 0.4
+
+## Appendix H Additional Scope Clarifications
+
+### H.1 Informative, Uninformative, and Reversed Channels
+
+The assumption ρ0+ρ1<1\rho_{0}+\rho_{1}<1 means that correct responses are more likely to receive positive reward than incorrect responses:
+
+Pr⁡(R~=1∣R∗=1)=1−ρ1>ρ0=Pr⁡(R~=1∣R∗=0).\Pr(\widetilde{R}=1\mid R^{*}=1)=1-\rho_{1}>\rho_{0}=\Pr(\widetilde{R}=1\mid R^{*}=0).
+
+(20)
+
+At ρ0+ρ1=1\rho_{0}+\rho_{1}=1, the two conditional reward distributions coincide and the transition matrix is singular; observed rewards alone carry no correctness information under this channel model. If ρ0+ρ1>1\rho_{0}+\rho_{1}>1, the channel is anti-informative. When a calibration set identifies that orientation, complementing R~′=1−R~\widetilde{R}^{\prime}=1-\widetilde{R} gives ρ0′=1−ρ0\rho^{\prime}_{0}=1-\rho_{0} and ρ1′=1−ρ1\rho^{\prime}_{1}=1-\rho_{1}, so ρ0′+ρ1′=2−(ρ0+ρ1)<1\rho^{\prime}_{0}+\rho^{\prime}_{1}=2-(\rho_{0}+\rho_{1})<1. The correction can then use the complemented channel. As c=1−ρ0−ρ1c=1-\rho_{0}-\rho_{1} approaches zero from above, PGBC amplifies coefficients through 1/c1/c, whereas PGFC’s expected signal shrinks proportionally to cc.
+
+For content-dependent errors ρ0​(x,y)\rho_{0}(x,y) and ρ1​(x,y)\rho_{1}(x,y), constant-rate corrections operate on an effective channel. Dependence between verifier errors and score terms can leave a residual such as Cov⁡(wR~,G∣R∗)\operatorname{Cov}(w_{\widetilde{R}},G\mid R^{*}). The non-i.i.d. experiment tests empirical behavior under this misspecification; it does not extend the exact population theorem to arbitrary content-dependent noise.
+
+### H.2 Single-Reward Functions and Nonlinear Group Objectives
+
+Every function of one binary reward is affine:
+
+f⁡(R∗)=f⁡(0)+(f⁡(1)−f⁡(0))​R∗.f(R^{*})=f(0)+\bigl(f(1)-f(0)\bigr)R^{*}.
+
+(21)
+
+Replacing R∗R^{*} by its backward-corrected estimator therefore provides an unbiased estimate of f⁡(R∗)f(R^{*}) under the stated channel assumptions. For a function F⁡(R1∗,…,RK∗)F(R_{1}^{*},\ldots,R_{K}^{*}) of an entire group with independent verifier noise, the channel is T⊗KT^{\otimes K}. Inverting this channel can in principle produce an unbiased estimator when TT is invertible, but direct inversion becomes poorly conditioned as group size increases for a noisy channel.
+
+For example, the clean pass@KK outcome is 1−∏j=1K(1−Rj∗)1-\prod_{j=1}^{K}(1-R_{j}^{*}). With independent verifier noise and correctly specified rates, an unbiased estimator is
+
+1−∏j=1K(1−R^j),1-\prod_{j=1}^{K}(1-\widehat{R}_{j}),
+
+(22)
+
+where R^j\widehat{R}_{j} is the backward-corrected reward. A policy gradient for this group objective includes score terms from all KK sampled responses. For a nonlinear function g⁡(px)g(p_{x}) of prompt success probability,
+
+px=𝔼⁡[R~∣x]−ρ01−ρ0−ρ1,p_{x}=\frac{\mathbb{E}[\widetilde{R}\mid x]-\rho_{0}}{1-\rho_{0}-\rho_{1}},
+
+(23)
+
+but the plug-in estimate g⁡(p^x)g(\widehat{p}_{x}) is generally not finite-sample unbiased. Clipping or shrinking p^x\widehat{p}_{x} and using uncertainty-aware weights may be useful practical extensions, but these require separate analysis and experimental validation.
+
+  
+    Experimental support, please
+    view the build logs
+    for errors. Generated by
+    
+      
+        L
+        A
+        T
+        E
+      
+      xml
+      
+    .
+  
+  
+    Instructions for reporting errors
+    
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+      support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+      methods listed below:
+
+    
+      
+• Click the "Report Issue" (
+            
+          ) button, located in the page header.
+    
+    
+Tip: You can select the relevant text first, to include it in your report.
+
+    
+Our team has already identified the following issues. We appreciate your time reviewing and reporting rendering errors we
+      may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+      should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+      all.
+
+    
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a list of packages that need conversion, and welcome developer contributions.
+
+  
+
+  
+    
+      
+        We gratefully acknowledge support from our major funders,
+        member institutions, ,
+        and all contributors.

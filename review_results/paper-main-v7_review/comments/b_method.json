@@ -1,0 +1,92 @@
+[
+  {
+    "title": "Claim that pass@8 stays within 4 points contradicted by Table 2",
+    "quote": "pass@8 ends within 4 points of round 0 in every run",
+    "explanation": "Section 4.2 says pass@8 ends within 4 points of round 0 in every Design I run at 10^-5. In Table 2 (last round R4, k = 8), the pass@k column for run B at seed 0 is -5.3 [-12.0, +2.0], which is outside the 4-point band. Run B at seed 0 is a 10^-5 run, so the statement is false for at least one run. The error understates the largest coverage loss in the headline 'small declines' summary, and the sentence is then used to support 'we read this as a possible small decline'.",
+    "comment_type": "technical",
+    "confidence": "high",
+    "source_section": "4.2 Design I at 10^-5",
+    "related_sections": ["Table 2"]
+  },
+  {
+    "title": "'Correct' is said to be judged by the selecting verifier, but all evaluation uses a different verifier V'",
+    "quote": "means accepted by the veriﬁer (preset reward), the same veriﬁer that selects the",
+    "explanation": "Section 3.4 defines correctness as acceptance by 'the same verifier that selects the training data'. Section 3.2 says that every table regrades all runs with V', which the loop itself used only in the final round. Run A, Run C and Design P selected training data with the original verifier, so for them evaluation and selection verifiers differ. Only Run B (and the final round) satisfy the stated definition. This matters for the paper's central question ('better at mathematics or only at what the verifier accepts'): the measured quantity is acceptance by V', not by the training-time reward. Under V' the A-versus-B comparison also has the original-verifier arm graded by a verifier it never saw, which the text never discusses as a mismatch. The definition should be made per run or the sentence corrected.",
+    "comment_type": "logical",
+    "confidence": "high",
+    "source_section": "3.4 Models, Data, Training, Metrics",
+    "related_sections": ["3.2 Verifier", "Table 2"]
+  },
+  {
+    "title": "Round-0 regrade jump (33.3 to 40.0) is not reconcilable with the claimed negligible patch effect",
+    "quote": "pass@1 40.0 against 33.3 for Run A at seed 1",
+    "explanation": "Regrading the untrained model with V' raises round-0 pass@1 by 6.7 points, about 10 of 150 exam problems. Section 4.3 argues the patch is nearly inert: \\dfrac appears in 0.50-0.73% of generations (roughly one exam problem for a single draw), and kept pools differ by at most 4 of 872 examples. These two facts cannot both come from the same patch unless V' contains other changes (timeout retries, other normalisations) that are never decomposed. A reader cannot tell which verifier component moves accuracy by 6.7 points, nor whether those components also change pool composition between arms A and B. If the other changes are as large as the round-0 shift suggests, the 'patch control could not detect an effect' conclusion and the 'pools differ by at most 4' statement need re-derivation. A per-component attribution of the original-to-V' shift is missing.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "3.2 Verifier",
+    "related_sections": ["4.3 The Patch Control Could Not Detect an Effect"]
+  },
+  {
+    "title": "Training truncation removes the verified answer from 24-26% of pool examples, so training data are no longer verifier-accepted",
+    "quote": "any kept solution longer than about 512 tokens minus the prompt length is cut",
+    "explanation": "Pool membership is decided by the verifier on the full generation (up to 512 new tokens). The training limit of 512 tokens includes the prompt, so the paper itself reports that 24-26% of the round-0 pool is cut in training and loses its final answer and end-of-sequence token. For those examples the object trained on is a truncated, unfinished solution that the verifier never accepted; the filter no longer certifies what the model learns. The model is also taught that long solutions end without an answer or EOS, which can raise the cap-hit share and lower accuracy, an effect indistinguishable from 'drift toward the verifier'. This is an implementation defect in the recipe rather than a property of verifier-filtered self-training, yet the paper frames its conclusion as a null for the recipe. The additional choice of computing loss over the prompt too (and no per-problem cap, so easy problems contribute up to k examples each) further departs from the standard rejection-sampling fine-tuning recipe. There is no ablation that drops or re-packs over-length examples to show the declines survive.",
+    "comment_type": "technical",
+    "confidence": "high",
+    "source_section": "3.4 Models, Data, Training, Metrics",
+    "related_sections": ["4.4 Higher Learning Rates", "4.5"]
+  },
+  {
+    "title": "A 'seed' is said to set training randomness, but the trainer seed is fixed at 42",
+    "quote": "A “seed” sets the exam partition, the selection set and",
+    "explanation": "Section 3.3 states that a seed sets the exam partition, the selection set and the training randomness together. Section 3.4 lists 'trainer seed 42' among the library defaults used for every run. If the trainer seed is constant, training randomness (LoRA init, data order) is not varied by the experiment seed, or at least the paper does not say how the two interact. This affects interpretation of every pair the paper uses as a 'replicate' to gauge training-seed variance, because partition variance and training variance are then confounded differently from what is stated. Reproducibility also suffers: it is unclear which random sources a reader must set to reproduce a run.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "3.3 Two Experimental Designs",
+    "related_sections": ["3.4 Models, Data, Training, Metrics"]
+  },
+  {
+    "title": "The 3.8-point replicate gap used to calibrate training-seed variance cannot be traced to the reported tables",
+    "quote": "as a gauge ends 3.8 points of sample accuracy apart",
+    "explanation": "The paper uses a 'replicate pair' that ends 3.8 points of sample accuracy apart as its only gauge for variance missing from the bootstrap intervals, and it also argues the detectable-effect thresholds are optimistic because of it. The pair is not identified. In the main text, same-configuration changes in sample accuracy at 10^-5 differ by at most 1.6 points (A: -3.3 vs -3.1; B: -4.2 vs -2.6), at 2x10^-4 by 0.0, and at 10^-4 by at most 2.4; the only larger gap is at 5x10^-4 (-10.8 vs -6.0, 4.8) and in round-0 levels (41.0 vs 37.7, 3.3). None gives 3.8, so the reader cannot check which two runs it refers to or whether it is a change or a level. With a gauge based on one pair, and one that mixes partition and training variance, the size of the missing variance term is essentially unquantified, which weakens the 'optimistic threshold' argument in both directions.",
+    "comment_type": "technical",
+    "confidence": "low",
+    "source_section": "3.4 Models, Data, Training, Metrics",
+    "related_sections": ["4.4 Higher Learning Rates", "Table 1", "Table 2"]
+  },
+  {
+    "title": "Counting A and B runs as independent evidence overstates the support for a decline in sample accuracy",
+    "quote": "pass@1 is 3.3–4.7 points lower at round 4, with every interval including zero (Table 2); sample accuracy falls 2.6–4.2 points, with an interval excluding zero for three of the",
+    "explanation": "Section 4.2 reports that the sample-accuracy interval excludes zero for three of four runs and treats this as the basis for a possible decline. The four runs are not four independent observations. A and B at the same seed share the exam partition, the round-0 draws and (per Section 4.3) nearly identical pools, so they are close to replicates of two experiments; the paper says as much about the patch control and in Section 3.4 ('the runs are not independent'). The bootstrap intervals also exclude training-seed variance, which the paper itself measures as comparable to the effect (B minus A flips from +5.3 to -5.3 in pass@1 for near-identical pools). No multiplicity correction is applied across the many metrics, rates and runs. In this setting 'three of four intervals exclude zero' is roughly 'one or two experiments with narrow, optimistic intervals', and the pass@1 and pass@k intervals for the same runs all include zero. The text hedges ('possible small decline'), but the stated count still lends more weight than the design supports.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "4.2 Design I at 10^-5",
+    "related_sections": ["3.4 Models, Data, Training, Metrics", "4.3", "4.4"]
+  },
+  {
+    "title": "Evidence for 'several rounds' and for an effective learning rate never overlap",
+    "quote": "default and was not tuned",
+    "explanation": "The five-round (four adapters) runs use 10^-5, a learning rate for LoRA that is one to two orders below typical values; the paper itself says the adapter changed the MATH-500 outputs little and that unchanged length and cap-hit share are weak evidence the adapter did little. The runs at rates that clearly change behaviour (10^-4 to 5x10^-4) have only three rounds (two adapters) and k = 4. So the study never tests many rounds at a rate where each round has an effect, which is what the framing 'after several generate-verify-train rounds' and the 'null result for one recipe' suggest. The 10^-5 declines also come from runs where the adapter hardly moved the model, so they say little about self-training either way, and the paper concedes the runs differ in k, rounds, pool size and metric so that only 10^-4 to 5x10^-4 isolates the rate. A null at insufficient exposure is weaker than the title implies; the limits of this coverage should be stated next to the headline claim.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "3.4 Models, Data, Training, Metrics",
+    "related_sections": ["4.4 Higher Learning Rates", "3.3 Two Experimental Designs"]
+  },
+  {
+    "title": "pass@1 and pass@k changes for run A, seed 0 have identical point estimates and intervals",
+    "quote": "−3.3 [−10.7, +4.0]",
+    "explanation": "In Table 2 the first row (A, seed 0, 10^-5) gives exactly the same value and interval, -3.3 [-10.7, +4.0], for both Delta pass@1 and Delta pass@k. pass@1 is a single draw per problem while pass@8 is the best of eight, so problem-level paired differences should differ; identical bootstrap intervals to the first decimal require identical paired data. This could be a coincidence (both could reflect the same 5 problems changing), but pass@k then would equal pass@1 under the added/lost definition only by chance, and the column could also be a copy-paste error. Please verify against bootstrap_ci.py output, since the table is the basis for the 'every interval includes zero' conclusions.",
+    "comment_type": "technical",
+    "confidence": "low",
+    "source_section": "Table 2",
+    "related_sections": ["4.2 Design I at 10^-5"]
+  },
+  {
+    "title": "Primary outcome is capped by a verifier defect that rejects nearly all correct answers on roughly 11-12% of problems",
+    "quote": "it rejects 94–98% of correct answers in every round",
+    "explanation": "The verifier treatment states that on the 54-62 problems (of 500) where the gold-storage defect fires, 94-98% of correct answers are rejected, and for 29-34 of them the gold cannot be parsed by the original verifier at all. V' repairs the dfrac issue but, per the paper's own account, not this defect, so about 11-12% of problems (about 16-19 of 150 exam problems) cannot be scored correct whatever the model does. Every accuracy, pass@k and interval in Tables 1-2 is therefore bounded and noisier than reported, the effective exam is closer to 130 problems, and the detectable-effect formula (based on half-widths over 150 problems) mixes in problems that cannot contribute signal. The defect is also a verifier failure of exactly the type the paper's title question is about, yet the main analysis neither excludes these problems nor reports results restricted to problems with a usable gold and working acceptance. The paper notes the defect and defers to an appendix, but the absence of a clean-subset analysis in the primary comparison leaves the 'mathematics versus verifier' question confounded with the verifier's own defect.",
+    "comment_type": "logical",
+    "confidence": "medium",
+    "source_section": "3.2 Verifier",
+    "related_sections": ["3.4 Models, Data, Training, Metrics", "Table 2"]
+  }
+]

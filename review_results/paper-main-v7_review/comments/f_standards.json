@@ -1,0 +1,107 @@
+[
+  {
+    "title": "Intro and Section 4.5 give contradictory ranges for the finished-accuracy loss at 5e-4",
+    "severity": "major",
+    "location": "Introduction (Contributions) vs Section 4.5 / Table 2",
+    "quote": "generations lose 5.5–10.6 points against the untrained model on the same problem mix (A, B and no-ﬁlter runs; train-on-gold about 26)",
+    "explanation": "Section 4.5 says the same quantity is '1.5–9.0 points, with intervals excluding zero in two of six runs'. Table 2 'Finished, matched' for A/B/no-filter at 5e-4 reads -6.1, -1.5, -4.1, -3.2, -9.0, -3.6, so the maximum is 9.0, not 10.6, and the minimum is 1.5, not 5.5. The Contribution bullet states a larger and tighter loss than the table supports, and omits that four of six intervals include zero. This is the headline decomposition contribution, and the paper does not hold it to its own descriptive-only caveat."
+  },
+  {
+    "title": "Inconsistent and unsupported 'sample-accuracy bound' (2.2 vs 1.7 points; 'largest upper limit')",
+    "severity": "major",
+    "location": "Section 3.4 vs Section 5.1 vs Table 2",
+    "quote": "of about 1.7 points is the largest upper limit among observed intervals, a post hoc ﬁgure that omits seed variance, not a power statement",
+    "explanation": "Section 3.4 refers to 'the 2.2-point bound', Section 5.1 to about 1.7. Table 2's sample-accuracy upper limits include +3.2, +5.2, +6.5, +4.4 (and +0.5, +1.7 at 1e-4), so no reading of 'largest upper limit' gives 1.7 or 2.2. If it means the smallest upper limit, it is a minimum over ~20 intervals chosen after the fact, i.e. the most favourable value, which is the opposite of a bound on what the data could hide. The figure is mentioned in several places as evidence for the null, so its definition and selection need to be explicit; as written it is inconsistent and cherry-picked."
+  },
+  {
+    "title": "Title and abstract call it a null while the paper's own data show significant harm; null claims lack equivalence testing and power",
+    "severity": "major",
+    "location": "Abstract, Section 4.6, Section 5.1, Conclusion",
+    "quote": "The mean pass@1 change over the three seeds is −4.1 (t interval [−6.1, −2.1]), and −4.5 for sample accuracy ([−8.0, −1.0])",
+    "explanation": "The headline is 'null result', but the final-round interval excludes zero on the negative side, and so do sample-accuracy intervals in all four A/B runs at 5e-4. The 'null' is only one-sided (no gain). 'No gain detected' is supported only by the stated MDE of ~10 points (6 final round), which is larger than gains typically reported for self-training or RLVR at this scale, and which the paper itself calls 'optimistic thresholds, not bounds'. No equivalence/non-inferiority test (e.g. TOST with a stated margin) is given, so the data neither show absence of a gain nor of a loss. The same paper that demands this standard of others reports an underpowered non-detection as a null in the title, then concedes 'we do not claim that it costs accuracy'. The framing should be 'inconclusive, point estimates negative', not 'null'."
+  },
+  {
+    "title": "Detectable-effect thresholds are computed from intervals the paper says are too narrow, yet stated in the abstract as the design's sensitivity",
+    "severity": "moderate",
+    "location": "Section 3.4 'Detectable effects'; Abstract",
+    "quote": "these are optimistic thresholds, not bounds: even with h as the whole error, a gain at that size is missed 20% of the time, and probably more often",
+    "explanation": "The abstract says 'The design detects only gains of about 10 points of pass@1 (6 in the ﬁnal round)' with no hedge. The paper's own evidence puts training-seed variance at the same order as h: B minus A flips from +5.3 to -5.3 on pools that differ by 0-3 examples, which implies a single-run noise SD of roughly 3.7 points (difference SD of about sqrt2 times that), against bootstrap half-widths of about 7 for pass@1. True power at a 10-point effect is therefore well below 80%. The 2.8h/1.96 formula also reuses h estimated from observed change intervals as if it were a standard error for a gain, and the '4–6.5 of sample accuracy' range is not reproducible from the half-widths in Table 2 (the largest is about 4.3)."
+  },
+  {
+    "title": "Seed variance acknowledged but then ignored when reading interval-excludes-zero results and dose-response",
+    "severity": "major",
+    "location": "Sections 4.2, 4.4",
+    "quote": "The decline may grow with the rate on one seed: at seed 1 sample accuracy falls 3.7, 6.0 and 10.8 points across the three rates, at seed 2 4.7, 6.0 and 6.0.",
+    "explanation": "These differences (2-5 points between rates) are the same size as the B-A sign flip (±5.3) the paper attributes to 'trajectory noise', and each rate in the grid is one or two runs. Each seed also changes the exam partition, so a within-seed comparison across rates mixes rate with nothing else but sees one training draw per cell. The paper states the intervals 'do not include training-seed variance' but nonetheless builds claims on them: 'the sample-accuracy intervals exclude zero in all four A/B runs', 'an interval excluding zero for three of the four runs', and a monotone rate trend. In addition, 'all four A/B runs' are effectively two independent pairs ('same-seed A and B are closer to two replicates'), so the count overstates the evidence. The paper does not apply its own gauge (replicates 3.8 points apart) to these inference-style statements."
+  },
+  {
+    "title": "No multiplicity control, yet counts of intervals excluding zero are used as evidence",
+    "severity": "moderate",
+    "location": "Section 3.4 Uncertainty; Sections 4.2, 4.4, 4.5, Table 2",
+    "quote": "We make no multiplicity correction and the runs are not independent (they share exam partitions and round-0 draws), so patterns across runs are descriptive, not tests.",
+    "explanation": "Table 2 alone reports ~80 intervals (4 metrics, ~20 runs) plus Table 5 and the injected-bias intervals. The paper then reports tallies such as 'with an interval excluding zero for three of the four runs', 'intervals excluding zero in two of six runs' and 'one interval excludes zero and one reaches it', and reads sign consistency as a decline ('the estimates are negative in all three seeds'). Declaring a pattern 'descriptive' does not license using the tallies to support the conclusions (e.g. 'a possible small decline'); and in the opposite direction, with this many intervals, a few excluding zero are expected by chance. The correlation among runs (shared partitions, round-0 draws) is acknowledged but not modelled, e.g. by a mixed model or by pooling per-problem outcomes across runs."
+  },
+  {
+    "title": "Switch to sample accuracy as primary measure was made after seeing results and favours detecting declines",
+    "severity": "moderate",
+    "location": "Section 3.4; Section 1",
+    "quote": "pass@1 was ﬁxed in advance; sample accuracy was not, but it estimates the same quantity from all k samples with less variance, so after the runs we chose it as the primary accuracy measure",
+    "explanation": "The lower-variance measure was adopted after the pre-set measures (pass@1, pass@k) gave non-significant results. Sample accuracy is the measure whose intervals most often exclude zero, so the choice raises the number of 'significant' declines (4.2: 'three of the four runs'; 4.4: 'all four'; 4.6: 'all three intervals exclude zero'). It is the same garden-of-forking-paths pattern the paper's pre-registration language is meant to avoid. Disclosure is given, but the conclusions of Section 5.1 ('Not detectably') and the final-round summary lean on this post hoc measure; a consistent standard would report the pre-set measures as the confirmatory ones and treat sample accuracy as exploratory."
+  },
+  {
+    "title": "The 'independent' second grader is not independent and cannot support the format-artefact claims",
+    "severity": "major",
+    "location": "Section 5.1; Section 6; Section 4.6",
+    "quote": "It reads only the last \\boxed, so a falling boxed share lowers both graders; it does not rule out a format artefact in the gate.",
+    "explanation": "Both graders (V' with the gold wrapped in \\boxed when the prediction contains one, and normalised string match of the last \\boxed) are conditioned on the prediction containing \\boxed and compare the same final string against the same stored golds. The file is even named indep_grade.py and section 5.1 reports agreement ('same sign and size') as robustness. Agreement of two boxed-dependent graders tests only the math-verify parsing step, not the shared dependence on format, normalisation and gold storage, which is the concern of the paper's title. Moreover, string match is stricter on equivalent forms (fractions, units, ordering), so a model that switches to the terse reference style (as the gate does: '$-delimited spans' 60 -> 1,577 of 1,600) can lose credit for form differences. No human or LLM-judge grading of a sample, and no gold-answer-independent check, is offered."
+  },
+  {
+    "title": "Gate failure interpreted as 'imitates terse references and loses reasoning' using the same format-sensitive graders; also based on one seed",
+    "severity": "moderate",
+    "location": "Section 4.6",
+    "quote": "It is not a format defect: on the 500 exam problems the share of generations with a \\boxed answer is unchanged (90.6 → 90.3%), accuracy among them falls from 48.5 to 17.1%, and the median length drops 3.2×",
+    "explanation": "An unchanged boxed share rules out only 'no \\boxed', not other format defects: the model now writes a different style (98% $-spans, 414 vs 1,332 characters), and accuracy among boxed answers is scored by the string-match grader that the paper elsewhere says is format-dependent. Shorter outputs and a lower score are also compatible with answers in a normalised-gold form (the revised recipe 'normalised gold answers') that differs from the grader's expected form, or with truncation of a final answer. The mechanism 'loses reasoning steps' is an inference from length, with no inspection of samples or a per-problem check of whether the final value is right but in a different form. The gate is a single seed with a second rate rerun, so its variance is unknown. Since the paper makes the gate decisive ('the recipe [counts] as able to help' only if it passes), the interpretation of its failure deserves the same care applied to the loop."
+  },
+  {
+    "title": "Final round: three seeds share one exam and recipe was chosen after four failed arms; the headline decline is presented without that caveat in the abstract",
+    "severity": "moderate",
+    "location": "Abstract; Section 4.6",
+    "quote": "in the ﬁnal round, with a revised recipe, pass@1 falls 3.2–4.8 points in each of three seeds (mean −4.1)",
+    "explanation": "The t interval over n=3 uses 2 degrees of freedom and omits exam-draw variance ('one exam draw'). The recipe (completion-only loss, all linear layers, 1,024 cap, normalised gold, new pool) was designed after seeing every earlier arm fail and made several simultaneous changes, so it is a post hoc, multi-change configuration, tested on a gate that failed. Section 4.6 admits 'the loop's decline cannot be attributed to self-training or to the verifier', but the abstract opens with the number as if it were a clean replication. Round-0 pass@1 itself varies 46.8-49.2 across seeds from sampling alone (k=2), a 2.4-point spread comparable to the effects, which makes 'negative in all three seeds' a weaker consistency statement than it sounds."
+  },
+  {
+    "title": "Text claims pass@8 stays within 4 points in every Design I run, but Table 2 shows -5.3",
+    "severity": "minor",
+    "location": "Section 4.2 vs Table 2",
+    "quote": "pass@8 ends within 4 points of round 0 in every run",
+    "explanation": "Table 2 gives the 10^-5 pass@k change for B at seed 0 as -5.3 [-12.0, +2.0]. The sentence understates the largest pass@k decline in the isolated runs, in the direction that supports 'small declines'."
+  },
+  {
+    "title": "Injected-bias controls have no demonstrated sensitivity, yet their null is read as 'no selective avoidance'",
+    "severity": "moderate",
+    "location": "Section 4.6 'Injected bias'; Section 5.3",
+    "quote": "In neither run does the \\boxed share fall selectively where boxing is penalised, so neither validates the audit.",
+    "explanation": "Each control is one seed; the visible-rule control shows +2.8 [-2.8, +8.3] in share difference, so effects below roughly 5-8 points are not detectable, and the rule removes only 35 of 298 kept examples (263 kept), a small dose change. These are compared against point estimates from three unbiased seeds (-3.7, -2.7, -5.5) with no seed-variance estimate. The paper correctly says they 'neither validate the audit', but its text also says the runs 'show no selective avoidance', which a null from a control without a positive-control check cannot show. Without a positive control that the audit can detect avoidance, Table 5's near-zero changes in r_t cannot be interpreted either way; the paper's remedy ('adaptation is not excluded') is fair, but the audit is still proposed as a protocol (Section 5.3) without a demonstration that it works."
+  },
+  {
+    "title": "Audit comparison to train-on-gold r_t drift relies on point estimates whose intervals all include zero",
+    "severity": "minor",
+    "location": "Section 5.3, Table 5",
+    "quote": "Train-on-gold, with no veriﬁer in the loop, gives rt rises of 2.1–3.3 points (Table 5), so rt drifts as much as the falls we observe, unrelated to the veriﬁer.",
+    "explanation": "Both gold rows have intervals [-1.2, 8.1] and [-2.2, 6.7], which include zero, as do the self-training falls (touching zero at best). Calling this drift 'as much as' the falls treats point estimates from one seed each as equal evidence, with 2,000 resamples (fewer than the 10,000 elsewhere) and no seed variance. The three audited self-training runs are also not independent (two share the 5e-4 rate, with same-seed A/B pairs treated as near-replicates elsewhere)."
+  },
+  {
+    "title": "Cap-share attribution varies from -2% to 72% across runs, undermining the 'decomposition' as a finding",
+    "severity": "minor",
+    "location": "Section 4.5, Section 5.3 (ii)",
+    "quote": "attributes 12–30% of the decline to the cap share in the three original seed-1 runs (and −2 and 5% in two further runs) and 52–72% at seed 2",
+    "explanation": "The share of the decline attributed to cap hits ranges from negative to 72% depending on seed, with no intervals, and the conditioning ('The matched measure conditions on which problems ﬁnish after training') makes the finished-accuracy part selection-dependent. Offering this as a recommended check (ii) for others presents an unstable, post hoc, interval-free quantity as protocol; the seed-to-seed spread is itself the main finding and is evidence of the training-seed variance the intervals omit."
+  },
+  {
+    "title": "Grader dependence on the selecting verifier: exam scores use the same verifier family that selects training data, so 'Mathematics vs verifier' cannot be separated by construction",
+    "severity": "moderate",
+    "location": "Section 3.4 ('Correct always means accepted by the veriﬁer'); Section 5.1",
+    "quote": "“Correct” always means accepted by the veriﬁer (preset reward), the same veriﬁer that selects the training data.",
+    "explanation": "The paper's central question requires an exam grader independent of the training verifier. All exam scores use V' (a patched math-verify), while the loop selected with V (or V' in the final round); the paper itself says a verifier-style adaptation would be visible only as a rise in this score. A rise could not be distinguished from verifier-specific learning, and a fall cannot be assigned to either branch; the paper concludes 'neither branch of the question is answered', which is honest but means the title question is unanswerable by design, and this was foreseeable before running (Section 3.4 states the same-verifier grading as a design choice). A held-out grader (LLM judge or human-checked sample) was not tried even on a subset."
+  }
+]

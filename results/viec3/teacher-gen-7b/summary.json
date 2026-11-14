@@ -1,0 +1,15 @@
+{
+ "model": "Qwen/Qwen2.5-7B-Instruct",
+ "k": 4,
+ "max_tokens": 1024,
+ "temp": 0.8,
+ "problems": 300,
+ "samples": 1200,
+ "sample_acc_v": 0.7366666666666667,
+ "sample_acc_string": 0.705,
+ "sample_acc_both": 0.705,
+ "problems_with_a_kept_solution": 237,
+ "kept_for_training": 237,
+ "median_chars_all": 1270.0,
+ "median_chars_kept": 1104
+}

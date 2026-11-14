@@ -1,0 +1,120 @@
+[
+ {
+  "title": "Causal explanation of gate failure stated as fact in abstract",
+  "quote": "so the model imitates\nterse references and loses reasoning, which makes the gate a weak control",
+  "explanation": "The abstract states as a conclusion that the model 'imitates terse references and loses reasoning'. The evidence is three correlates (unchanged boxed share, lower accuracy among boxed answers, 3.2x shorter outputs). Section 2 admits for the closely related Kim et al. result that 'we did not test its cause'. Other implementation-level explanations are left open: the 512-token training limit that includes the prompt cuts 24-26% of kept solutions and removes their final answer and end token, the loss covers the prompt, and the gold is stored without a delimiter. None of these is separated from imitation of terse references, so this mechanism is a hypothesis presented as a finding.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "Abstract",
+  "related_sections": [
+   "Related Work",
+   "Setup"
+  ]
+ },
+ {
+  "title": "Failed positive gate means the null is uninterpretable, not 'a null for the recipe'",
+  "quote": "No arm improves, not even training on reference\nsolutions, so this is a null for the recipe, not a statement about self-training.",
+  "explanation": "The sentence uses the gold arm's failure (-32.2) as if it strengthened the null ('not even'). A positive control that fails shows the pipeline cannot register improvement even when the training signal is as good as it gets. It is therefore evidence of a pipeline defect (truncation, prompt-in-loss, token cap, storage defect) and not just of a weak control. The abstract concedes the gate is weak, but the contribution list still presents a clean null for 'the recipe'. The recipe as run has several choices that are probably unrepresentative (lr 1e-5 'our code's default and not tuned', 512 cap equal to the training limit, prompt loss), so the null may reflect this implementation and not the generate-verify-train recipe the title names.",
+  "comment_type": "logical",
+  "confidence": "high",
+  "source_section": "Introduction",
+  "related_sections": [
+   "Abstract",
+   "Setup"
+  ]
+ },
+ {
+  "title": "Final-round declines are asserted as real while below the stated detectable effect",
+  "quote": "pass@1 falls 3.2–4.8\npoints in each of three seeds (mean −4.1). The design detects only gains\nof about 10 points of pass@1 (6 in the ﬁnal round).",
+  "explanation": "Nulls on gains are justified by intervals and power, but the abstract treats a -4.1 mean drop as a finding although the stated minimum detectable effect in that round is about 6 points. No interval for the drop is given in the abstract, so a reader cannot tell whether it excludes zero. The paper also notes that intervals omit training-seed variance and that a replicate pair differs by 3.8 points. A drop of 3-5 points is of the size of that unmodelled variance. The paper applies a stricter standard to gains than to losses. The final round also uses a 'revised recipe' added after seeing the earlier nulls, so the decline is post hoc and not comparable to the 'any of four learning rates' null in the preceding sentence.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Abstract",
+  "related_sections": [
+   "Introduction",
+   "Setup"
+  ]
+ },
+ {
+  "title": "Learning-rate null overstated: sweep is confounded with k and rounds",
+  "quote": "no gain is detectable on a held-out exam at any learning rate we tried (a coarse grid that\nalso changes k and rounds)",
+  "explanation": "The abstract speaks of 'four learning rates' as if it were a clean learning-rate sweep. The contribution list admits the grid also changes k and rounds, and Section 3.3 says most evidence comes from higher-rate runs listed only in a supplementary table. Learning rate is therefore not isolated, and 'no gain at any learning rate' cannot be read as covering the learning-rate dimension. With the same weak power (10 points), this supports 'we saw no large gain in the configurations tried' and not a null over learning rate. The abstract does not give this caveat.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Introduction",
+  "related_sections": [
+   "Abstract",
+   "Setup"
+  ]
+ },
+ {
+  "title": "Claim that SFT loop 'does not' improve accuracy contradicts the power caveat",
+  "quote": "These studies improve accuracy, which our SFT loop does not",
+  "explanation": "Related Work contrasts RLVR studies that improve accuracy with an SFT loop that 'does not'. Elsewhere the paper says its design detects only gains of about 10 pass@1 points (6 in the final round), with optimistic thresholds, and that gains below this 'could have been missed'. The data show only that no gain was detected, not that none exists. The comparison with RLVR is also not matched: one adapter per round from the base model, 1 epoch, lr 1e-5 and a 512-token cap versus GRPO with online rollouts. The sentence suggests an SFT-versus-RL difference that the experiments cannot establish.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Related Work",
+  "related_sections": [
+   "Introduction",
+   "Setup"
+  ]
+ },
+ {
+  "title": "Self-inflicted storage bug framed as verifier bias; scope of 'the verifier' question",
+  "quote": "A format probe that re-renders gold answers in valid forms shows that \\dfrac\nand \\tfrac are always rejected",
+  "explanation": "The title, abstract and Section 3.2 heading ('the Verifier and Its Directional Bias') frame the study around what 'the verifier accepts'. The dominant defect (rejecting 15.5-18.3% of accepted generations, 94-98% of correct answers on affected problems, with 29-34 of those problems having unparseable golds) comes from the authors' own storage of gold answers without a delimiter, not from math-verify's judgement. Independent measurement on real solutions gives a 7.8% false-negative rate, and the cited work reports 0.95 recall for math-verify on MATH. The introduction's 'frequent verifier defect' and the abstract's one-in-six figure present a pipeline bug as evidence about verifier-filtered training. The abstract partly admits the audit is uninformative, but the framing still raises the expectation that the verifier question is being tested. Also, the 8-of-10 'probably the gold-storage defect' is an untested attribution.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Setup",
+  "related_sections": [
+   "Abstract",
+   "Introduction"
+  ]
+ },
+ {
+  "title": "Decomposition listed as a contribution though it follows Xu et al. and is hedged elsewhere",
+  "quote": "A decomposition of an accuracy decline under a ﬁxed token cap into a\nﬁnished-accuracy part and a cap-share part",
+  "explanation": "Related Work says the separation of finished accuracy from termination is motivated by Xu et al. [15], who identify 'a ﬁxed token cap under style drift' as a measurement failure, and states that the per-round false-reject measurement and the patch are not claimed as contributions. The decomposition is presented as a contribution without the same disclaimer. Also, the contribution states that finished generations lose 5.5-10.6 points at the highest rate, but the introduction says 'on one seed the cap share carries more of it', and conditioning on finished generations is a selected subset whose composition differs between the trained and untrained model. 'The same problem mix' only partly addresses this. The bullet is more confident than the text supports.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Introduction",
+  "related_sections": [
+   "Related Work"
+  ]
+ },
+ {
+  "title": "Pre-registration framing overstates what was fixed in advance",
+  "quote": "We ﬁxed four measures in advance",
+  "explanation": "The paper then says the reading rule can only fire if accuracy rises, and that the higher learning rates, the controls, the primary accuracy measure, the termination measures, re-scoring and the final round were all added after seeing earlier runs. Of the headline results (abstract), the final-round decline, the gate, the boxed/accuracy decomposition and the audit are all post hoc. The sentence about prespecified measures suggests more confirmatory structure than exists; further, the pre-set rule could not detect the observed outcome (declines), so no prespecified test bears on the main findings. The abstract does not mark which results are post hoc.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "Introduction",
+  "related_sections": [
+   "Abstract",
+   "Setup"
+  ]
+ },
+ {
+  "title": "Unclear relation between 'patched verifier', V and V′; Run B definition",
+  "quote": "Every table grades all runs with V ′ , which the loop used\nonly in the ﬁnal round",
+  "explanation": "The patch is defined as rewriting \\dfrac and \\tfrac to \\frac 'and nothing else'. V′ is defined separately as wrapping the gold in \\boxed{} when the prediction contains one. The abstract says 'one patched veriﬁer' and Run B is 'patched veriﬁer', so it is unclear whether V′ includes the dfrac patch, whether Run B's selection used the dfrac patch or V′, and which is applied in the regrade of Run A versus B. The A-versus-B contrast is described as the central control, and the reader cannot tell if the two arms differ in the dfrac rewrite (0-4 examples) or in V′ (+23% pool). The A-B difference of the selection verifier is the central comparison, so this must be explicit.",
+  "comment_type": "logical",
+  "confidence": "medium",
+  "source_section": "Setup",
+  "related_sections": [
+   "Abstract"
+  ]
+ },
+ {
+  "title": "'Held-out' exams and 'common form of the loop' overgeneralise",
+  "quote": "We study the question\nin a cheap and common form of the loop, oﬄine rejection-sampling SFT",
+  "explanation": "The abstract describes 'held-out MATH-500 and GSM8K exams'. Design P selects and evaluates on the same 1,000 problems, so those results are not held-out, and in Design I the 150-problem exam is a 30% partition of a single 500-problem set while generation runs on all 500. The final 500-problem round's held-out status is not described in this part. In addition, 'common' is asserted for a recipe with unusual settings: restart-from-base fresh adapters each round, one epoch, lr 1e-5, loss on the prompt, 512-token sequence limit including prompt, LoRA on q and v only. The cited loops (STaR, ReST-EM, RFT) differ in these. The scope of the title, 'One Verifier-Filtered Self-Training Recipe', is more cautious than 'common', so the introduction contradicts it.",
+  "comment_type": "logical",
+  "confidence": "low",
+  "source_section": "Introduction",
+  "related_sections": [
+   "Abstract",
+   "Setup"
+  ]
+ }
+]

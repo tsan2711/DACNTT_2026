@@ -1,0 +1,72 @@
+[
+ {
+  "title": "Failed positive gate leaves the null uninformative",
+  "quote": "",
+  "explanation": "The gate failed, so the null cannot be separated from a recipe defect (truncation, off-policy terse references). Paper scopes the null to this recipe; stronger framing would overclaim.",
+  "comment_type": "claim_accuracy",
+  "severity": "major"
+ },
+ {
+  "title": "Seed variance and multiplicity not controlled",
+  "quote": "",
+  "explanation": "Counts of intervals excluding zero come from single-seed bootstraps without multiplicity control; A/B share partitions.",
+  "comment_type": "methodology",
+  "severity": "major"
+ },
+ {
+  "title": "Training truncation / recipe defect",
+  "quote": "",
+  "explanation": "About 24-26% of pool examples lose their final answer in training; the null is partly about this implementation.",
+  "comment_type": "methodology",
+  "severity": "major"
+ },
+ {
+  "title": "Graders not independent",
+  "quote": "",
+  "explanation": "V' and string match both depend on \\boxed and gold storage; defect not fully removed.",
+  "comment_type": "methodology",
+  "severity": "major"
+ },
+ {
+  "title": "Gate mechanism asserted not tested",
+  "quote": "",
+  "explanation": "Unchanged boxed share does not exclude other format artefacts; text now hedged.",
+  "comment_type": "claim_accuracy",
+  "severity": "moderate"
+ },
+ {
+  "title": "Detectable-effect and 1.7-point bound are post hoc",
+  "quote": "",
+  "explanation": "Described as post hoc in text; seed variance omitted.",
+  "comment_type": "claim_accuracy",
+  "severity": "moderate"
+ },
+ {
+  "title": "Gold arm is not a valid r_t drift baseline",
+  "quote": "",
+  "explanation": "Gold arm collapses the model and its intervals include zero.",
+  "comment_type": "methodology",
+  "severity": "moderate"
+ },
+ {
+  "title": "Cap-share attribution varies -2% to 72%",
+  "quote": "",
+  "explanation": "Section 4.5 vs 5.3 mention different run sets.",
+  "comment_type": "presentation",
+  "severity": "moderate"
+ },
+ {
+  "title": "Table 2 Run A seed 0 duplicate entries",
+  "quote": "",
+  "explanation": "dpass@1 and dpass@k identical; check source.",
+  "comment_type": "presentation",
+  "severity": "minor"
+ },
+ {
+  "title": "Fixed in this pass: pass@8 range, 1.7 bound, intro range, one-in-six, format-defect wording, injected-bias comparison",
+  "quote": "",
+  "explanation": "Edited in paper_main.tex.",
+  "comment_type": "presentation",
+  "severity": "minor"
+ }
+]

@@ -1,0 +1,1 @@
+The core contribution (a scoped null for sub-2B self-training with a failed positive gate) is sound and worth keeping. Main concerns: seed variance and multiplicity, the recipe truncation defect, and non-independent graders. Numerical inconsistencies flagged by reviewers were fixed. Remaining issues are fixable framing and caveats.
