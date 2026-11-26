@@ -28,7 +28,7 @@ from kaggle_driver import run_child, StallTracker
 out = "/kaggle/working/results/viec3/{name}"
 os.makedirs(out, exist_ok=True)
 cmd = ["python", "-u", "-m", "experiments.viec3.teacher_gen", "--model", "{model}", "--out", out,
-       "--seed", "{seed}", "--k", "4", "--max-tokens", "1024", "--keep", "298"]
+       "--seed", "{seed}", "--k", "4", "--max-tokens", "1024", "--keep", "298", "--per-problem", "{per_problem}"]
 for attempt in range(4):                       # resumable: a stalled/killed attempt continues where it stopped
     status = run_child(cmd, __import__("pathlib").Path("/kaggle/working/run_{name}.log"), StallTracker(30 * 60), poll=10.0)
     print("attempt", attempt, status, flush=True)
@@ -40,7 +40,7 @@ print(open(out + "/summary.json").read() if os.path.exists(out + "/summary.json"
 B2_ARGS = ["--n", "500", "--rounds", "2", "--k", "2", "--max-tokens", "1024", "--seed", "{seed}",
            "--learning-rate", "{lr}", "--fixed-pipeline", "--train-pool-n", "300", "--completion-only",
            "--lora-targets", "all-linear", "--max-seq-length", "1024", "--train-on-gold",
-           "--teacher-solutions", "experiments/viec3/teacher_solutions.jsonl", "--max-train-examples", "298"]
+           "--teacher-solutions", "experiments/viec3/teacher_solutions.jsonl", "--max-train-examples", "{max_train}"]
 
 B2_CELL = '''import subprocess, signal, os
 out = "/kaggle/working/results/viec3/{name}"
@@ -68,17 +68,19 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--lr", default="1e-4")
     ap.add_argument("--name", default=None)
+    ap.add_argument("--per-problem", type=int, default=1, help="b1: verified solutions kept per problem")
+    ap.add_argument("--max-train", type=int, default=298, help="b2: cap on training examples per round")
     a = ap.parse_args()
     extra = {}
     if a.which == "b1":
         name = a.name or "teacher-gen-7b"
-        cell1 = B1_CELL.format(name=name, model=a.model, seed=a.seed)
+        cell1 = B1_CELL.format(name=name, model=a.model, seed=a.seed, per_problem=a.per_problem)
     else:
         if not a.teacher or not a.teacher.is_file():
             ap.error("b2 needs --teacher FILE")
         name = a.name or f"gate-teacher-s{a.seed}"
         extra["experiments/viec3/teacher_solutions.jsonl"] = a.teacher
-        args = ", ".join(json.dumps(x.format(seed=a.seed, lr=a.lr)) for x in B2_ARGS)
+        args = ", ".join(json.dumps(x.format(seed=a.seed, lr=a.lr, max_train=a.max_train)) for x in B2_ARGS)
         cell1 = B2_CELL.format(name=name, model=MODEL, args=args)
     compile(cell1, "cell1", "exec")
     meta = json.loads(a.meta.read_text())

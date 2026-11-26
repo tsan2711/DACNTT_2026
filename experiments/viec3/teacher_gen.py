@@ -41,7 +41,9 @@ def main() -> int:
     ap.add_argument("--max-tokens", type=int, default=1024)
     ap.add_argument("--temp", type=float, default=0.8)
     ap.add_argument("--batch", type=int, default=8, help="problems per generate() call (x k sequences)")
-    ap.add_argument("--keep", type=int, default=298)
+    ap.add_argument("--keep", type=int, default=298, help="number of problems kept")
+    ap.add_argument("--per-problem", type=int, default=1,
+                    help="distinct verified solutions kept per problem (up to this many; 1 = old behaviour)")
     ap.add_argument("--max-problems", type=int, default=None, help="debug: only the first N pool problems")
     ap.add_argument("--cache", type=Path, default=REPO / "data" / "gold")
     args = ap.parse_args()
@@ -124,20 +126,24 @@ def main() -> int:
                 good.append(t)
                 lens_ok.append(len(t))
         if good:
-            cands[r["item_id"]] = (r["dataset"], rng.choice(good))
+            uniq = list(dict.fromkeys(good))
+            rng.shuffle(uniq)
+            cands[r["item_id"]] = (r["dataset"], uniq[: args.per_problem])
     ids = sorted(cands)
     rng.shuffle(ids)
     kept = ids[: args.keep]
     with (args.out / "teacher_solutions.jsonl").open("w", encoding="utf-8") as fh:
         for i in kept:
-            ds, sol = cands[i]
-            fh.write(json.dumps({"dataset": ds, "item_id": i, "solution": sol}, ensure_ascii=False) + "\n")
+            ds, sols = cands[i]
+            for sol in sols:
+                fh.write(json.dumps({"dataset": ds, "item_id": i, "solution": sol}, ensure_ascii=False) + "\n")
     summary = {
         "model": args.model, "k": args.k, "max_tokens": args.max_tokens, "temp": args.temp,
         "problems": len(rec), "samples": n_samples,
         "sample_acc_v": n_v / max(n_samples, 1), "sample_acc_string": n_s / max(n_samples, 1),
         "sample_acc_both": n_both / max(n_samples, 1),
         "problems_with_a_kept_solution": len(cands), "kept_for_training": len(kept),
+        "solutions_kept": sum(len(cands[i][1]) for i in kept), "per_problem": args.per_problem,
         "median_chars_all": st.median(lens_all) if lens_all else None,
         "median_chars_kept": st.median(lens_ok) if lens_ok else None,
     }

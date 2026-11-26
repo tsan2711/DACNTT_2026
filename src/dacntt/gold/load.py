@@ -29,6 +29,9 @@ class GoldItem:
     #: model is prompted for. Only used by the ``--train-on-gold`` control
     #: (Giai đoạn 6); the GVT loop proper never reads it.
     solution: str = ""
+    #: Additional verified teacher solutions for the same problem (positive gate
+    #: with several solutions per problem). Only read with ``--train-on-gold``.
+    extra_solutions: tuple[str, ...] = ()
 
 
 def load_gold(

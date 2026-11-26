@@ -140,13 +140,17 @@ def main(argv: list[str] | None = None) -> int:
 
         if not args.train_on_gold:
             raise SystemExit("--teacher-solutions needs --train-on-gold (it replaces item.solution)")
-        teacher = {}
+        teacher: dict[str, list[str]] = {}
         for line in Path(args.teacher_solutions).read_text(encoding="utf-8").splitlines():
             if line.strip():
                 rec = json.loads(line)
-                teacher[f"{rec['dataset']}:{rec['item_id']}"] = rec["solution"]
+                teacher.setdefault(f"{rec['dataset']}:{rec['item_id']}", []).append(rec["solution"])
         items = [
-            dataclasses.replace(it, solution=teacher.get(f"{it.dataset}:{it.item_id}", ""))
+            dataclasses.replace(
+                it,
+                solution=(teacher.get(f"{it.dataset}:{it.item_id}") or [""])[0],
+                extra_solutions=tuple((teacher.get(f"{it.dataset}:{it.item_id}") or [""])[1:]),
+            )
             if f"{it.dataset}:{it.item_id}" in (train_ids or frozenset())
             else it
             for it in items

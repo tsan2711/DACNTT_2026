@@ -819,3 +819,41 @@ Trước: thân bài hết trang 16, references trang 17–18 (tổng 39 trang).
 
 ## Chốt số r_t (2026-11-10)
 Script chuẩn là `experiments/viec3/review_cpu/rt_audit.txt` (Bảng 4). Khoảng đúng: **15.5–18.3%** (R0 18.3/16.8/15.7). Con số 18.4 ở các mục trên đến từ script `scored/`+`patched/` cũ, lệch 1–2 mẫu, không dùng nữa. `paper_main.tex` và `supplementary.tex` đã dùng 18.3; `paper_revised.tex` là bản cũ, giữ nguyên.
+
+## 2026-11-25 — sửa theo DA148-answer-2 (lần 3), Track A (backup: papers/latex/paper_main.pre_da148-3.tex)
+- B2.1 Mục 3.4: "Correct" = chấp nhận bởi V′ (chấm mọi bảng); loop chọn dữ liệu bằng V chưa vá trước vòng cuối, V′ ở vòng cuối.
+- B2.2 Mục 5.1: phạm vi −1,3…−12,0 ghi rõ "on MATH-500", thêm Run C GSM8K (−12,7 / −22,0).
+- B2.3 Mục 4.4: B−A seed 2 sửa thành [−12,7; +1,3] (khớp regrade/ci.md dòng B_5e-4_s2 − A_5e-4_s2).
+- B2.4 Mục 4.6: định nghĩa rõ tỷ lệ \boxed (\boxed cuối, ngoặc cân bằng, như gate_anatomy.py); đếm mọi \boxed (summary.csv) lệch ≤0,3 điểm (đã kiểm: gold 90,6/90,9; teacher 94,3/94,3; 91,5/91,6; 92,6/92,8; loop −0,6/−0,4, −5,1/−5,3).
+- B2.5 Mục 3.2: mẫu còn timeout sau retry 60 s (1–4 mẫu ở 8 run, theo summary.csv timeouts_after_retry) tính là bị từ chối.
+- Dose: 20,5% và 23,5% (237, 228 so với 298) trong abstract.
+- Bảng 2: chú thích "A, 0" giải thích rõ không phải lỗi sao chép.
+- Tài liệu tham khảo xếp theo họ tác giả (như splncs04), số trích tự đổi.
+- Văn phong: viết lại câu gate ở abstract, kết luận (tách câu), Mục 4.6 (gate), Mục 5.1 (format artefact); nén Injected bias / Limitations / Audit để giữ 15 trang.
+- Chưa làm (hết chỗ 15 trang): tách "Injected bias" thành mục con; chú thích 3 cắt Contributions.
+
+## 2026-11-25 — openaireview R9 (8 sub-agent, 91 góp ý → 38 mục: 8 major / 16 moderate / 14 minor)
+Kết quả: `review_results/paper-main-v9_review/final_issues.json` (save_viz_json lỗi thiếu module `reviewer`, bỏ qua). Số liệu đối chiếu với ci.md/summary.csv: không có lỗi số học.
+Đã sửa trong `paper_main.tex` (vẫn 15 trang):
+- Abstract: "leaves it unchanged" → "shows no detectable change"; "15–18% of correct solutions" → "of V′-accepted generations".
+- Conclusion: "about 30 points" → "32 points"; bỏ câu audit lặp.
+- Table 1 caption: "rounds 1–2" → "between rounds 0 and 2".
+- Sec 4.5: "the decline sits in finished accuracy" → "the cap share does not explain the decline, but matched finished changes are small".
+- Limitations: "one model family and size" → nêu có 0.5B ở Design P.
+Chưa sửa (cần chọn hoặc cần chỗ): phương sai seed của gap loop–teacher, MDE post hoc, kiểm contamination, nhãn Q1/Q2 trong intro, đổi tiêu đề, timeout "1,200–8,000", "2–14 points" cap-hit, 15.5–18.3% vs gold 20–23%.
+
+## 2026-11-25 (tối) — Đợt 1 sau R9 (bản 15 trang, 0 overfull; backup `paper_main.pre_r9.tex`)
+- Abstract/Intro: nhãn Q1/Q2, "neither Q1 nor Q2 is established", ghi "intervals omit seed variance" ở abstract; "decline lies partly in finished accuracy…" thay "most clearly".
+- Mục 3.2: V′ bọc gold chỉ khi có \boxed; gold không parse "caps the attainable gain"; mẫu số timeout 1.000–8.000.
+- Mục 3.3/3.4: định nghĩa "seed" (trainer seed 42 cố định); MDE thực tế ~14 do spread B−A.
+- Mục 4.4: "consistent with, not established", B−A seed 2 sample accuracy −4,7 [−8,2; −1,2], "trajectory noise larger than the problem-level intervals".
+- Mục 4.6: thêm khoảng cách trên sample accuracy (2,7 / 5,5) và pass@2 của teacher (−0,8 / −1,6); chú thích Bảng 4 "descriptive".
+- Limitations: Recipe choice (6 thay đổi, không ablate, teacher không phải positive control). Conclusion: 32 điểm, "one interval excludes zero; all three sample-accuracy intervals do".
+- Cắt: Injected bias còn 4 dòng, Related Work gọn (vẫn giữ cite Kim, Imperfect Verifiers), bỏ dòng "Next".
+
+## 2026-11-26 — G3 vào bài (backup: *.pre_g3.tex)
+- G3 teacher Qwen2.5-Math-7B (834/805 ví dụ, seed 1/2): không gain. Thêm 2 dòng Bảng 4, đoạn ngắn Mục 4.6, abstract/limitations/conclusion, mục "Math-specialised teacher" trong phụ lục. Giữ tiêu đề.
+- Gap teacher−loop lấy từ regrade/ci.md (CONTRASTS mới): cận +0.8 → +1.0, 8.7 → 8.6.
+- Giữ 15 trang: nén Mục 4.6 (anatomy chuyển hẳn sang phụ lục), "Injected bias", tài liệu >=6 tác giả dùng et al.
+- Tag trong Code availability: paper-2026-11c (CHƯA tạo/push).
+- Kiểm cuối 26/11: abstract 'this teacher arm' → 'the first teacher arm'; độ lệch đếm \boxed 0.3 → 0.4 (teacher toán).

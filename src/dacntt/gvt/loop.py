@@ -224,6 +224,8 @@ def _select_examples(
         if train_on_gold:
             if item.solution:
                 examples.append(TrainExample(item.problem, item.solution))
+                for extra in item.extra_solutions:
+                    examples.append(TrainExample(item.problem, extra))
             continue
         for solution in select_batch(item.gold, texts, adapter, select_all=select_all):
             examples.append(TrainExample(item.problem, solution))

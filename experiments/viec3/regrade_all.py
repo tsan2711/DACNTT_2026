@@ -54,12 +54,15 @@ RUNS = {
     "P_1.5B": "qwen15b-n500", "P_0.5B": "qwen05b-n500",
     "FINAL_loop_s1": "gvt-s1-lr1e4", "FINAL_loop_s2": "gvt-s2-lr1e4", "FINAL_loop_s3": "gvt-s3-lr1e4",
     "FINAL_gold_1e-4": "gate-gold-lr1e4", "FINAL_gold_2e-5": "gate-gold-lr2e5", "FINAL_teacher_s1": "gate-teacher-s1", "FINAL_teacher_s2": "gate-teacher-s2",
+    "G3_mathteacher_s1": "gate-mathteacher-s1", "G3_mathteacher_s2": "gate-mathteacher-s2",
 }
 
 CONTRASTS = [("B_1e-5_s0", "A_1e-5_s0"), ("B_1e-5_s1", "A_1e-5_s1"), ("B_5e-4_s1", "A_5e-4_s1"),
              ("B_5e-4_s2", "A_5e-4_s2"), ("NF_5e-4_s1", "A_5e-4_s1"), ("NF_5e-4_s2", "A_5e-4_s2"),
              ("G_5e-4_s1", "A_5e-4_s1"), ("G_5e-4_s2", "A_5e-4_s2"), ("A_5e-4_s1_rep", "A_5e-4_s1"),
-             ("A_5e-4_s1_msl1024", "A_5e-4_s1_rep")]
+             ("A_5e-4_s1_msl1024", "A_5e-4_s1_rep"),
+             ("FINAL_teacher_s1", "FINAL_loop_s1"), ("FINAL_teacher_s2", "FINAL_loop_s2"),
+             ("G3_mathteacher_s1", "FINAL_loop_s1"), ("G3_mathteacher_s2", "FINAL_loop_s2")]
 
 
 # ---------------------------------------------------------------- string-match grader (same as indep_grade.py)
