@@ -1,8 +1,9 @@
 """Boxed share on biased vs other problems, round 0 -> last, per run.
 
-    .venv/bin/python -m experiments.viec3.bias_groups RUN_DIR [--B 5000]
+        .venv/bin/python -m experiments.viec3.bias_groups RUN_DIR [--B 5000] [--hash 0.3]
 
-For the content-learnable injected bias (--inject-bias-content) the select
+With --hash SHARE the biased group is the hash-chosen share of golds used by
+--inject-boxed-bias (run bias30). For the content-learnable injected bias (--inject-bias-content) the select
 verifier rejects every \\boxed answer whose gold contains \\frac/\\dfrac. A model
 that learns the verifier should stop boxing on those problems more than on the
 rest. Reports, per group, the share of generations containing \\boxed in round
@@ -18,20 +19,23 @@ import argparse
 import json
 import random
 import re
+import zlib
 from pathlib import Path
 
 BIASED = re.compile(r"\\[dt]?frac")
 BOXED = re.compile(r"\\boxed")
 
 
-def load(run: Path) -> dict[int, dict[str, tuple[bool, list[bool]]]]:
+def load(run: Path, hash_share: float = 0.0) -> dict[int, dict[str, tuple[bool, list[bool]]]]:
     out: dict[int, dict[str, tuple[bool, list[bool]]]] = {}
     for line in (run / "generations.jsonl").open(encoding="utf-8"):
         d = json.loads(line)
         if d.get("dataset") != "math500":
             continue
         out.setdefault(d["round"], {})[d["item_id"]] = (
-            bool(BIASED.search(d["gold"])),
+            zlib.crc32(d["gold"].strip().encode()) % 1000 < hash_share * 1000
+            if hash_share > 0
+            else bool(BIASED.search(d["gold"])),
             [bool(BOXED.search(t)) for t in d["texts"]],
         )
     return out
@@ -63,8 +67,8 @@ def boot(rounds: dict, last: int, B: int, seed: int = 0) -> dict[str, tuple[floa
     return {k: (sorted(v)[int(0.025 * B)], sorted(v)[int(0.975 * B)]) for k, v in acc.items()}
 
 
-def report(run: Path, B: int) -> None:
-    rounds = load(run)
+def report(run: Path, B: int, hash_share: float = 0.0) -> None:
+    rounds = load(run, hash_share)
     last = max(rounds)
     ids = sorted(set(rounds[0]) & set(rounds[last]))
     n_b = sum(rounds[0][i][0] for i in ids)
@@ -86,9 +90,10 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("runs", nargs="+", type=Path)
     ap.add_argument("--B", type=int, default=5000)
+    ap.add_argument("--hash", type=float, default=0.0, dest="hash_share")
     a = ap.parse_args()
     for r in a.runs:
-        report(r, a.B)
+        report(r, a.B, a.hash_share)
 
 
 if __name__ == "__main__":

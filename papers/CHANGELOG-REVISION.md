@@ -857,3 +857,19 @@ Chưa sửa (cần chọn hoặc cần chỗ): phương sai seed của gap loop�
 - Giữ 15 trang: nén Mục 4.6 (anatomy chuyển hẳn sang phụ lục), "Injected bias", tài liệu >=6 tác giả dùng et al.
 - Tag trong Code availability: paper-2026-11c (CHƯA tạo/push).
 - Kiểm cuối 26/11: abstract 'this teacher arm' → 'the first teacher arm'; độ lệch đếm \boxed 0.3 → 0.4 (teacher toán).
+
+## 2026-11-28 — R10: sửa 5 việc và rà số liệu lần cuối (backup: *.pre_r10.tex)
+- Abstract viết lại (234 từ theo PDF), chỉ giữ chênh lệch teacher − loop.
+- Intro: tách câu dài, bỏ các số RLVR đã có ở Related Work và câu "pooled decline absent"; Contributions viết gọn, nằm trọn trang 2. Uncertainty tách câu.
+- Liều 20,5% / 23,5% thống nhất bài chính và phụ lục.
+- Số sai/cũ đã sửa (đối chiếu regrade/ci.json, flags, rt_audit.txt, metrics.csv): tỷ lệ cap share 10–29 / −1, 4 / 57–73; "up to 73%"; 6 đầu mút ở Bảng 5; pool 391; pass@1 log gốc 32,0; timeout 9 run, 2.000–40.000.
+- Phụ lục: khôi phục cột Kept pool/Boxed của bảng lrcheck; "five of six" → "two of six"; đoạn selection vs exam chấm lại bằng V′ (script mới review_cpu/selection_vs_exam.py), kết luận yếu đi; bảng reeval ghi rõ dùng verifier gốc; các đầu mút khoảng tin cậy, churn, liều, MDE.
+- bias_groups.py thêm --hash để tái lập khoảng −1,8 [−7,4; +3,8] của run bias30.
+- Response letter: M3 → NOT DONE, m4/m6 cập nhật, thêm mục liệt kê lỗi số liệu.
+- Bản này khác tag paper-2026-11c nên dùng tag mới paper-2026-11d (xem mục dưới).
+
+## 2026-11-28 — M3 và tag paper-2026-11d (backup: *.pre_m3.tex)
+- Mục 4.6 chuyển thành 4.1 "Main Result", mở đầu ghi rõ chạy sau cùng và post hoc. Mục cũ 4.1–4.5 thành 4.2–4.6, viết gọn.
+- Bảng lrseries và controls chuyển sang phụ lục (Appendix lrcheck). Bài chính 14 trang, phụ lục 27 trang.
+- Code availability ghi tag paper-2026-11d; response letter cập nhật số mục/bảng, M3 → DONE.
+
